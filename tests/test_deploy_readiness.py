@@ -330,3 +330,48 @@ class TestHealthLeaksNoSecrets:
         described = describe_pool()
         assert "redis_url" not in described
         assert "://" not in str(described.get("host", ""))
+
+
+class TestWebhookConfigIsVisible:
+    """A Twilio signature mismatch produces a 403 on every webhook and no other
+    symptom. Publishing the base URL and whether validation is on is what makes
+    that diagnosable without access to the dashboard."""
+
+    async def test_health_reports_the_base_url_and_validation_state(
+        self, client, db
+    ):
+        body = (await client.get("/health")).json()
+        assert "webhooks" in body
+        assert "public_base_url" in body["webhooks"]
+        assert body["webhooks"]["signature_validation"] in ("enforced", "SKIPPED")
+
+    async def test_validation_shows_skipped_without_credentials(self, client, db):
+        from app.config import get_settings
+
+        get_settings.cache_clear()
+        body = (await client.get("/health")).json()
+        # The suite runs with no Twilio credentials, so it must say so loudly.
+        assert body["webhooks"]["signature_validation"] == "SKIPPED"
+
+    async def test_validation_shows_enforced_once_configured(
+        self, client, db, monkeypatch
+    ):
+        from app.config import get_settings
+
+        monkeypatch.setenv("TWILIO_ACCOUNT_SID", "AC" + "0" * 32)
+        monkeypatch.setenv("TWILIO_AUTH_TOKEN", "a" * 32)
+        monkeypatch.setenv("TWILIO_VALIDATE_SIGNATURE", "true")
+        get_settings.cache_clear()
+        try:
+            body = (await client.get("/health")).json()
+            assert body["webhooks"]["signature_validation"] == "enforced"
+            # And still no token in the payload.
+            assert "a" * 32 not in (await client.get("/health")).text
+        finally:
+            for key in (
+                "TWILIO_ACCOUNT_SID",
+                "TWILIO_AUTH_TOKEN",
+                "TWILIO_VALIDATE_SIGNATURE",
+            ):
+                monkeypatch.delenv(key, raising=False)
+            get_settings.cache_clear()

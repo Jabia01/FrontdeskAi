@@ -150,6 +150,19 @@ def create_app() -> FastAPI:
             "anthropic_key_configured": bool(settings.anthropic_api_key),
             "twilio_configured": settings.twilio_configured,
             "calendar_configured": settings.calendar_configured,
+            # Not secret - it is this service's own address - and it is the
+            # single most error-prone value here, because Twilio signatures are
+            # verified against it as an exact string rather than against the
+            # request. Publishing it is what makes a 403 diagnosable from
+            # outside instead of by guesswork.
+            "webhooks": {
+                "public_base_url": settings.public_base_url,
+                "signature_validation": (
+                    "enforced"
+                    if settings.twilio_validate_signature and settings.twilio_configured
+                    else "SKIPPED"
+                ),
+            },
             "queue": describe_pool(),
         }
 
