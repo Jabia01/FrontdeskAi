@@ -275,6 +275,27 @@ h1, h2, h3, h4 { margin: 0; font-weight: 640; letter-spacing: -0.035em; }
 }
 
 .hero-copy .display { margin-bottom: 24px; }
+
+/* The rotating ending. All of them occupy one grid cell, so the cell is the
+   height of the tallest and the page below never shifts as they swap. */
+.headline-swap {
+  display: grid;
+  margin-top: 0.06em;
+}
+.headline-swap > span {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transform: translateY(0.18em);
+  transition: opacity 620ms var(--ease), transform 620ms var(--ease);
+  pointer-events: none;
+}
+.headline-swap > span.on {
+  opacity: 1;
+  transform: none;
+}
+/* Without JavaScript the first ending simply stays - a rotating headline must
+   never be the reason a visitor sees no headline at all. */
+html:not(.js) .headline-swap > span:first-child { opacity: 1; transform: none; }
 .hero-copy .lede { max-width: 540px; margin-bottom: 36px; }
 .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 .hero-note {
@@ -946,6 +967,8 @@ h1, h2, h3, h4 { margin: 0; font-weight: 640; letter-spacing: -0.035em; }
     transition-duration: 0.001ms !important;
   }
   .js .rise { opacity: 1; transform: none; }
+  .headline-swap > span { transition: none; }
+  .headline-swap > span:first-child { opacity: 1; transform: none; }
   .ch-logo-stroke { stroke-dashoffset: 0; }
   .timeline::before { transform: scaleX(1); }
 }

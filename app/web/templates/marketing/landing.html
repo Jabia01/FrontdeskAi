@@ -17,8 +17,21 @@
     <div class="hero-copy">
       <span class="eyebrow rise in">Take the phone back</span>
       <h1 class="display rise in d1">
-        Never lose another customer to
-        <span class="grad">a phone you couldn't reach.</span>
+        {{ headline_stem }}
+        {#
+          Every ending is rendered and stacked in one grid cell, so the heading
+          is always as tall as the longest of them and nothing below it moves
+          when one swaps for another.
+        #}
+        <span class="headline-swap" data-headline>
+          {#
+            Only the visible ending is exposed to assistive technology, or the
+            heading would be read aloud as six endings run together.
+          #}
+          {% for tail in headline_tails %}
+          <span class="grad{{ ' on' if loop.first }}"{% if not loop.first %} aria-hidden="true"{% endif %}>{{ tail }}</span>
+          {% endfor %}
+        </span>
       </h1>
       <p class="lede rise in d2">
         They text your number. {{ brand.name }} answers in their language, in

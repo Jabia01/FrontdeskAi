@@ -177,6 +177,26 @@
     }
   }
 
+  /* ------------------------------------------------- the rotating headline */
+  var headline = document.querySelector("[data-headline]");
+  if (headline) {
+    var endings = Array.prototype.slice.call(headline.children);
+    /* The first ending is already marked in the HTML, so a visitor whose
+       JavaScript never arrives still reads a complete sentence. */
+    if (endings.length > 1 && !still) {
+      var showing = 0;
+      setInterval(function () {
+        endings[showing].classList.remove("on");
+        endings[showing].setAttribute("aria-hidden", "true");
+        showing = (showing + 1) % endings.length;
+        endings[showing].classList.add("on");
+        /* aria-hidden moves with the visibility, so a screen reader always
+           hears exactly one complete sentence. */
+        endings[showing].removeAttribute("aria-hidden");
+      }, 4200);
+    }
+  }
+
   /* ---------------------------------------------------- the language cycle */
   var stage = document.querySelector("[data-languages]");
   if (stage) {

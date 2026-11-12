@@ -197,6 +197,26 @@ OWNER_ALERT = {
     ),
 }
 
+
+# -------------------------------------------------------------- the headline
+
+#: The stem holds still and the ending rotates, so the sentence stays readable
+#: while the claim widens: there is more than one way to lose a customer, and
+#: the product answers all of them.
+#:
+#: The first is the strongest, because plenty of visitors will only ever see
+#: one. Keep them close in length - the page reserves the height of the tallest
+#: so nothing below ever shifts, but wildly uneven endings leave a visible gap.
+HEADLINE_STEM = "Never lose another customer to"
+HEADLINE_TAILS: list[str] = [
+    "a phone you couldn't reach.",
+    "a text you read too late.",
+    "a voicemail nobody checks.",
+    "the shop that answered first.",
+    "a language you don't speak.",
+    "the Sunday you took off.",
+]
+
 # ------------------------------------------------------------------- the numbers
 
 #: Every figure measured on the real deployment during the build. If you cannot

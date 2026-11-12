@@ -384,3 +384,62 @@ class TestTheCharacter:
         the internal console."""
         body = (await client.get("/admin/login")).text
         assert "chichi.css" not in body
+
+
+class TestTheRotatingHeadline:
+    """The ending rotates while the stem holds still. Two things must stay
+    true: the page below must never move, and a visitor without JavaScript or
+    with a screen reader must get one complete sentence rather than six."""
+
+    def test_there_are_several_endings(self):
+        assert len(content.HEADLINE_TAILS) >= 3
+        assert content.HEADLINE_STEM.strip()
+
+    def test_each_ending_completes_the_sentence(self):
+        for tail in content.HEADLINE_TAILS:
+            assert tail.endswith("."), tail
+            assert not tail[0].isupper(), f"{tail!r} should continue the stem"
+
+    def test_the_endings_are_close_in_length(self):
+        """The heading reserves the height of the tallest, so a wild outlier
+        leaves a visible gap under the shorter ones."""
+        lengths = [len(t) for t in content.HEADLINE_TAILS]
+        assert max(lengths) - min(lengths) <= 14, lengths
+
+    async def test_every_ending_is_in_the_html(self, client, db):
+        import html as html_mod
+
+        body = html_mod.unescape((await client.get("/")).text)
+        assert content.HEADLINE_STEM in body
+        for tail in content.HEADLINE_TAILS:
+            assert tail in body, tail
+
+    async def test_exactly_one_starts_visible(self, client, db):
+        body = (await client.get("/")).text
+        swap = body[body.index("headline-swap"):body.index("</h1>")]
+        assert swap.count('class="grad on"') == 1
+
+    async def test_the_hidden_endings_are_hidden_from_screen_readers(
+        self, client, db
+    ):
+        """Otherwise the heading is announced as six endings run together."""
+        body = (await client.get("/")).text
+        swap = body[body.index("headline-swap"):body.index("</h1>")]
+        assert swap.count('aria-hidden="true"') == len(content.HEADLINE_TAILS) - 1
+
+    def test_they_are_stacked_rather_than_stacked_up(self):
+        """One grid cell holds all of them, so the heading cannot change
+        height and shove the hero down mid-read."""
+        css = (STATIC / "site.css").read_text(encoding="utf-8")
+        block = css[css.index(".headline-swap {"):css.index(".headline-swap > span.on")]
+        assert "display: grid" in block
+        assert "grid-area: 1 / 1" in block
+
+    def test_it_survives_without_javascript(self):
+        css = (STATIC / "site.css").read_text(encoding="utf-8")
+        assert "html:not(.js) .headline-swap > span:first-child" in css
+
+    def test_it_stops_for_reduced_motion(self):
+        css = (STATIC / "site.css").read_text(encoding="utf-8")
+        tail = css[css.index("prefers-reduced-motion"):]
+        assert ".headline-swap > span:first-child" in tail

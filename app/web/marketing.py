@@ -67,6 +67,8 @@ def _landing_context() -> dict:
         "conversations_json": json.dumps(
             content.DEMO_CONVERSATIONS, ensure_ascii=False
         ),
+        "headline_stem": content.HEADLINE_STEM,
+        "headline_tails": content.HEADLINE_TAILS,
         "demo_shop": content.DEMO_SHOP,
         "demo_caption": content.DEMO_CAPTION,
         "owner_alert": content.OWNER_ALERT,
