@@ -1,0 +1,40 @@
+{% extends "shop/base.html" %}
+{% block title %}Calls - {{ shop.name }}{% endblock %}
+{% block body %}
+<h1>Calls</h1>
+<p class="sub">
+  Every call we were told about, and whether the caller got a text back.
+  Times in {{ tz }}.
+</p>
+<div class="card flush">
+  {% if rows %}
+  <table>
+    <thead><tr><th>From</th><th>Outcome</th><th>Texted back</th>
+      <th>Length</th><th>When</th></tr></thead>
+    <tbody>
+    {% for call, customer in rows %}
+      <tr>
+        <td class="tight">{{ call.from_number | phone }}
+          {% if customer and customer.name %}
+          <div class="sub" style="margin:0;font-size:13px">{{ customer.name }}</div>
+          {% endif %}</td>
+        <td class="tight"><span class="badge {{ call.outcome.value }}">
+          {{ call.outcome.value.replace("_", " ") }}</span></td>
+        <td class="tight">
+          {% if call.texted_back_at %}
+            <span class="badge ok">{{ call.texted_back_at | ago }}</span>
+          {% elif call.outcome.value == "missed" %}
+            <span class="badge failed">no</span>
+          {% else %}-{% endif %}
+        </td>
+        <td class="tight">{{ call.duration if call.duration is not none else "-" }}s</td>
+        <td class="tight sub">{{ call.created_at | in_tz(tz) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">No calls recorded yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

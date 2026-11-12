@@ -1,0 +1,39 @@
+{#
+  Shared by the console and the owner dashboard.
+  Expects: messages (oldest first), tz (a zoneinfo name).
+
+  Anything the customer never actually saw is drawn differently and labelled -
+  a blocked send, a shadow-mode draft, a draft the owner replaced. On a
+  transcript that is the single most useful thing on the page, so this view
+  deliberately shows what the prompt's own history deliberately hides.
+#}
+<div class="thread">
+  {% for message in messages %}
+  {% set unseen = message.status.value in ("blocked", "draft", "rejected") %}
+  <div class="msg {{ message.direction.value }}{{ ' unseen' if unseen }}">
+    {{ message.body or message.transcript or "(no text)" }}
+    {% if message.media_url %}
+      <span class="meta">attachment: {{ message.media_url }}</span>
+    {% endif %}
+    <span class="meta">
+      {{ message.created_at | in_tz(tz) }}
+      &middot; {{ message.channel.value }}
+      &middot; {{ message.status.value }}
+      {% if message.detected_language %}
+        &middot; {{ message.detected_language | language_name }}
+      {% endif %}
+      {% if message.status.value == "blocked" %}
+        - never delivered: the 24-hour WhatsApp window had closed
+      {% elif message.status.value == "draft" %}
+        - waiting for the owner's OK
+      {% elif message.status.value == "rejected" %}
+        - replaced by the owner
+      {% elif message.status.value == "failed" %}
+        - send failed{% if message.error %}: {{ message.error }}{% endif %}
+      {% endif %}
+    </span>
+  </div>
+  {% else %}
+  <p class="empty">No messages in this conversation.</p>
+  {% endfor %}
+</div>

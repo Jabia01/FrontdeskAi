@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Enter your code{% endblock %}
+{% block wrapclass %}wrap narrow{% endblock %}
+{% block brand %}AI Front Desk{% endblock %}
+{% block nav %}{% endblock %}
+{% block body %}
+<div class="card" style="margin-top:36px">
+  <h1>Enter your code</h1>
+  <p class="sub">
+    If that number is on one of our shops, a six-digit code is on its way to
+    {{ masked }}. It expires in ten minutes.
+  </p>
+  {% if hint %}<div class="note">{{ hint }}</div>{% endif %}
+  <form method="post" action="/shop/verify">
+    <input type="hidden" name="phone" value="{{ phone }}">
+    <label>Code
+      <input type="text" name="code" class="otp" required autofocus
+             inputmode="numeric" autocomplete="one-time-code"
+             pattern="[0-9]*" maxlength="6">
+    </label>
+    <div class="actions">
+      <button class="btn" type="submit">Sign in</button>
+      <a class="btn ghost" href="/shop/login">Use a different number</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

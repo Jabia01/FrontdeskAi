@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Sign in to your shop{% endblock %}
+{% block wrapclass %}wrap narrow{% endblock %}
+{% block brand %}AI Front Desk{% endblock %}
+{% block nav %}{% endblock %}
+{% block body %}
+<div class="card" style="margin-top:36px">
+  <h1>Sign in</h1>
+  <p class="sub">
+    Enter the mobile number we text you on. We will send you a code.
+  </p>
+  <form method="post" action="/shop/login">
+    <label>Mobile number
+      <input type="tel" name="phone" required autofocus
+             autocomplete="tel" placeholder="(312) 555-0111">
+    </label>
+    <div class="actions"><button class="btn" type="submit">Send me a code</button></div>
+  </form>
+  <p class="sub" style="margin:18px 0 0;font-size:13px">
+    You never have to use this page. Everything your shop needs reaches you on
+    WhatsApp, and you reply there.
+  </p>
+</div>
+{% endblock %}

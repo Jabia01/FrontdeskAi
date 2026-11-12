@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block brand %}{{ shop.name if shop else "Your shop" }}{% endblock %}
+{% block home %}/shop{% endblock %}
+{% block nav %}
+<nav class="topnav">
+  <a href="/shop" class="{{ 'on' if section == 'today' }}">Today</a>
+  <a href="/shop/conversations" class="{{ 'on' if section == 'conversations' }}">Messages</a>
+  <a href="/shop/appointments" class="{{ 'on' if section == 'appointments' }}">Appointments</a>
+  <a href="/shop/jobs" class="{{ 'on' if section == 'jobs' }}">Jobs</a>
+  <a href="/shop/calls" class="{{ 'on' if section == 'calls' }}">Calls</a>
+  {% if principal %}
+  <form method="post" action="/shop/logout" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="btn ghost small" type="submit">Sign out</button>
+  </form>
+  {% endif %}
+</nav>
+{% endblock %}

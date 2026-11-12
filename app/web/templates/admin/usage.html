@@ -1,0 +1,94 @@
+{% extends "admin/base.html" %}
+{% block title %}Usage - console{% endblock %}
+{% block body %}
+<h1>Usage</h1>
+<p class="sub">
+  Claude spend over the last {{ days }} days - the cost side of the margin.
+  <span class="topnav" style="display:inline-flex;vertical-align:middle">
+    {% for option in [7, 30, 90] %}
+    <a href="/admin/usage?days={{ option }}" class="{{ 'on' if days == option }}">
+      {{ option }}d</a>
+    {% endfor %}
+  </span>
+</p>
+
+<div class="grid">
+  <div class="stat"><div class="k">Claude spend</div>
+    <div class="v">{{ total_cost | money }}</div>
+    <div class="n">{{ total_calls | number }} calls</div></div>
+  <div class="stat"><div class="k">Per call</div>
+    <div class="v">{{ (total_cost / total_calls if total_calls else 0) | money }}</div></div>
+  <div class="stat"><div class="k">Cached input</div>
+    <div class="v">{{ cache_share }}%</div>
+    <div class="n">{{ cache_read | number }} read, {{ cache_write | number }} written</div></div>
+</div>
+
+{% if total_calls and cache_read == 0 %}
+<div class="note warn">
+  Nothing has been read from the prompt cache. If this stays at zero across
+  repeated messages in the same conversation, something in the prompt builder
+  is moving between calls and the cached prefix never matches.
+</div>
+{% endif %}
+
+<div class="card flush">
+  <div class="card-head"><h2>By model</h2></div>
+  {% if by_model %}
+  <table>
+    <thead><tr>
+      <th>Model</th><th class="num">Calls</th><th class="num">Fresh input</th>
+      <th class="num">Cache read</th><th class="num">Cache write</th>
+      <th class="num">Output</th><th class="num">Cost</th><th class="num">Per call</th>
+    </tr></thead>
+    <tbody>
+    {% for row in by_model %}
+      <tr>
+        <td class="mono">{{ row.model }}</td>
+        <td class="num">{{ row.calls | number }}</td>
+        <td class="num">{{ row.input_tokens | number }}</td>
+        <td class="num">{{ row.cache_read | number }}</td>
+        <td class="num">{{ row.cache_write | number }}</td>
+        <td class="num">{{ row.output_tokens | number }}</td>
+        <td class="num">{{ row.cost | money }}</td>
+        <td class="num">{{ (row.cost / row.calls if row.calls else 0) | money }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="sub" style="padding:12px 18px;margin:0;font-size:13px">
+    A Sonnet escalation is a cold cache read by design - caches are scoped to a
+    model, so the escalation path cannot reuse the Haiku prefix.
+  </p>
+  {% else %}
+  <p class="empty">No Claude calls in this window.</p>
+  {% endif %}
+</div>
+
+<div class="card flush">
+  <div class="card-head"><h2>By shop</h2></div>
+  {% if per_shop %}
+  <table>
+    <thead><tr>
+      <th>Shop</th><th>Status</th><th class="num">In</th><th class="num">Out</th>
+      <th class="num">Claude</th><th class="num">Per message in</th>
+    </tr></thead>
+    <tbody>
+    {% for row in per_shop %}
+      <tr>
+        <td><a href="/admin/shops/{{ row.client.id }}">{{ row.client.name }}</a></td>
+        <td class="tight"><span class="badge {{ row.client.status.value }}">
+          {{ row.client.status.value }}</span></td>
+        <td class="num">{{ row.messages["in"] | number }}</td>
+        <td class="num">{{ row.messages["out"] | number }}</td>
+        <td class="num">{{ row.cost | money }}</td>
+        <td class="num">
+          {{ (row.cost / row.messages["in"] if row.messages["in"] else 0) | money }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">No shops yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

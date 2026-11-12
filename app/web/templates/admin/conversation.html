@@ -1,0 +1,69 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ conversation.short_code }} - {{ client.name }}{% endblock %}
+{% block body %}
+<h1>{{ customer.phone | phone }}</h1>
+<p class="sub">
+  <span class="mono">{{ conversation.short_code }}</span>
+  &middot; <span class="badge {{ conversation.status.value }}">{{ conversation.status.value }}</span>
+  &middot; {{ conversation.channel.value }}
+  &middot; {{ client.name }}
+  &middot; <a href="{{ back }}">Back to messages</a>
+</p>
+
+<div class="cols two">
+  <div class="card flush">
+    <div class="card-head"><h2>Transcript</h2></div>
+    {% include "_transcript.html" with context %}
+  </div>
+
+  <div>
+    <div class="card">
+      <h3>Customer</h3>
+      <dl class="kv">
+        <dt>Number</dt><dd>{{ customer.phone | phone }}</dd>
+        <dt>Name</dt><dd>{{ customer.name or "-" }}</dd>
+        <dt>{{ noun | capitalize }}</dt><dd>{{ customer.item or "-" }}</dd>
+        <dt>Language</dt>
+        <dd>{{ customer.language | language_name }}
+          {% if customer.language_source %}
+            <span class="badge">{{ customer.language_source.value }}</span>
+          {% endif %}
+          {% if customer.language_confidence %}
+            <span class="sub">{{ (customer.language_confidence * 100) | round | int }}%</span>
+          {% endif %}
+        </dd>
+        <dt>Opted out</dt>
+        <dd>{% if customer.opted_out_at %}
+          <span class="badge failed">yes, {{ customer.opted_out_at | ago }}</span>
+          {% else %}no{% endif %}</dd>
+        <dt>First seen</dt><dd>{{ customer.created_at | in_tz(tz) }}</dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h3>Conversation</h3>
+      <dl class="kv">
+        <dt>Started</dt><dd>{{ conversation.created_at | in_tz(tz) }}</dd>
+        <dt>Last message</dt><dd>{{ conversation.last_message_at | in_tz(tz) }}</dd>
+        <dt>24h window</dt>
+        <dd>{% if conversation.window_expires_at %}
+          {% if conversation.window_expires_at > now %}
+            <span class="badge ok">open</span>
+            until {{ conversation.window_expires_at | in_tz(tz) }}
+          {% else %}
+            <span class="badge failed">closed</span>
+            {{ conversation.window_expires_at | ago }}
+          {% endif %}
+          {% else %}-{% endif %}</dd>
+        <dt>Handoff</dt>
+        <dd>{% if conversation.handed_off_at %}
+          {{ conversation.handoff_reason or "handed off" }}
+          <span class="sub">({{ conversation.handed_off_at | ago }})</span>
+          {% else %}no{% endif %}</dd>
+        <dt>Misunderstood</dt><dd>{{ conversation.misunderstand_count }}</dd>
+        <dt>AI failures</dt><dd>{{ conversation.ai_failure_count }}</dd>
+      </dl>
+    </div>
+  </div>
+</div>
+{% endblock %}

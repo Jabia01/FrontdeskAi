@@ -1,0 +1,53 @@
+{% extends "admin/base.html" %}
+{% block title %}Messages - {{ client.name }}{% endblock %}
+{% block body %}
+<h1>{{ client.name }}</h1>
+<p class="sub">
+  <a href="/admin/shops/{{ client.id }}">Back to the shop</a>
+</p>
+
+<div class="card flush">
+  <div class="card-head">
+    <h2>Conversations</h2>
+    <span class="spacer"></span>
+    <div class="topnav" style="margin:0">
+      <a href="/admin/shops/{{ client.id }}/conversations"
+         class="{{ 'on' if not status }}">All</a>
+      {% for option in ["ai", "human", "closed"] %}
+      <a href="/admin/shops/{{ client.id }}/conversations?status={{ option }}"
+         class="{{ 'on' if status == option }}">{{ option }}</a>
+      {% endfor %}
+    </div>
+  </div>
+  {% if rows %}
+  <table>
+    <thead><tr>
+      <th>Code</th><th>Customer</th><th>Language</th><th>Last message</th>
+      <th>Status</th><th class="num">Msgs</th><th>When</th>
+    </tr></thead>
+    <tbody>
+    {% for row in rows %}
+      <tr>
+        <td class="tight mono">{{ row.conversation.short_code }}</td>
+        <td class="tight">
+          <a href="/admin/shops/{{ client.id }}/conversations/{{ row.conversation.id }}">
+            {{ row.customer.phone | phone }}</a>
+          {% if row.customer.is_owner %}<span class="badge">owner</span>{% endif %}
+          {% if row.customer.opted_out_at %}<span class="badge failed">opted out</span>{% endif %}
+        </td>
+        <td class="tight">{{ row.customer.language | language_name }}</td>
+        <td><span class="clip">{{ row.last_body or "-" }}</span></td>
+        <td class="tight"><span class="badge {{ row.conversation.status.value }}">
+          {{ row.conversation.status.value }}</span>
+          <span class="badge">{{ row.conversation.channel.value }}</span></td>
+        <td class="num">{{ row.message_count }}</td>
+        <td class="tight sub">{{ row.conversation.last_message_at | ago }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">Nothing here.</p>
+  {% endif %}
+</div>
+{% endblock %}

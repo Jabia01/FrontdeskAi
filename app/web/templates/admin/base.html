@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block brand %}AI Front Desk <span>console</span>{% endblock %}
+{% block home %}/admin{% endblock %}
+{% block nav %}
+<nav class="topnav">
+  <a href="/admin" class="{{ 'on' if section == 'shops' }}">Shops</a>
+  <a href="/admin/signups" class="{{ 'on' if section == 'signups' }}">
+    Signups{% if new_signups %} ({{ new_signups }}){% endif %}
+  </a>
+  <a href="/admin/usage" class="{{ 'on' if section == 'usage' }}">Usage</a>
+  <a href="/admin/audit" class="{{ 'on' if section == 'audit' }}">Audit</a>
+  {% if principal %}
+  <form method="post" action="/admin/logout" class="inline-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="btn ghost small" type="submit">Sign out</button>
+  </form>
+  {% endif %}
+</nav>
+{% endblock %}

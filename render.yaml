@@ -1,0 +1,113 @@
+# Render blueprint: the web service, the arq worker, and Redis.
+#
+# Postgres is NOT here on purpose - it lives on Supabase, so `DATABASE_URL` is a
+# secret you paste in once (see docs/deploy.md for which of Supabase's three
+# connection strings to use; the wrong one fails in ways that look like our bug).
+#
+# Create with: Render dashboard -> New -> Blueprint -> point at this repo.
+# Every `sync: false` value is prompted for on that first create, and never
+# again - change them afterwards in each service's Environment tab.
+
+services:
+  - type: web
+    name: frontdesk-web
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: 0.5c-512mb
+    region: ohio
+    healthCheckPath: /health
+    # Migrations run once per deploy, before any new instance takes traffic.
+    # Needs a paid plan; on free, run `alembic upgrade head` by hand instead.
+    preDeployCommand: python -m alembic upgrade head
+    # --proxy-headers is load-bearing: behind Render's proxy, every request
+    # otherwise appears to come from the proxy's own address, and the signup
+    # form's per-address rate limit would see all visitors as one.
+    dockerCommand: >-
+      python -m uvicorn app.main:app
+      --host 0.0.0.0 --port $PORT
+      --proxy-headers --forwarded-allow-ips='*'
+    autoDeployTrigger: commit
+    envVars:
+      # Deliberately one web instance. The tenant-router config cache and the
+      # admin login throttle are both in-process, so a second instance would
+      # hold its own copy of each. Both are documented as such; neither is
+      # worth moving to Redis for a pilot.
+      - key: WEB_CONCURRENCY
+        value: "1"
+      - key: PYTHONPATH
+        value: /app
+      - key: LOG_LEVEL
+        value: INFO
+      - key: AI_ENABLED
+        value: "true"
+      # Twilio signatures are verified against this exact string, not against
+      # the incoming request, so it has to match what Twilio is configured with
+      # - including https and no trailing slash.
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_VALIDATE_SIGNATURE
+        value: "true"
+      # The whole service-account JSON, pasted in. A file path is no use on a
+      # platform with no persistent disk.
+      - key: GOOGLE_CREDENTIALS_JSON
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          name: frontdesk-redis
+          type: keyvalue
+          property: connectionString
+
+  - type: worker
+    name: frontdesk-worker
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: 0.5c-512mb
+    region: ohio
+    # The worker answers customers AND runs the two cron sweeps (reminders every
+    # fifteen minutes, the daily summary hourly). If it is not running, replies
+    # queue up and no reminder goes out.
+    dockerCommand: python -m arq app.queue.worker.WorkerSettings
+    autoDeployTrigger: commit
+    envVars:
+      - key: PYTHONPATH
+        value: /app
+      - key: LOG_LEVEL
+        value: INFO
+      - key: AI_ENABLED
+        value: "true"
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: GOOGLE_CREDENTIALS_JSON
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          name: frontdesk-redis
+          type: keyvalue
+          property: connectionString
+
+  - type: keyvalue
+    name: frontdesk-redis
+    plan: 256mb
+    region: ohio
+    # Reachable only from inside this Render account's private network.
+    ipAllowList: []
+    # The queue must not drop jobs under memory pressure - an evicted job is a
+    # customer who never got an answer. `noeviction` makes the worker fail
+    # loudly instead, and arq retries.
+    maxmemoryPolicy: noeviction

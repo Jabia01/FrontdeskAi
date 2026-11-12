@@ -1,0 +1,69 @@
+{% extends "admin/base.html" %}
+{% block title %}Signups - console{% endblock %}
+{% block body %}
+<h1>Signups</h1>
+<p class="sub">
+  Shops that filled in the landing-page form. There is no alerting channel yet,
+  so a new one shows up here and as a <span class="mono">NEW SIGNUP</span> line
+  in the server log.
+</p>
+
+<div class="card flush">
+  {% if rows %}
+  <table>
+    <thead><tr>
+      <th>Shop</th><th>Contact</th><th>Where</th><th>Said</th>
+      <th>Status</th><th>When</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for row in rows %}
+      <tr>
+        <td>
+          <strong>{{ row.business_name }}</strong>
+          {% if row.notes %}
+          <div class="sub" style="margin:0;font-size:13px">{{ row.notes }}</div>
+          {% endif %}
+        </td>
+        <td class="tight">
+          {{ row.contact_name or "-" }}<br>
+          <span class="mono">{{ row.phone | phone }}</span>
+          {% if row.email %}<br><span class="sub">{{ row.email }}</span>{% endif %}
+        </td>
+        <td class="tight">{{ row.city or "-" }}
+          {% if row.trade %}
+          <div class="sub" style="margin:0;font-size:13px">{{ row.trade }}</div>
+          {% endif %}
+        </td>
+        <td><span class="clip">{{ row.message or "-" }}</span></td>
+        <td class="tight">
+          <span class="badge {{ row.status.value }}">{{ row.status.value }}</span>
+          {% if row.client_id %}
+          <br><a href="/admin/shops/{{ row.client_id }}">the shop</a>
+          {% endif %}
+        </td>
+        <td class="tight sub">{{ row.created_at | ago }}</td>
+        <td class="tight">
+          <form method="post" action="/admin/signups/{{ row.id }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <select name="status">
+              {% for option in statuses %}
+              <option value="{{ option }}" {{ "selected" if option == row.status.value }}>
+                {{ option }}</option>
+              {% endfor %}
+            </select>
+            <button class="btn ghost small" type="submit">Set</button>
+          </form>
+          {% if not row.client_id %}
+          <a class="btn small" href="/admin/shops/new?signup={{ row.id }}"
+             style="margin-top:6px">Make a shop</a>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">No signups yet. The form is at <a href="/">/</a>.</p>
+  {% endif %}
+</div>
+{% endblock %}

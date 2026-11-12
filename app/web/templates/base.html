@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}AI Front Desk{% endblock %}</title>
+  <meta name="robots" content="{% block robots %}noindex, nofollow{% endblock %}">
+  <link rel="stylesheet" href="/web-static/app.css">
+</head>
+<body>
+{% block chrome %}
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="{% block home %}/{% endblock %}">
+      {% block brand %}AI Front Desk{% endblock %}
+    </a>
+    {% block nav %}{% endblock %}
+  </div>
+</header>
+{% endblock %}
+
+<main class="{% block wrapclass %}wrap{% endblock %}">
+  {% block flash %}
+    {% if error %}<div class="note bad">{{ error }}</div>{% endif %}
+    {% if ok %}<div class="note good">{{ ok }}</div>{% endif %}
+    {% if warn %}<div class="note warn">{{ warn }}</div>{% endif %}
+  {% endblock %}
+  {% block body %}{% endblock %}
+</main>
+</body>
+</html>

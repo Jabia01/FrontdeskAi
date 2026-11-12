@@ -1,0 +1,98 @@
+{% extends "admin/base.html" %}
+{% block title %}Add a shop - console{% endblock %}
+{% block body %}
+<h1>Add a shop</h1>
+<p class="sub">
+  Creates the shop in <strong>shadow mode</strong>: it drafts replies and the
+  owner approves them on WhatsApp. Nothing reaches a customer until you set it
+  live. You will fill in services, hours and prices on the next page.
+</p>
+
+{% if signup %}
+<div class="note">
+  From signup <strong>{{ signup.business_name }}</strong>
+  ({{ signup.phone | phone }}{% if signup.city %}, {{ signup.city }}{% endif %}).
+  Marking it converted when you save.
+</div>
+{% endif %}
+
+<div class="card">
+  <form method="post" action="/admin/shops">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="signup_id" value="{{ signup.id if signup else '' }}">
+
+    <label>Shop name
+      <input type="text" name="name" required maxlength="200"
+             value="{{ form.name if form else (signup.business_name if signup else '') }}"
+             autofocus>
+    </label>
+
+    <label>Owner's mobile number
+      <span class="hint">Alerts, approvals and commands all go here. It is also
+        how the owner signs in to their dashboard.</span>
+      <input type="tel" name="owner_phone" required
+             value="{{ form.owner_phone if form else (signup.phone if signup else '') }}">
+    </label>
+
+    <label>Kind of business
+      <span class="hint">Only sets a starting point - services, handoff
+        keywords, and the word this business uses for a job ("vehicle", "pet",
+        "device"). Everything is editable afterwards.</span>
+      <select name="vertical">
+        {% for key, preset in verticals.items() %}
+        <option value="{{ key }}"
+          {{ "selected" if (form.vertical if form else "other") == key }}>
+          {{ preset.label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label>Timezone
+      <select name="timezone">
+        {% for zone in timezones %}
+        <option value="{{ zone }}"
+          {{ "selected" if (form.timezone if form else "America/Chicago") == zone }}>
+          {{ zone }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label>Languages
+      <span class="hint">In priority order, comma separated. English is added
+        automatically if you leave it out - a first greeting always includes it.</span>
+      <input type="text" name="enabled_languages"
+             value="{{ form.enabled_languages if form else 'en, es' }}">
+    </label>
+
+    <label>Owner's own language
+      <span class="hint">Handoff summaries and alerts are written in this.</span>
+      <input type="text" name="owner_language" maxlength="16"
+             value="{{ form.owner_language if form else 'en' }}">
+    </label>
+
+    <h2>Numbers</h2>
+    <p class="sub">All optional now - a shop can be exercised at
+      <span class="mono">/sim</span> before any real number points at it. A
+      number can only ever belong to one shop.</p>
+
+    <label>SMS number
+      <input type="tel" name="sms_number" value="{{ form.sms_number if form else '' }}">
+    </label>
+    <label>WhatsApp sender
+      <span class="hint">The number, or Twilio's full
+        <span class="mono">whatsapp:+1...</span> form.</span>
+      <input type="text" name="whatsapp_id" value="{{ form.whatsapp_id if form else '' }}">
+    </label>
+    <label>Voice number
+      <span class="hint">Used for missed-call text-back today, and for the v2
+        voice channel later.</span>
+      <input type="tel" name="voice_number" value="{{ form.voice_number if form else '' }}">
+    </label>
+
+    <div class="actions">
+      <button class="btn" type="submit">Create in shadow mode</button>
+      <a class="btn ghost" href="/admin">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

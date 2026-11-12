@@ -1,0 +1,41 @@
+{% extends "admin/base.html" %}
+{% block title %}Audit - console{% endblock %}
+{% block body %}
+<h1>Audit</h1>
+<p class="sub">
+  Append-only. Every login, every config save, every status change - the
+  console can edit any shop's prompt and put it live, so it keeps a record.
+</p>
+
+<div class="card flush">
+  {% if rows %}
+  <table>
+    <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Target</th><th>Detail</th></tr></thead>
+    <tbody>
+    {% for row in rows %}
+      <tr>
+        <td class="tight sub">{{ row.at | in_tz("UTC") }}</td>
+        <td class="tight">{{ row.actor }}
+          <span class="badge">{{ row.actor_kind.value }}</span></td>
+        <td class="tight mono">{{ row.action }}</td>
+        <td class="tight">
+          {% if row.client_id %}
+          <a href="/admin/shops/{{ row.client_id }}">{{ row.target or "shop" }}</a>
+          {% else %}{{ row.target or "-" }}{% endif %}
+        </td>
+        <td>
+          {% if row.detail %}
+          <span class="mono" style="font-size:12px">
+            {% for key, value in row.detail | dictsort %}{{ key }}={{ value }} {% endfor %}
+          </span>
+          {% else %}-{% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">Nothing recorded yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

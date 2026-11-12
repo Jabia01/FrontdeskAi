@@ -1,0 +1,31 @@
+{% extends "shop/base.html" %}
+{% block title %}Appointments - {{ shop.name }}{% endblock %}
+{% block body %}
+<h1>Appointments</h1>
+<p class="sub">Booked by the assistant, from last week onwards. Times in {{ tz }}.</p>
+<div class="card flush">
+  {% if rows %}
+  <table>
+    <thead><tr><th>When</th><th>Service</th><th>{{ noun | capitalize }}</th>
+      <th>Customer</th><th>Status</th><th>Notes</th></tr></thead>
+    <tbody>
+    {% for appointment, customer in rows %}
+      <tr>
+        <td class="tight">{{ appointment.start_at | in_tz(tz) }}</td>
+        <td>{{ appointment.service or "-" }}</td>
+        <td class="tight">{{ appointment.item or "-" }}</td>
+        <td class="tight">{{ customer.phone | phone if customer else "-" }}</td>
+        <td class="tight"><span class="badge {{ appointment.status }}">{{ appointment.status }}</span>
+          {% if appointment.owner_confirmed_at %}
+          <br><span class="sub">you confirmed {{ appointment.owner_confirmed_at | ago }}</span>
+          {% endif %}</td>
+        <td><span class="clip">{{ appointment.notes or "" }}</span></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">Nothing booked.</p>
+  {% endif %}
+</div>
+{% endblock %}

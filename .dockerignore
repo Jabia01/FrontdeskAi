@@ -1,0 +1,19 @@
+# Never ship secrets or local state into an image.
+.env
+.env.*
+!.env.example
+
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.git/
+.gitignore
+
+# Local-only infrastructure and notes.
+docker-compose.yml
+docs/
+README.md
+tests/

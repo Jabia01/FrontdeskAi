@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Front Desk Simulator</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --panel: #ffffff;
+    --border: #e3e6ea;
+    --text: #15181d;
+    --muted: #6b7280;
+    --accent: #2f6fed;
+    --in-bg: #ffffff;
+    --out-bg: #2f6fed;
+    --out-text: #ffffff;
+    --warn: #b45309;
+    --err: #b91c1c;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12141a;
+      --panel: #1a1d25;
+      --border: #2b303b;
+      --text: #e6e8ec;
+      --muted: #9aa1ad;
+      --accent: #5b8cff;
+      --in-bg: #232732;
+      --out-bg: #3b6fe0;
+      --out-text: #ffffff;
+      --warn: #fbbf24;
+      --err: #f87171;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 24px 16px 40px; }
+  h1 { font-size: 20px; margin: 0 0 2px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px;
+  }
+  .controls { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
+  @media (max-width: 620px) { .controls { grid-template-columns: 1fr; } }
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  select, input, button, textarea {
+    font: inherit; color: var(--text); background: var(--bg);
+    border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; width: 100%;
+  }
+  button {
+    background: var(--accent); color: #fff; border-color: transparent;
+    cursor: pointer; font-weight: 600; white-space: nowrap;
+  }
+  button.ghost { background: transparent; color: var(--muted); font-weight: 500; }
+  button:disabled { opacity: .55; cursor: default; }
+  #log {
+    margin-top: 16px; min-height: 320px; max-height: 56vh; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 10px; padding: 14px;
+  }
+  .row { display: flex; }
+  .row.out { justify-content: flex-end; }
+  .bubble {
+    max-width: 78%; padding: 9px 13px; border-radius: 14px;
+    border: 1px solid var(--border); background: var(--in-bg);
+    white-space: pre-wrap; word-wrap: break-word;
+  }
+  .row.out .bubble { background: var(--out-bg); color: var(--out-text); border-color: transparent; }
+  .meta { font-size: 11px; color: var(--muted); margin-top: 3px; font-family: var(--mono); }
+  .row.out .meta { text-align: right; }
+  .sys {
+    align-self: center; font-size: 12px; color: var(--muted);
+    font-family: var(--mono); text-align: center; max-width: 92%;
+  }
+  .sys.warn { color: var(--warn); }
+  .sys.err { color: var(--err); }
+  .composer { display: flex; gap: 10px; margin-top: 12px; }
+  .composer input { flex: 1; }
+  .composer button { width: auto; padding: 9px 18px; }
+  .quick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .quick button {
+    width: auto; background: transparent; color: var(--accent);
+    border: 1px solid var(--border); font-size: 12px; font-weight: 500; padding: 5px 10px;
+  }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 10px; }
+  code { font-family: var(--mono); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Front Desk Simulator</h1>
+  <div class="sub">
+    Messages go through the real gateway, tenant router, conversation engine and
+    Claude agent. Only the transport is simulated.
+  </div>
+
+  <div class="panel">
+    <div class="controls">
+      <div>
+        <label for="shop">Shop endpoint</label>
+        <select id="shop">
+          <option value="sim-westside">Westside Auto Repair (Chicago, en+es)</option>
+          <option value="sim-cicero">Cicero Tire &amp; Brake (es-first on +1)</option>
+        </select>
+      </div>
+      <div>
+        <label for="from">Your number (country code matters)</label>
+        <input id="from" value="+13125559876" spellcheck="false">
+      </div>
+      <div>
+        <button id="reset" class="ghost">New conversation</button>
+      </div>
+    </div>
+
+    <div class="quick">
+      <button data-msg="What time do you close today?">hours (en)</button>
+      <button data-msg="Mi carro hace un ruido raro cuando freno">noise (es)</button>
+      <button data-msg="How much for front brakes on a 2014 Civic?">price (en)</button>
+      <button data-msg="I need a firm quote for a transmission rebuild">firm quote</button>
+      <button data-msg="I was in an accident and my lawyer wants the invoice">handoff</button>
+      <button data-msg="Czy robicie wymianę opon?">polish</button>
+      <button data-msg="ok">neutral</button>
+      <button data-msg="STOP">STOP</button>
+      <button data-msg="">empty (first greeting)</button>
+    </div>
+  </div>
+
+  <div class="panel" id="log"></div>
+
+  <div class="composer">
+    <input id="msg" placeholder="Type a customer message..." autocomplete="off">
+    <button id="send">Send</button>
+  </div>
+  <div class="hint">
+    Replies are polled from the simulator outbox. Watch the terminal running
+    <code>arq app.queue.worker.WorkerSettings</code> for owner alerts and model routing.
+  </div>
+</div>
+
+<script>
+const log = document.getElementById('log');
+const msgEl = document.getElementById('msg');
+const sendBtn = document.getElementById('send');
+const shopEl = document.getElementById('shop');
+const fromEl = document.getElementById('from');
+
+let polling = false;
+let cursor = null;
+
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+
+function addBubble(dir, text, meta) {
+  const row = el('div', 'row ' + dir);
+  const col = el('div');
+  col.appendChild(el('div', 'bubble', text));
+  if (meta) col.appendChild(el('div', 'meta', meta));
+  row.appendChild(col);
+  log.appendChild(row);
+  log.scrollTop = log.scrollHeight;
+}
+
+function addSys(text, kind) {
+  log.appendChild(el('div', 'sys' + (kind ? ' ' + kind : ''), text));
+  log.scrollTop = log.scrollHeight;
+}
+
+async function poll() {
+  if (polling) return;
+  polling = true;
+  try {
+    let url = '/webhooks/sim/poll?external_id=' + encodeURIComponent(shopEl.value)
+      + '&from_number=' + encodeURIComponent(fromEl.value.trim());
+    if (cursor) url += '&after=' + encodeURIComponent(cursor);
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.cursor !== null && data.cursor !== undefined) cursor = data.cursor;
+    for (const m of (data.messages || [])) {
+      const bits = [];
+      if (m.language) bits.push(m.language);
+      if (m.status && m.status !== 'sent') bits.push(m.status.toUpperCase());
+      addBubble('in', m.body, bits.join(' · '));
+      if (m.status === 'blocked') {
+        addSys('blocked: ' + (m.error || '24-hour window closed'), 'warn');
+      }
+    }
+    if (data.conversation_status === 'human') {
+      if (!log.dataset.handedOff) {
+        log.dataset.handedOff = '1';
+        addSys('conversation handed off to the owner - the AI has stopped replying', 'warn');
+      }
+    }
+  } catch (e) {
+    /* transient - next tick retries */
+  } finally {
+    polling = false;
+  }
+}
+
+async function send(text) {
+  const body = text === undefined ? msgEl.value : text;
+  const from = fromEl.value.trim();
+  if (!from) { addSys('set a phone number first', 'warn'); return; }
+
+  sendBtn.disabled = true;
+  if (body.trim()) {
+    addBubble('out', body, from);
+  } else {
+    addSys('sending empty message - triggers the first-contact greeting path');
+  }
+  if (text === undefined) msgEl.value = '';
+
+  try {
+    const res = await fetch('/webhooks/sim', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ external_id: shopEl.value, from_number: from, body: body })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      addSys('gateway ' + res.status + ': ' + (data.detail || 'error'), 'err');
+    } else if (data.status === 'duplicate') {
+      addSys('deduplicated - already seen this provider_msg_id');
+    }
+  } catch (e) {
+    addSys('request failed: ' + e.message, 'err');
+  } finally {
+    sendBtn.disabled = false;
+    msgEl.focus();
+  }
+}
+
+sendBtn.addEventListener('click', () => send());
+msgEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
+document.querySelectorAll('.quick button').forEach(b => {
+  b.addEventListener('click', () => send(b.dataset.msg));
+});
+function resetView(note) {
+  log.innerHTML = '';
+  cursor = null;
+  delete log.dataset.handedOff;
+  addSys(note);
+}
+document.getElementById('reset').addEventListener('click', () => {
+  const n = Math.floor(1000 + Math.random() * 9000);
+  fromEl.value = '+1312555' + n;
+  resetView('new caller ' + fromEl.value + ' - a fresh customer and conversation');
+});
+shopEl.addEventListener('change', () => {
+  resetView('switched shop to ' + shopEl.options[shopEl.selectedIndex].text);
+});
+fromEl.addEventListener('change', () => {
+  resetView('caller is now ' + fromEl.value);
+});
+
+addSys('ready - pick a quick message or type one');
+setInterval(poll, 900);
+msgEl.focus();
+</script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+{% extends "admin/base.html" %}
+{% block title %}Prompt - {{ client.name }}{% endblock %}
+{% block body %}
+<h1>{{ client.name }}</h1>
+<p class="sub">
+  Exactly what Claude is sent as the system prompt on the
+  <strong>{{ channel }}</strong> channel.
+  <a href="/admin/shops/{{ client.id }}">Back to the shop</a> &middot;
+  <a href="/admin/shops/{{ client.id }}/config">Edit the config behind it</a>
+</p>
+
+<div class="card">
+  <div class="topnav" style="margin:0">
+    {% for option in channels %}
+    <a href="/admin/shops/{{ client.id }}/prompt?channel={{ option }}"
+       class="{{ 'on' if option == channel }}">{{ option }}</a>
+    {% endfor %}
+  </div>
+  <dl class="kv" style="margin-top:14px">
+    <dt>This channel</dt><dd class="mono">{{ version }}</dd>
+    <dt>All channels</dt>
+    <dd class="mono">{{ config_version }}
+      <span class="sub">(what the config renders now, across every channel)</span></dd>
+    <dt>Stored version</dt>
+    <dd class="mono">
+      {{ stored_version or "not set" }}
+      {% if drifted %}<span class="badge human">drifted</span>{% endif %}
+    </dd>
+    <dt>Length</dt>
+    <dd>{{ prompt_text | length | number }} characters,
+        roughly {{ (prompt_text | length / 4) | round | int | number }} tokens</dd>
+  </dl>
+  {% if (prompt_text | length) < 2048 %}
+  <div class="note warn" style="margin:14px 0 0">
+    Under about 2,000 characters. Haiku needs a 512-token prefix before it
+    caches anything at all, so a prompt this short may never cache - fill in
+    more of the config.
+  </div>
+  {% endif %}
+  {% if drifted %}
+  <div class="note warn" style="margin:14px 0 0">
+    The stored version does not match what the config renders now. Save the
+    config page to re-hash it.
+  </div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h3>System prompt</h3>
+  <pre style="white-space:pre-wrap;word-break:break-word;margin:0;font-size:13px">{{ prompt_text }}</pre>
+</div>
+{% endblock %}

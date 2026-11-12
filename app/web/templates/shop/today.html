@@ -1,0 +1,174 @@
+{% extends "shop/base.html" %}
+{% block title %}Today - {{ shop.name }}{% endblock %}
+{% block body %}
+<h1>Today</h1>
+<p class="sub">
+  Everything here you can also do by text. This page is just a wider window.
+</p>
+
+<div class="grid">
+  {% if handoffs %}
+  <div class="stat alert"><div class="k">Waiting for you</div>
+    <div class="v">{{ handoffs | length }}</div>
+    <div class="n">reply <span class="mono">RESUME</span> to hand one back</div></div>
+  {% endif %}
+  {% if drafts %}
+  <div class="stat alert"><div class="k">Drafts to approve</div>
+    <div class="v">{{ drafts | length }}</div>
+    <div class="n">reply <span class="mono">OK</span> to send one</div></div>
+  {% endif %}
+  <div class="stat"><div class="k">Messages in (7d)</div>
+    <div class="v">{{ stats.inbound | number }}</div>
+    <div class="n">{{ stats.outbound | number }} answered</div></div>
+  <div class="stat"><div class="k">Appointments (7d)</div>
+    <div class="v">{{ stats.appointments | number }}</div></div>
+  <div class="stat"><div class="k">Missed calls (7d)</div>
+    <div class="v">{{ stats.calls | number }}</div>
+    <div class="n">{{ stats.texted_back }} texted back</div></div>
+</div>
+
+{% if handoffs %}
+<div class="card flush">
+  <div class="card-head"><h2>Waiting for you</h2></div>
+  <table><tbody>
+    {% for row in handoffs %}
+    <tr>
+      <td class="tight mono">{{ row.conversation.short_code }}</td>
+      <td><a href="/shop/conversations/{{ row.conversation.id }}">
+        {{ row.customer.phone | phone }}</a>
+        <div class="sub" style="margin:0;font-size:13px">
+          {{ row.conversation.handoff_reason or "handed to you" }}</div></td>
+      <td><span class="clip">{{ row.last_body or "" }}</span></td>
+      <td class="tight sub">{{ row.conversation.handed_off_at | ago }}</td>
+    </tr>
+    {% endfor %}
+  </tbody></table>
+  <p class="sub" style="padding:12px 18px;margin:0;font-size:13px">
+    The AI has stopped answering these. Text the customer yourself, or reply
+    <span class="mono">RESUME {{ handoffs[0].conversation.short_code }}</span>
+    to let it carry on.
+  </p>
+</div>
+{% endif %}
+
+{% if drafts %}
+<div class="card flush">
+  <div class="card-head"><h2>Drafts waiting for your OK</h2></div>
+  <table><tbody>
+    {% for row in drafts %}
+    <tr>
+      <td class="tight mono">{{ row.conversation.short_code }}</td>
+      <td class="tight">{{ row.customer.phone | phone }}</td>
+      <td>{{ row.message.body }}</td>
+      <td class="tight sub">{{ row.message.created_at | ago }}</td>
+    </tr>
+    {% endfor %}
+  </tbody></table>
+  <p class="sub" style="padding:12px 18px;margin:0;font-size:13px">
+    Nothing has been sent. Reply <span class="mono">OK</span> to the alert on
+    your phone to send it, or just type what you would rather say.
+  </p>
+</div>
+{% endif %}
+
+<div class="cols two">
+  <div class="card flush">
+    <div class="card-head"><h2>Next appointments</h2>
+      <span class="spacer"></span><a href="/shop/appointments">All</a></div>
+    {% if appointments %}
+    <table><tbody>
+      {% for appointment, customer in appointments %}
+      <tr>
+        <td class="tight">{{ appointment.start_at | in_tz(tz) }}</td>
+        <td>{{ appointment.service or "-" }}
+          <div class="sub" style="margin:0;font-size:13px">
+            {{ appointment.item or "" }}
+            {% if customer %}&middot; {{ customer.phone | phone }}{% endif %}</div></td>
+        <td class="tight"><span class="badge {{ appointment.status }}">
+          {{ appointment.status }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody></table>
+    {% else %}
+    <p class="empty">Nothing booked.</p>
+    {% endif %}
+  </div>
+
+  <div class="card flush">
+    <div class="card-head"><h2>Ready for collection</h2>
+      <span class="spacer"></span><a href="/shop/jobs">All jobs</a></div>
+    {% if jobs %}
+    <table><tbody>
+      {% for job, customer in jobs %}
+      <tr>
+        <td>{{ job.item or "-" }}
+          {% if customer %}
+          <div class="sub" style="margin:0;font-size:13px">
+            {{ customer.phone | phone }}</div>{% endif %}</td>
+        <td class="tight sub">{{ job.updated_at | ago }}</td>
+      </tr>
+      {% endfor %}
+    </tbody></table>
+    {% else %}
+    <p class="empty">Nothing marked ready. Text
+      <span class="mono">READY</span> and the {{ noun }} when one is.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card flush">
+  <div class="card-head"><h2>Latest messages</h2>
+    <span class="spacer"></span><a href="/shop/conversations">All messages</a></div>
+  {% if recent %}
+  <table>
+    <thead><tr><th>Customer</th><th>Last message</th><th>Language</th>
+      <th>Status</th><th>When</th></tr></thead>
+    <tbody>
+    {% for row in recent %}
+      <tr>
+        <td class="tight"><a href="/shop/conversations/{{ row.conversation.id }}">
+          {{ row.customer.phone | phone }}</a>
+          {% if row.customer.is_owner %}<span class="badge">you</span>{% endif %}</td>
+        <td><span class="clip">{{ row.last_body or "-" }}</span></td>
+        <td class="tight">{{ row.customer.language | language_name }}</td>
+        <td class="tight"><span class="badge {{ row.conversation.status.value }}">
+          {{ row.conversation.status.value }}</span></td>
+        <td class="tight sub">{{ row.conversation.last_message_at | ago }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">No messages yet.</p>
+  {% endif %}
+</div>
+
+{% if calls %}
+<div class="card flush">
+  <div class="card-head"><h2>Recent calls</h2>
+    <span class="spacer"></span><a href="/shop/calls">All calls</a></div>
+  <table><tbody>
+    {% for call, customer in calls %}
+    <tr>
+      <td class="tight">{{ call.from_number | phone }}</td>
+      <td class="tight"><span class="badge {{ call.outcome.value }}">
+        {{ call.outcome.value.replace("_", " ") }}</span></td>
+      <td class="tight">
+        {% if call.texted_back_at %}
+          <span class="badge ok">texted back</span>
+        {% elif call.outcome.value == "missed" %}
+          <span class="badge failed">not texted</span>
+        {% endif %}
+      </td>
+      <td class="tight sub">{{ call.created_at | ago }}</td>
+    </tr>
+    {% endfor %}
+  </tbody></table>
+</div>
+{% endif %}
+
+<p class="foot">
+  Times are shown in {{ tz }}. Reply <span class="mono">HELP</span> to any
+  alert for the full list of things you can text.
+</p>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "shop/base.html" %}
+{% block title %}Jobs - {{ shop.name }}{% endblock %}
+{% block body %}
+<h1>Jobs</h1>
+<p class="sub">
+  What the assistant tells a customer when they ask if theirs is ready.
+  Text <span class="mono">READY</span> and the {{ noun }} to change one.
+</p>
+<div class="card flush">
+  {% if rows %}
+  <table>
+    <thead><tr><th>{{ noun | capitalize }}</th><th>Status</th><th>Customer</th>
+      <th>Set by</th><th>Updated</th></tr></thead>
+    <tbody>
+    {% for job, customer in rows %}
+      <tr>
+        <td>{{ job.item or "-" }}</td>
+        <td class="tight"><span class="badge {{ job.status.value }}">
+          {{ job.status.value.replace("_", " ") }}</span></td>
+        <td class="tight">{{ customer.phone | phone if customer else "-" }}</td>
+        <td class="tight sub">{{ job.updated_by or "-" }}</td>
+        <td class="tight sub">{{ job.updated_at | ago }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">No jobs recorded yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

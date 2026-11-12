@@ -1,0 +1,52 @@
+{% extends "shop/base.html" %}
+{% block title %}Messages - {{ shop.name }}{% endblock %}
+{% block body %}
+<h1>Messages</h1>
+<p class="sub">Every conversation your number has had.</p>
+
+<div class="card flush">
+  <div class="card-head">
+    <h2>Conversations</h2>
+    <span class="spacer"></span>
+    <div class="topnav" style="margin:0">
+      <a href="/shop/conversations" class="{{ 'on' if not status }}">All</a>
+      <a href="/shop/conversations?status=human"
+         class="{{ 'on' if status == 'human' }}">Waiting for you</a>
+      <a href="/shop/conversations?status=ai"
+         class="{{ 'on' if status == 'ai' }}">Handled</a>
+    </div>
+  </div>
+  {% if rows %}
+  <table>
+    <thead><tr>
+      <th>Customer</th><th>Last message</th><th>Language</th>
+      <th>Status</th><th class="num">Msgs</th><th>When</th>
+    </tr></thead>
+    <tbody>
+    {% for row in rows %}
+      <tr>
+        <td class="tight">
+          <a href="/shop/conversations/{{ row.conversation.id }}">
+            {{ row.customer.phone | phone }}</a>
+          {% if row.customer.name %}
+          <div class="sub" style="margin:0;font-size:13px">{{ row.customer.name }}</div>
+          {% endif %}
+          {% if row.customer.is_owner %}<span class="badge">you</span>{% endif %}
+          {% if row.customer.opted_out_at %}
+            <span class="badge failed">opted out</span>{% endif %}
+        </td>
+        <td><span class="clip">{{ row.last_body or "-" }}</span></td>
+        <td class="tight">{{ row.customer.language | language_name }}</td>
+        <td class="tight"><span class="badge {{ row.conversation.status.value }}">
+          {{ row.conversation.status.value }}</span></td>
+        <td class="num">{{ row.message_count }}</td>
+        <td class="tight sub">{{ row.conversation.last_message_at | ago }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">Nothing here yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

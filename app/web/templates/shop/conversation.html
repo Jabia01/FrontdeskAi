@@ -1,0 +1,34 @@
+{% extends "shop/base.html" %}
+{% block title %}{{ customer.phone }} - {{ shop.name }}{% endblock %}
+{% block body %}
+<h1>{{ customer.phone | phone }}</h1>
+<p class="sub">
+  {% if customer.name %}{{ customer.name }} &middot; {% endif %}
+  {% if customer.item %}{{ customer.item }} &middot; {% endif %}
+  writes in {{ customer.language | language_name }}
+  &middot; <span class="badge {{ conversation.status.value }}">{{ conversation.status.value }}</span>
+  &middot; <a href="/shop/conversations">Back to messages</a>
+</p>
+
+{% if conversation.status.value == "human" %}
+<div class="note warn">
+  The AI has stopped answering this one{% if conversation.handoff_reason %}
+  ({{ conversation.handoff_reason }}){% endif %}. Text the customer yourself,
+  or reply <span class="mono">RESUME {{ conversation.short_code }}</span> to let
+  it carry on.
+</div>
+{% endif %}
+
+<div class="card flush">
+  <div class="card-head">
+    <h2>Transcript</h2>
+    <span class="spacer"></span>
+    <span class="sub" style="margin:0">
+      to reply, text <span class="mono">{{ conversation.short_code }} your message</span>
+    </span>
+  </div>
+  {% include "_transcript.html" with context %}
+</div>
+
+<p class="foot">Times are shown in {{ tz }}.</p>
+{% endblock %}

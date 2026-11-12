@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{#
+  COPY AND PRICING ARE PLACEHOLDERS. Everything a visitor reads is in this one
+  file - edit it directly. The feature claims describe what the product actually
+  does today, so if you change the product, change these too.
+
+  Deliberately trade-neutral. The same backend runs a garage, a salon, a
+  groomer, a plumber and a repair shop: what differs is configuration, so the
+  page should not read as though it were built for one of them.
+#}
+{% set price = "249" %}
+{% set city = "Chicago" %}
+
+{% block title %}AI Front Desk - never miss another customer{% endblock %}
+{% block robots %}index, follow{% endblock %}
+{% block wrapclass %}{% endblock %}
+
+{% block nav %}
+<nav class="topnav">
+  <a href="#how">How it works</a>
+  <a href="#pricing">Pricing</a>
+  <a href="#faq">FAQ</a>
+  <a href="#signup" class="on">Get started</a>
+</nav>
+{% endblock %}
+
+{% block flash %}{% endblock %}
+
+{% block body %}
+<section class="hero">
+  <h1>Your business answers every text, in any language, in seconds.</h1>
+  <p>
+    Customers text your number. They get a straight answer about hours, prices
+    and availability, or an appointment on your calendar. You stay on WhatsApp -
+    no new app, no dashboard to learn.
+  </p>
+  <a class="btn" href="#signup">Start a free two-week trial</a>
+</section>
+
+{% if error %}
+<div class="wrap narrow"><div class="note bad">{{ error }}</div></div>
+{% endif %}
+
+<section class="strip" id="how">
+  <div class="strip-inner">
+    <h2 style="margin-top:0">How it works</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="n">1</div>
+        <h3>We learn your business</h3>
+        <p>
+          Your hours, services, price ranges and the way you talk to customers.
+          Nothing is invented: if a price is not in your list, it says so and
+          offers a visit for an exact quote.
+        </p>
+      </div>
+      <div class="step">
+        <div class="n">2</div>
+        <h3>Two weeks of shadowing</h3>
+        <p>
+          It writes the reply, you approve it on WhatsApp. You see exactly what
+          it would have said before a single customer hears from it.
+        </p>
+      </div>
+      <div class="step">
+        <div class="n">3</div>
+        <h3>It answers</h3>
+        <p>
+          Text and WhatsApp, day and night. Anything it should not handle - a
+          complaint, an emergency, an insurance question - goes straight to you.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <h2>What it does</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>Answers in their language</h3>
+      <p>
+        A customer writes in Spanish, Polish or English and gets a reply in the
+        same language on the first try. No menus, no "press 1 for English".
+      </p>
+    </div>
+    <div class="card">
+      <h3>Texts back missed calls</h3>
+      <p>
+        When a call goes unanswered, the caller gets a text within seconds
+        asking what they need - before they try the next business on the list.
+      </p>
+    </div>
+    <div class="card">
+      <h3>Books real appointments</h3>
+      <p>
+        It offers only times that are genuinely free on your calendar, and
+        never holds a slot it has not checked.
+      </p>
+    </div>
+    <div class="card">
+      <h3>Reminds them the day before</h3>
+      <p>
+        An automatic reminder the day before, in the customer's own language,
+        with the time you actually agreed. Fewer no-shows, no phone calls.
+      </p>
+    </div>
+    <div class="card">
+      <h3>Answers "is it ready yet?"</h3>
+      <p>
+        You text <span class="mono">READY</span> once - and whatever it was, a
+        car, a dog, a laptop, a suit. The customer is told in their language the
+        moment they ask.
+      </p>
+    </div>
+    <div class="card">
+      <h3>Knows when to stop</h3>
+      <p>
+        It hands the conversation to you and goes quiet. It will never argue
+        with an angry customer or guess at a price.
+      </p>
+    </div>
+  </div>
+
+  <h2>Who it is for</h2>
+  <div class="card">
+    <p class="sub" style="margin:0">
+      Any small business where customers text to ask a question, book a time, or
+      check whether something is done: auto repair and tyres, salons and
+      barbers, pet grooming, plumbers and electricians, phone and appliance
+      repair, tailors, workshops. If your phone rings while your hands are
+      full, it is for you.
+    </p>
+  </div>
+
+  <h2 id="pricing">Pricing</h2>
+  <div class="card price">
+    <div class="amount">${{ price }}<span class="per"> / month</span></div>
+    <p class="sub" style="margin:8px 0 0">
+      One business, one number, unlimited conversations. Two weeks of shadow
+      mode first, and you only start paying when you switch it on. Cancel any
+      time.
+    </p>
+  </div>
+
+  <h2 id="faq">Questions</h2>
+  <div class="card">
+    <dl class="faq">
+      <dt>Does it pretend to be a person?</dt>
+      <dd>No. It says it is your assistant, and it hands over to you whenever a
+          customer asks for a human.</dd>
+
+      <dt>What if it does not know something?</dt>
+      <dd>It says so and passes the question to you. It only speaks from the
+          information you gave us - it cannot invent a price or a promise.</dd>
+
+      <dt>Do I need a computer?</dt>
+      <dd>No. Everything reaches you on WhatsApp, and you reply there. This
+          site has a dashboard if you want one, but you never have to open it.</dd>
+
+      <dt>Can I turn it off?</dt>
+      <dd>Yes, instantly, and you can take over any single conversation by
+          replying to the alert.</dd>
+
+      <dt>Which languages?</dt>
+      <dd>Whatever your customers write in. We enable the ones your
+          neighbourhood actually uses, and English is always included.</dd>
+    </dl>
+  </div>
+
+  <h2 id="signup">Get started</h2>
+  <div class="card">
+    <p class="sub">
+      We are onboarding {{ city }} businesses by hand right now, a few at a
+      time. Tell us where to reach you and we will text you back.
+    </p>
+    <form method="post" action="/signup">
+      <label>Business name
+        <input type="text" name="business_name" required maxlength="200"
+               value="{{ (form.business_name if form else '') }}">
+      </label>
+      <label>What do you do?
+        <span class="hint">A few words is plenty - "brakes and tyres", "dog
+          grooming", "emergency plumbing".</span>
+        <input type="text" name="trade" maxlength="120"
+               value="{{ (form.trade if form else '') }}">
+      </label>
+      <label>Your name
+        <input type="text" name="contact_name" maxlength="200"
+               value="{{ (form.contact_name if form else '') }}">
+      </label>
+      <label>Mobile number
+        <span class="hint">We will text you here - it is how the product works.</span>
+        <input type="tel" name="phone" required maxlength="32"
+               value="{{ (form.phone if form else '') }}">
+      </label>
+      <label>Email <span class="hint">Optional.</span>
+        <input type="email" name="email" maxlength="200"
+               value="{{ (form.email if form else '') }}">
+      </label>
+      <label>City
+        <input type="text" name="city" maxlength="120"
+               value="{{ (form.city if form else city) }}">
+      </label>
+      <label>Anything we should know?
+        <textarea name="message" maxlength="2000">{{ (form.message if form else '') }}</textarea>
+      </label>
+      <div style="position:absolute;left:-9999px" aria-hidden="true">
+        <label>Website<input type="text" name="website" tabindex="-1"
+                             autocomplete="off"></label>
+      </div>
+      <div class="actions">
+        <button class="btn" type="submit">Send</button>
+        <span class="sub" style="margin:0">No payment details, no contract.</span>
+      </div>
+    </form>
+  </div>
+
+  <p class="foot">
+    AI Front Desk &middot; built for small businesses in {{ city }}.
+  </p>
+</div>
+{% endblock %}

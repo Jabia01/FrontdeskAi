@@ -1,0 +1,63 @@
+{% extends "admin/base.html" %}
+{% block title %}Shops - console{% endblock %}
+{% block body %}
+<h1>Shops</h1>
+<p class="sub">{{ totals.shops_total }} in total &middot;
+  {{ totals.messages | number }} messages and
+  {{ totals.cost | money }} of Claude in the last 30 days</p>
+
+<div class="grid" style="margin-bottom:22px">
+  {% for status, count in totals.shops_by_status | dictsort %}
+  <div class="stat">
+    <div class="k">{{ status }}</div>
+    <div class="v">{{ count }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card flush">
+  <div class="card-head">
+    <h2>All shops</h2>
+    <span class="spacer"></span>
+    <a class="btn small" href="/admin/shops/new">Add a shop</a>
+  </div>
+  {% if rows %}
+  <table>
+    <thead><tr>
+      <th>Shop</th><th>Status</th><th>Languages</th>
+      <th class="num">In / out (7d)</th><th class="num">Claude (30d)</th>
+      <th>Needs you</th>
+    </tr></thead>
+    <tbody>
+    {% for row in rows %}
+      <tr>
+        <td>
+          <a href="/admin/shops/{{ row.client.id }}">{{ row.client.name }}</a>
+          <div class="sub" style="margin:0;font-size:13px">
+            {{ row.client.timezone }} &middot; {{ row.client.owner_phone | phone }}
+          </div>
+        </td>
+        <td><span class="badge {{ row.client.status.value }}">{{ row.client.status.value }}</span></td>
+        <td class="tight">{{ row.client.languages | join(", ") }}</td>
+        <td class="num tight">{{ row.messages["in"] }} / {{ row.messages["out"] }}</td>
+        <td class="num tight">{{ row.cost | money }}</td>
+        <td class="tight">
+          {% if row.attention.handoffs %}
+            <span class="badge human">{{ row.attention.handoffs }} handoff{{ "s" if row.attention.handoffs != 1 }}</span>
+          {% endif %}
+          {% if row.attention.drafts %}
+            <span class="badge draft">{{ row.attention.drafts }} draft{{ "s" if row.attention.drafts != 1 }}</span>
+          {% endif %}
+          {% if not row.attention.handoffs and not row.attention.drafts %}
+            <span class="sub" style="margin:0">-</span>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">No shops yet. <a href="/admin/shops/new">Add the first one</a>.</p>
+  {% endif %}
+</div>
+{% endblock %}

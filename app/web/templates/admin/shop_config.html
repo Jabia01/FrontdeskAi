@@ -1,0 +1,219 @@
+{% extends "admin/base.html" %}
+{% block title %}Config - {{ client.name }}{% endblock %}
+{% block body %}
+<h1>{{ client.name }}</h1>
+<p class="sub">
+  Everything the agent knows about this shop.
+  <a href="/admin/shops/{{ client.id }}">Back to the shop</a> &middot;
+  <a href="/admin/shops/{{ client.id }}/prompt">See the prompt this produces</a>
+  {% if config and config.updated_at %}
+    &middot; last saved {{ config.updated_at | ago }}
+  {% endif %}
+</p>
+
+<form method="post" action="/admin/shops/{{ client.id }}/config">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+  <div class="card">
+    <h2 style="margin-top:0">The shop</h2>
+    <label>Name
+      <input type="text" name="name" required maxlength="200" value="{{ form.name }}">
+    </label>
+    <label>Owner's mobile number
+      <span class="hint">Alerts and commands go here, and it is their dashboard
+        login.</span>
+      <input type="tel" name="owner_phone" required value="{{ form.owner_phone }}">
+    </label>
+    <label>Timezone
+      <select name="timezone">
+        {% for zone in timezones %}
+        <option value="{{ zone }}" {{ "selected" if form.timezone == zone }}>{{ zone }}</option>
+        {% endfor %}
+        {% if form.timezone not in timezones %}
+        <option value="{{ form.timezone }}" selected>{{ form.timezone }}</option>
+        {% endif %}
+      </select>
+    </label>
+    <label>Plan
+      <input type="text" name="plan" maxlength="64" value="{{ form.plan }}">
+    </label>
+    <label>Kind of business
+      <select name="vertical">
+        {% for key, preset in verticals.items() %}
+        <option value="{{ key }}" {{ "selected" if form.vertical == key }}>
+          {{ preset.label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Word for what a job is about
+      <span class="hint">A garage says "vehicle", a groomer "pet", a repair
+        shop "device", a tailor "garment". This is rendered into the system
+        prompt and into what the owner is texted, so it is worth getting right:
+        it is the difference between "Which vehicle?" and "Which job?".</span>
+      <input type="text" name="job_noun" maxlength="32" value="{{ form.job_noun }}">
+    </label>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">What it may say</h2>
+
+    <label>Tone
+      <span class="hint">How this shop talks. Rendered into the prompt as-is.</span>
+      <textarea name="tone">{{ form.tone }}</textarea>
+    </label>
+
+    <label>Services
+      <span class="hint">One per line.</span>
+      <textarea name="services" class="code">{{ form.services }}</textarea>
+    </label>
+
+    <label>Price ranges
+      <span class="hint">
+        <span class="mono">Service | low | high</span>, one per line. The agent
+        may only ever quote a range from this list - with nothing here it
+        refuses to name any number at all, which is the safe default.
+      </span>
+      <textarea name="price_ranges" class="code">{{ form.price_ranges }}</textarea>
+    </label>
+
+    <label>Business info
+      <span class="hint"><span class="mono">label | value</span>, one per line.
+        Address, parking, payment methods, anything factual.</span>
+      <textarea name="business_info" class="code">{{ form.business_info }}</textarea>
+    </label>
+
+    <label>FAQs
+      <span class="hint"><span class="mono">question | answer</span>, one per line.</span>
+      <textarea name="faqs" class="code">{{ form.faqs }}</textarea>
+    </label>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Hours</h2>
+    <p class="sub"><span class="mono">8:00-18:00</span>, or
+      <span class="mono">closed</span>. These are the hours booking offers
+      slots inside, so a typo here closes the shop.</p>
+    {% for day in weekdays %}
+    <label>{{ day | capitalize }}
+      <input type="text" name="hours_{{ day }}"
+             value="{{ form.hours.get(day, 'closed') }}">
+    </label>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">When to fetch a human</h2>
+    <label>Keywords
+      <span class="hint">Comma separated. Any of these in a message hands the
+        conversation straight to the owner.</span>
+      <input type="text" name="handoff_keywords" value="{{ form.handoff_keywords }}">
+    </label>
+    <label>Hand off after this many failed attempts to understand
+      <input type="number" name="max_misunderstandings" min="1" max="10"
+             value="{{ form.max_misunderstandings }}">
+    </label>
+    <label>Notes
+      <span class="hint">Free text, included in the prompt. E.g. "anything over
+        $1500, or any insurance work".</span>
+      <textarea name="handoff_notes">{{ form.handoff_notes }}</textarea>
+    </label>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Languages</h2>
+    <label>Enabled languages
+      <span class="hint">Priority order, comma separated. English is kept in the
+        list whatever you do: a first greeting always includes it.</span>
+      <input type="text" name="enabled_languages" value="{{ form.enabled_languages }}">
+    </label>
+    <label>Owner's language
+      <span class="hint">Handoff summaries and alerts are written in this.</span>
+      <input type="text" name="owner_language" maxlength="16"
+             value="{{ form.owner_language }}">
+    </label>
+    <label>Default customer language
+      <span class="hint">Used when the number's country says nothing useful.</span>
+      <input type="text" name="default_customer_language" maxlength="16"
+             value="{{ form.default_customer_language }}">
+    </label>
+    <label>Country overrides
+      <span class="hint">JSON. <span class="mono">{"+1": ["es", "en"]}</span>
+        greets every US number in Spanish first - the doc's Cicero case.</span>
+      <textarea name="country_language_overrides" class="code">{{ form.country_language_overrides }}</textarea>
+    </label>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Booking, calls and alerts</h2>
+    <label>Google Calendar id
+      <span class="hint">Blank keeps bookings in our database only. With no
+        service-account credentials on the server, the calendar is an in-memory
+        stub whatever you put here.</span>
+      <input type="text" name="calendar_id" value="{{ form.calendar_id }}">
+    </label>
+    <label>Booking rules
+      <span class="hint">JSON: slot_minutes, duration_minutes, lead_time_hours,
+        max_days_ahead, max_concurrent.</span>
+      <textarea name="booking" class="code">{{ form.booking }}</textarea>
+    </label>
+    <label>Missed-call text-back channel
+      <select name="missed_call_channel">
+        {% for option in ["sms", "whatsapp"] %}
+        <option value="{{ option }}" {{ "selected" if form.missed_call_channel == option }}>
+          {{ option }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>How to reach the owner
+      <span class="hint"><strong>auto</strong> uses WhatsApp while their own
+        24-hour window is open and SMS otherwise.</span>
+      <select name="owner_channel">
+        {% for option in ["auto", "whatsapp", "sms"] %}
+        <option value="{{ option }}" {{ "selected" if form.owner_channel == option }}>
+          {{ option }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Reminder hours before an appointment
+      <span class="hint">0 turns reminders off. The sweep runs every fifteen
+        minutes and sends each appointment's reminder once.</span>
+      <input type="number" name="reminder_hours_before" min="0" max="168"
+             value="{{ form.reminder_hours_before }}">
+    </label>
+    <label>Daily summary
+      <span class="hint">One message a day to the owner: yesterday's numbers,
+        today's appointments, and anything waiting on them. A day with nothing
+        on it is skipped rather than sent empty.</span>
+      <select name="summary_enabled">
+        <option value="on" {{ "selected" if form.summary_enabled }}>Send it</option>
+        <option value="" {{ "selected" if not form.summary_enabled }}>Off</option>
+      </select>
+    </label>
+    <label>Hour to send the summary
+      <span class="hint">In this business's own timezone, 0-23.</span>
+      <input type="number" name="summary_hour" min="0" max="23"
+             value="{{ form.summary_hour }}">
+    </label>
+    <label>Approved WhatsApp template names
+      <span class="hint">JSON, by purpose:
+        <span class="mono">{"reminder": "appointment_reminder_v1"}</span>.
+        Until a template is approved by Meta, any send outside the 24-hour
+        window is recorded as blocked and the owner is alerted instead.</span>
+      <textarea name="templates" class="code">{{ form.templates }}</textarea>
+    </label>
+    <label>Channel style
+      <span class="hint">JSON, per channel: max_chars and rules. This is part of
+        the cached prompt prefix, so editing it re-primes the cache.</span>
+      <textarea name="channel_style" class="code">{{ form.channel_style }}</textarea>
+    </label>
+  </div>
+
+  <div class="actions">
+    <button class="btn" type="submit">Save</button>
+    <a class="btn ghost" href="/admin/shops/{{ client.id }}">Cancel</a>
+    <span class="sub" style="margin:0">
+      Saving drops this shop's cached prompt and re-hashes its version.
+    </span>
+  </div>
+</form>
+{% endblock %}

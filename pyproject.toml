@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-front-desk"
+version = "0.1.0"
+description = "Multi-tenant AI front desk for small businesses (WhatsApp, SMS, voice-ready)"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30",
+    "alembic>=1.14",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "python-multipart>=0.0.12",
+    "anthropic>=0.40",
+    "arq>=0.26",
+    "twilio>=9.3",
+    "phonenumbers>=8.13",
+    # zoneinfo has no tz database on Windows, nor on slim Linux images.
+    "tzdata>=2024.2",
+    "google-api-python-client>=2.149",
+    "google-auth>=2.35",
+    # Server-rendered console, owner dashboard and landing page.
+    "jinja2>=3.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "httpx>=0.27",
+    "ruff>=0.8",
+    # Only used by tests/test_deploy_readiness.py to parse render.yaml.
+    "pyyaml>=6.0",
+]
+
+[tool.setuptools]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+# BLE001: the broad `except Exception` handlers are deliberate. A missing
+# credential, a bad request and a DNS failure all raise different types, and
+# every one of them must degrade to the holding reply rather than crash the
+# worker - the customer must always get an answer.
+ignore = [
+    "BLE001",
+    # B008: `Depends(...)` in a default argument is FastAPI's own dependency
+    # idiom, not an accident - the call is evaluated once at import, which is
+    # exactly what the framework wants.
+    "B008",
+]

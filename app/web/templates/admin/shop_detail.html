@@ -1,0 +1,229 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ client.name }} - console{% endblock %}
+{% block body %}
+<h1>{{ client.name }}</h1>
+<p class="sub">
+  <span class="badge {{ client.status.value }}">{{ client.status.value }}</span>
+  &middot; {{ client.timezone }}
+  &middot; owner {{ client.owner_phone | phone }}
+  &middot; plan {{ client.plan }}
+  &middot; <a href="/admin/shops/{{ client.id }}/config">Edit config</a>
+  &middot; <a href="/admin/shops/{{ client.id }}/prompt">View prompt</a>
+  &middot; <a href="/admin/shops/{{ client.id }}/conversations">All messages</a>
+</p>
+
+<div class="grid">
+  <div class="stat"><div class="k">Messages in (30d)</div>
+    <div class="v">{{ stats.inbound | number }}</div>
+    <div class="n">{{ stats.outbound | number }} sent back</div></div>
+  <div class="stat"><div class="k">Conversations</div>
+    <div class="v">{{ stats.conversations | number }}</div></div>
+  <div class="stat"><div class="k">Appointments</div>
+    <div class="v">{{ stats.appointments | number }}</div></div>
+  <div class="stat"><div class="k">Calls</div>
+    <div class="v">{{ stats.calls | number }}</div>
+    <div class="n">{{ stats.texted_back }} texted back</div></div>
+  <div class="stat"><div class="k">Claude (30d)</div>
+    <div class="v">{{ stats.cost | money }}</div></div>
+  {% if stats.blocked %}
+  <div class="stat alert"><div class="k">Blocked sends</div>
+    <div class="v">{{ stats.blocked }}</div>
+    <div class="n">outside the 24h window</div></div>
+  {% endif %}
+</div>
+
+<div class="cols two">
+  <div>
+    <div class="card">
+      <h3>Status</h3>
+      <form method="post" action="/admin/shops/{{ client.id }}/status">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <select name="status">
+          {% for status in statuses %}
+          <option value="{{ status }}" {{ "selected" if status == client.status.value }}>
+            {{ status }}</option>
+          {% endfor %}
+        </select>
+        <div class="actions">
+          <button class="btn small" type="submit">Change status</button>
+        </div>
+        <p class="sub" style="margin:10px 0 0;font-size:13px">
+          <strong>shadow</strong> drafts for the owner &middot;
+          <strong>live</strong> answers customers &middot;
+          <strong>paused</strong> stops the AI. Leaving the running statuses
+          signs the owner out of their dashboard.
+        </p>
+      </form>
+    </div>
+
+    <div class="card flush">
+      <div class="card-head"><h2>Numbers</h2></div>
+      {% if endpoints %}
+      <table>
+        <tbody>
+        {% for endpoint in endpoints %}
+          <tr>
+            <td class="tight"><span class="badge">{{ endpoint.channel.value }}</span></td>
+            <td class="mono">{{ endpoint.external_id }}</td>
+            <td class="tight">
+              {% if endpoint.active %}<span class="badge ok">active</span>
+              {% else %}<span class="badge failed">off</span>{% endif %}
+            </td>
+            <td class="tight">
+              <form method="post"
+                    action="/admin/shops/{{ client.id }}/endpoints/{{ endpoint.id }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="active"
+                       value="{% if endpoint.active %}false{% else %}true{% endif %}">
+                <button class="btn ghost small" type="submit">
+                  {{ "Turn off" if endpoint.active else "Turn on" }}</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="empty">No numbers mapped yet.</p>
+      {% endif %}
+      <div style="padding:14px 18px;border-top:1px solid var(--border)">
+        <form method="post" action="/admin/shops/{{ client.id }}/endpoints">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <label style="margin-top:0">Add a number
+            <select name="channel">
+              {% for channel in channels %}
+              <option value="{{ channel }}">{{ channel }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>Endpoint id
+            <span class="hint">Exactly what the provider sends as
+              <span class="mono">To</span>. WhatsApp keeps its
+              <span class="mono">whatsapp:</span> prefix.</span>
+            <input type="text" name="external_id" placeholder="+13125550123">
+          </label>
+          <div class="actions"><button class="btn small" type="submit">Add</button></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    {% if handoffs %}
+    <div class="card flush">
+      <div class="card-head"><h2>Waiting on a human</h2></div>
+      <table><tbody>
+        {% for row in handoffs %}
+        <tr>
+          <td class="tight mono">{{ row.conversation.short_code }}</td>
+          <td><a href="/admin/shops/{{ client.id }}/conversations/{{ row.conversation.id }}">
+            {{ row.customer.phone | phone }}</a>
+            <div class="sub" style="margin:0;font-size:13px">
+              {{ row.conversation.handoff_reason or "handed off" }}</div></td>
+          <td class="tight sub">{{ row.conversation.handed_off_at | ago }}</td>
+        </tr>
+        {% endfor %}
+      </tbody></table>
+    </div>
+    {% endif %}
+
+    {% if drafts %}
+    <div class="card flush">
+      <div class="card-head"><h2>Drafts awaiting approval</h2></div>
+      <table><tbody>
+        {% for row in drafts %}
+        <tr>
+          <td class="tight mono">{{ row.conversation.short_code }}</td>
+          <td><span class="clip">{{ row.message.body }}</span></td>
+          <td class="tight sub">{{ row.message.created_at | ago }}</td>
+        </tr>
+        {% endfor %}
+      </tbody></table>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <h3>Claude spend, last 30 days</h3>
+      {% if spend %}
+      {% set top = (spend | map(attribute=2) | max) or 0.0001 %}
+      <div class="bars">
+        {% for day, calls, cost in spend %}
+        <span style="height:{{ (100 * cost / top) | round(1) }}%"
+              title="{{ day }}: {{ cost | money }} over {{ calls }} calls"></span>
+        {% endfor %}
+      </div>
+      <p class="sub" style="margin:8px 0 0;font-size:13px">
+        {{ spend | length }} active day{{ "s" if spend | length != 1 }} &middot;
+        {{ spend | map(attribute=1) | sum }} Claude calls
+      </p>
+      {% else %}
+      <p class="sub" style="margin:0">Nothing yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h3>Customer languages</h3>
+      {% if languages %}
+      <dl class="kv">
+        {% for code, count in languages %}
+        <dt>{{ code | language_name }}</dt><dd>{{ count }}</dd>
+        {% endfor %}
+      </dl>
+      {% else %}
+      <p class="sub" style="margin:0">None detected yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="card flush">
+  <div class="card-head"><h2>Recent conversations</h2>
+    <span class="spacer"></span>
+    <a href="/admin/shops/{{ client.id }}/conversations">See all</a>
+  </div>
+  {% if conversations %}
+  <table>
+    <thead><tr><th>Code</th><th>Customer</th><th>Last message</th>
+      <th>Status</th><th class="num">Msgs</th><th>When</th></tr></thead>
+    <tbody>
+    {% for row in conversations %}
+      <tr>
+        <td class="tight mono">{{ row.conversation.short_code }}</td>
+        <td class="tight">
+          <a href="/admin/shops/{{ client.id }}/conversations/{{ row.conversation.id }}">
+            {{ row.customer.phone | phone }}</a></td>
+        <td><span class="clip">{{ row.last_body or "-" }}</span></td>
+        <td class="tight"><span class="badge {{ row.conversation.status.value }}">
+          {{ row.conversation.status.value }}</span></td>
+        <td class="num">{{ row.message_count }}</td>
+        <td class="tight sub">{{ row.conversation.last_message_at | ago }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">No conversations yet. Try this shop at <a href="/sim">/sim</a>.</p>
+  {% endif %}
+</div>
+
+<div class="card flush">
+  <div class="card-head"><h2>Recent changes</h2></div>
+  {% if audit %}
+  <table><tbody>
+    {% for row in audit %}
+    <tr>
+      <td class="tight sub">{{ row.at | ago }}</td>
+      <td class="tight">{{ row.actor }}</td>
+      <td class="mono">{{ row.action }}</td>
+      <td><span class="clip">{{ row.target or "" }}
+        {% if row.detail and row.detail.get("changed") %}
+          &middot; {{ row.detail["changed"] | join(", ") }}
+        {% endif %}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody></table>
+  {% else %}
+  <p class="empty">Nothing recorded for this shop yet.</p>
+  {% endif %}
+</div>
+{% endblock %}
