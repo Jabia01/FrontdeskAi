@@ -1,0 +1,243 @@
+/* ===========================================================================
+   The owner dashboard, in Chichi's clothes.
+
+   Loaded *after* app.css and scoped entirely under `body.premium`, so it
+   redefines the tokens the shared components already read. The console loads
+   neither this file nor that class, and therefore cannot regress — which is
+   the whole reason it is an override sheet rather than an edit to app.css.
+
+   This is the screen a paying owner opens in the morning. It should feel worth
+   the subscription.
+   =========================================================================== */
+
+body.premium {
+  --bg: #07080C;
+  --surface: rgba(255, 255, 255, 0.035);
+  --surface-2: rgba(255, 255, 255, 0.06);
+  --border: rgba(255, 255, 255, 0.09);
+  --text: #F5F6FA;
+  --muted: rgba(245, 246, 250, 0.58);
+  --accent: #8B5CF6;
+  --accent-soft: rgba(139, 92, 246, 0.16);
+  --ok: #34D399;
+  --ok-soft: rgba(52, 211, 153, 0.14);
+  --warn: #FBBF24;
+  --warn-soft: rgba(251, 191, 36, 0.14);
+  --bad: #FB7185;
+  --bad-soft: rgba(251, 113, 133, 0.14);
+  --radius: 14px;
+  --shadow: 0 18px 50px -24px rgba(0, 0, 0, 0.9);
+
+  --grad: linear-gradient(100deg, #2E7BFF, #8B5CF6 52%, #FF7A59);
+
+  background:
+    radial-gradient(900px 520px at 12% -12%, rgba(46, 123, 255, 0.16), transparent 62%),
+    radial-gradient(760px 460px at 92% -4%, rgba(139, 92, 246, 0.14), transparent 62%),
+    var(--bg);
+  background-attachment: fixed;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ------------------------------------------------------------------ chrome */
+
+body.premium .topbar {
+  background: rgba(7, 8, 12, 0.72);
+  backdrop-filter: saturate(160%) blur(18px);
+  -webkit-backdrop-filter: saturate(160%) blur(18px);
+  border-bottom: 1px solid var(--border);
+}
+body.premium .topbar-inner { min-height: 62px; }
+body.premium .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+body.premium .brand .ch-logo { flex: none; }
+body.premium .brand span { color: var(--muted); font-weight: 450; }
+
+body.premium .topnav a {
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 7px 14px;
+  transition: color 180ms, background 180ms;
+}
+body.premium .topnav a:hover { color: var(--text); background: var(--surface-2); }
+body.premium .topnav a.on { background: var(--accent-soft); color: #C4B5FD; }
+
+/* ------------------------------------------------------------- typography */
+
+body.premium h1 { font-size: 30px; letter-spacing: -0.035em; font-weight: 640; }
+body.premium h2 { font-size: 19px; letter-spacing: -0.03em; }
+body.premium .sub { color: var(--muted); }
+
+/* ------------------------------------------------------------------ cards */
+
+body.premium .card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+body.premium .card-head { border-bottom-color: var(--border); }
+
+/* ------------------------------------------------------------------ stats */
+
+body.premium .stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  position: relative;
+  overflow: hidden;
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1), border-color 300ms;
+}
+body.premium .stat:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.18); }
+body.premium .stat::after {
+  content: "";
+  position: absolute; inset: 0 0 auto 0; height: 2px;
+  background: var(--grad);
+  opacity: 0.55;
+}
+body.premium .stat .k {
+  color: var(--muted);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+}
+body.premium .stat .v {
+  font-size: 34px;
+  font-weight: 670;
+  letter-spacing: -0.045em;
+}
+body.premium .stat.alert {
+  background: linear-gradient(180deg, var(--warn-soft), var(--surface));
+  border-color: rgba(251, 191, 36, 0.4);
+}
+body.premium .stat.alert::after { background: var(--warn); opacity: 1; }
+
+/* ----------------------------------------------------------------- tables */
+
+body.premium th {
+  color: var(--muted);
+  border-bottom-color: var(--border);
+  font-size: 11.5px;
+  letter-spacing: 0.07em;
+}
+body.premium td { border-bottom-color: var(--border); }
+body.premium tbody tr { transition: background 160ms; }
+body.premium tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
+
+/* ----------------------------------------------------------------- badges */
+
+body.premium .badge {
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  font-size: 11.5px;
+  padding: 3px 10px;
+}
+body.premium .badge.live,
+body.premium .badge.ok,
+body.premium .badge.sent,
+body.premium .badge.ready {
+  background: var(--ok-soft); color: #6EE7B7; border-color: rgba(52,211,153,0.35);
+}
+body.premium .badge.shadow,
+body.premium .badge.draft,
+body.premium .badge.waiting_parts {
+  background: var(--warn-soft); color: #FCD34D; border-color: rgba(251,191,36,0.35);
+}
+body.premium .badge.human,
+body.premium .badge.blocked,
+body.premium .badge.failed,
+body.premium .badge.rejected,
+body.premium .badge.missed {
+  background: var(--bad-soft); color: #FDA4AF; border-color: rgba(251,113,133,0.35);
+}
+
+/* ---------------------------------------------------------------- buttons */
+
+body.premium .btn {
+  border-radius: 999px;
+  background: var(--grad);
+  border: 0;
+  color: #fff;
+  font-weight: 560;
+  box-shadow: 0 6px 22px -10px rgba(120, 90, 255, 0.9);
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1), filter 200ms;
+}
+body.premium .btn:hover { transform: translateY(-1px); filter: brightness(1.08); }
+body.premium .btn.ghost {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+body.premium .btn.ghost:hover { background: rgba(255, 255, 255, 0.1); }
+
+/* ------------------------------------------------------------------ forms */
+
+body.premium input[type="text"],
+body.premium input[type="tel"],
+body.premium input[type="email"],
+body.premium input[type="password"],
+body.premium select,
+body.premium textarea {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+body.premium input:focus, body.premium textarea:focus, body.premium select:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.07);
+}
+body.premium .otp { letter-spacing: 0.45em; font-size: 30px; }
+
+/* ------------------------------------------------------------- transcript */
+
+body.premium .msg.inbound { background: rgba(255, 255, 255, 0.07); }
+body.premium .msg.outbound {
+  background: linear-gradient(135deg, #2E7BFF, #7C5CF6);
+  color: #fff;
+}
+body.premium .msg.unseen {
+  background: var(--bad-soft);
+  border: 1px dashed rgba(251, 113, 133, 0.6);
+}
+body.premium .msg .meta { color: rgba(255, 255, 255, 0.62); }
+
+/* -------------------------------------------------------------- the notes */
+
+body.premium .note { background: var(--surface-2); border-color: var(--border); }
+body.premium .note.warn { background: var(--warn-soft); border-color: rgba(251,191,36,0.4); color: #FCD34D; }
+body.premium .note.good { background: var(--ok-soft); border-color: rgba(52,211,153,0.4); color: #6EE7B7; }
+body.premium .note.bad { background: var(--bad-soft); border-color: rgba(251,113,133,0.4); color: #FDA4AF; }
+body.premium .empty { color: var(--muted); }
+
+/* ------------------------------------------------------ the sign-in pages */
+
+body.premium.gate {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+}
+body.premium.gate .topbar { position: fixed; top: 0; left: 0; right: 0; }
+body.premium.gate main { width: min(440px, 92vw); }
+body.premium.gate .card { padding: 32px 30px; }
+
+/* bars on the daily summary keep their gradient */
+body.premium .bars span { background: var(--grad); opacity: 0.8; }
+
+@media (prefers-reduced-motion: reduce) {
+  body.premium *, body.premium *::before, body.premium *::after {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+  }
+}

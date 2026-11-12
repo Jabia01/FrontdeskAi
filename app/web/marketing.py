@@ -11,6 +11,7 @@ who wants a callback; a `signups` row is a prospective shop, and has no
 
 from __future__ import annotations
 
+import json
 import logging
 import time
 from datetime import timedelta
@@ -21,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import repo_admin
 from app.db import get_session
+from app.web import content
 from app.web import phone as phone_util
 from app.web.templating import render
 
@@ -53,9 +55,33 @@ def reset_signup_throttle() -> None:
     _BY_ADDRESS.clear()
 
 
+def _landing_context() -> dict:
+    """Everything the landing page renders, from app/web/content.py.
+
+    The two `*_json` values are embedded in the page for site.js to read -
+    `tojson` rather than string building, so a quote in a Spanish sentence
+    cannot break the script tag.
+    """
+    return {
+        "demo_script_json": json.dumps(content.DEMO_SCRIPT, ensure_ascii=False),
+        "demo_shop": content.DEMO_SHOP,
+        "demo_caption": content.DEMO_CAPTION,
+        "owner_alert": content.OWNER_ALERT,
+        "metrics": content.METRICS,
+        "features": content.FEATURES,
+        "languages": content.LANGUAGE_DEMO,
+        "languages_json": json.dumps(content.LANGUAGE_DEMO, ensure_ascii=False),
+        "trades": content.TRADES,
+        "faq": content.FAQ,
+        # Empty while the quotes are invented - see content.visible_reviews.
+        "reviews": content.visible_reviews(),
+        "reviews_are_samples": content.reviews_are_samples(),
+    }
+
+
 @router.get("/", include_in_schema=False)
 async def landing(request: Request):
-    return render(request, "marketing/landing.html")
+    return render(request, "marketing/landing.html", **_landing_context())
 
 
 @router.get("/thanks", include_in_schema=False)
@@ -104,6 +130,7 @@ async def signup(
         return render(
             request,
             "marketing/landing.html",
+            **_landing_context(),
             error=error,
             form={
                 "business_name": business_name,

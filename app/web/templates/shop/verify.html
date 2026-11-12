@@ -1,10 +1,15 @@
 {% extends "base.html" %}
+{% block head %}<link rel="stylesheet" href="/web-static/shop.css">{% endblock %}
+{% block bodyclass %}premium gate{% endblock %}
 {% block title %}Enter your code{% endblock %}
 {% block wrapclass %}wrap narrow{% endblock %}
-{% block brand %}{{ brand.name }}{% endblock %}
+{% block brand %}
+  {% with size=26, flat=True %}{% include "marketing/_logo.html" %}{% endwith %}
+  {{ brand.name }}
+{% endblock %}
 {% block nav %}{% endblock %}
 {% block body %}
-<div class="card" style="margin-top:36px">
+<div class="card">
   <h1>Enter your code</h1>
   <p class="sub">
     If that number is on one of our shops, a six-digit code is on its way to

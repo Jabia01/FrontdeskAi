@@ -1,15 +1,22 @@
-{% extends "base.html" %}
+{% extends "marketing/base.html" %}
 {% block title %}Thanks - {{ brand.name }}{% endblock %}
 {% block robots %}noindex, follow{% endblock %}
-{% block wrapclass %}wrap narrow{% endblock %}
-{% block nav %}<nav class="topnav"><a href="/">Home</a></nav>{% endblock %}
+
 {% block body %}
-<div class="card" style="margin-top:40px">
-  <h1>Got it.</h1>
-  <p class="sub">
-    We will text you within a day. If it is urgent, text the number you
-    already have for us and we will pick it up.
-  </p>
-  <a class="btn ghost" href="/">Back to the start</a>
-</div>
+<section class="hero" style="padding-top:170px">
+  <div class="aurora"></div>
+  <div class="shell shell-narrow centred" style="position:relative;z-index:1">
+    <span class="eyebrow rise in" style="justify-content:center">Got it</span>
+    <h1 class="display rise in d1" style="font-size:clamp(38px,6vw,68px)">
+      We'll text you<br><span class="grad">within a day.</span>
+    </h1>
+    <p class="lede rise in d2" style="margin:24px auto 36px;max-width:460px">
+      That's the whole point of the product, so it would be strange to email
+      you instead. If it's urgent, reply to the text when it arrives.
+    </p>
+    <div class="hero-actions rise in d3" style="justify-content:center">
+      <a class="btn btn-ghost btn-lg" href="/">Back to the start</a>
+    </div>
+  </div>
+</section>
 {% endblock %}

@@ -5,9 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ brand.name }}{% endblock %}</title>
   <meta name="robots" content="{% block robots %}noindex, nofollow{% endblock %}">
+  <link rel="icon" href="/web-static/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/web-static/app.css">
+  {% block head %}{% endblock %}
 </head>
-<body>
+<body class="{% block bodyclass %}{% endblock %}">
 {% block chrome %}
 <header class="topbar">
   <div class="topbar-inner">

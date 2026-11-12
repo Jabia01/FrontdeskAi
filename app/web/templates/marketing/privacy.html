@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "marketing/base.html" %}
 {#
   REQUIRED for A2P 10DLC campaign registration, and read by a carrier reviewer
   rather than a lawyer. Two things must survive any edit:
@@ -14,21 +14,12 @@
 #}
 {% block title %}Privacy policy - {{ brand.name }}{% endblock %}
 {% block robots %}index, follow{% endblock %}
-{% block wrapclass %}{% endblock %}
 
-{% block nav %}
-<nav class="topnav">
-  <a href="/">Home</a>
-  <a href="/privacy" class="on">Privacy</a>
-  <a href="/terms">Terms</a>
-  <a href="/messaging">Messaging</a>
-</nav>
-{% endblock %}
 
 {% block body %}
-<div class="wrap legal">
+<div class="legal">
   <h1>Privacy policy</h1>
-  <p class="sub">Last updated {{ brand.legal_updated }}</p>
+  <p class="legal-date">Last updated {{ brand.legal_updated }}</p>
 
   <p>
     {{ brand.name }} is operated by {{ brand.legal_name }} ("we", "us"). We
@@ -175,5 +166,4 @@
   </p>
 </div>
 
-{% include "marketing/_footer.html" with context %}
 {% endblock %}

@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "marketing/base.html" %}
 {#
   Required as a public URL for A2P 10DLC campaign registration alongside the
   privacy policy. Written to describe how the service actually behaves rather
@@ -7,21 +7,12 @@
 #}
 {% block title %}Terms of service - {{ brand.name }}{% endblock %}
 {% block robots %}index, follow{% endblock %}
-{% block wrapclass %}{% endblock %}
 
-{% block nav %}
-<nav class="topnav">
-  <a href="/">Home</a>
-  <a href="/privacy">Privacy</a>
-  <a href="/terms" class="on">Terms</a>
-  <a href="/messaging">Messaging</a>
-</nav>
-{% endblock %}
 
 {% block body %}
-<div class="wrap legal">
+<div class="legal">
   <h1>Terms of service</h1>
-  <p class="sub">Last updated {{ brand.legal_updated }}</p>
+  <p class="legal-date">Last updated {{ brand.legal_updated }}</p>
 
   <p>
     These terms govern use of {{ brand.name }}, operated by
@@ -143,5 +134,4 @@
   </p>
 </div>
 
-{% include "marketing/_footer.html" with context %}
 {% endblock %}

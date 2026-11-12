@@ -1,0 +1,20 @@
+<header class="nav">
+  <div class="nav-inner">
+    <a class="wordmark" href="/" aria-label="{{ brand.name }} home">
+      {% with size=32 %}{% include "marketing/_logo.html" %}{% endwith %}
+      <span>{{ brand.name }}</span>
+    </a>
+
+    <nav class="nav-links" aria-label="Main">
+      <a href="/#how">How it works</a>
+      <a href="/#features">What it does</a>
+      <a href="/#languages">Languages</a>
+      <a href="/#pricing">Pricing</a>
+      <a href="/#faq">Questions</a>
+    </nav>
+
+    <div class="nav-cta">
+      <a class="btn btn-primary btn-sm" href="/#signup">Get started</a>
+    </div>
+  </div>
+</header>

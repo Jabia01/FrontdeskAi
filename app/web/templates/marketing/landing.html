@@ -1,352 +1,389 @@
-{% extends "base.html" %}
+{% extends "marketing/base.html" %}
 {#
-  The public site. Everything a visitor reads is either here or in
-  app/web/brand.py - the brand name, price, city and contact details all come
-  from there, so changing them is one edit.
-
-  Every claim below describes something the product actually does today. No
-  testimonials, no customer counts, no "trusted by" - we have not earned those
-  yet and inventing them would be both dishonest and, for a business that
-  carriers vet, actively risky.
+  Everything a visitor reads comes from app/web/brand.py and app/web/content.py.
+  No claim here is one we cannot point at: the demo is a real captured
+  conversation, and every number was measured on the live deployment.
 #}
 
 {% block title %}{{ brand.name }} - {{ brand.tagline }}{% endblock %}
-{% block robots %}index, follow{% endblock %}
-{% block wrapclass %}{% endblock %}
-
-{% block nav %}
-<nav class="topnav">
-  <a href="#how">How it works</a>
-  <a href="#features">What it does</a>
-  <a href="#who">Who it's for</a>
-  <a href="#pricing">Pricing</a>
-  <a href="#faq">Questions</a>
-  <a href="#signup" class="on">Get started</a>
-</nav>
-{% endblock %}
-
-{% block flash %}{% endblock %}
 
 {% block body %}
 
-<!-- ------------------------------------------------------------- hero -->
+<!-- ============================================================== hero -->
 <section class="hero">
-  <h1>Your business answers every message,<br>in any language, in seconds.</h1>
-  <p>
-    Customers text your number. {{ brand.name }} gives them a straight answer
-    about your hours, your prices and when you can fit them in - or books the
-    appointment outright. You stay on WhatsApp. No new app, no dashboard to
-    learn.
-  </p>
-  <div class="hero-actions">
-    <a class="btn" href="#signup">Start a free {{ brand.trial_days }}-day trial</a>
-    <a class="btn ghost" href="#how">See how it works</a>
+  <div class="aurora"></div>
+  <div class="shell hero-grid">
+
+    <div class="hero-copy">
+      <span class="eyebrow rise in">For {{ brand.market }}</span>
+      <h1 class="display rise in d1">
+        Never lose another customer to
+        <span class="grad">a phone you couldn't reach.</span>
+      </h1>
+      <p class="lede rise in d2">
+        They text your number. {{ brand.name }} answers in their language, in
+        seconds - your prices, your hours, your calendar - and books the job
+        while you're still under the car.
+      </p>
+      <div class="hero-actions rise in d3">
+        <a class="btn btn-primary btn-lg" href="#signup">
+          Start free for {{ brand.trial_days }} days
+        </a>
+        <a class="btn btn-ghost btn-lg" href="#how">See how it works</a>
+      </div>
+      <p class="hero-note rise in d4">
+        <span class="dot-ok"></span>
+        Nothing reaches a customer until you've approved it.
+      </p>
+    </div>
+
+    <div class="phone-wrap rise in d2">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="phone-top">
+            <div class="phone-av">W</div>
+            <div>
+              <div class="phone-who">{{ demo_shop }}</div>
+              <div class="phone-sub">answering now</div>
+            </div>
+          </div>
+          <div class="thread" data-thread></div>
+        </div>
+      </div>
+
+      <div class="owner-card">
+        <div class="who">your phone</div>
+        {{ owner_alert.text }}
+      </div>
+    </div>
+
   </div>
-  <p class="hero-note">No card to start. Nothing reaches a customer until you approve it.</p>
+
+  <div class="shell" style="position:relative;z-index:1;margin-top:34px">
+    <p class="phone-caption" style="margin-inline:auto">{{ demo_caption }}</p>
+  </div>
 </section>
 
-<!-- ---------------------------------------------------------- problem -->
-<section class="strip">
-  <div class="strip-inner">
-    <h2 class="centred">The customer you lost this morning</h2>
-    <div class="problem-grid">
-      <div class="problem">
-        <div class="problem-time">8:40</div>
-        <p>Someone texts asking what a job costs. You're under a car, on a
+<!-- =========================================================== measured -->
+<section class="shell" style="position:relative;z-index:1">
+  <div class="metrics rise">
+    {% for metric in metrics %}
+    <div class="metric">
+      <div class="v">{{ metric.value }}<span>{{ metric.unit }}</span></div>
+      <div class="l">{{ metric.label }}</div>
+      <div class="n">{{ metric.note }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ============================================================ problem -->
+<section class="section">
+  <div class="shell">
+    <div class="section-head centred rise">
+      <span class="eyebrow" style="justify-content:center">The maths nobody runs</span>
+      <h2 class="h2">The customer you lost<br>this morning.</h2>
+    </div>
+
+    <div class="timeline">
+      <div class="beat rise">
+        <div class="beat-time">8:40</div>
+        <p>Someone texts asking what a job costs. You're under a car, up a
            ladder, mid-haircut. You'll reply later.</p>
       </div>
-      <div class="problem">
-        <div class="problem-time">8:41</div>
-        <p>They text the next business on the list.</p>
+      <div class="beat rise d1">
+        <div class="beat-time">8:41</div>
+        <p>They text the next business on the list. That one answers.</p>
       </div>
-      <div class="problem">
-        <div class="problem-time">11:15</div>
-        <p>You reply. They've already booked somewhere else.</p>
+      <div class="beat rise d2">
+        <div class="beat-time">11:15</div>
+        <p>You reply. They booked somewhere else two hours ago.</p>
       </div>
     </div>
-    <p class="centred sub problem-note">
-      It isn't that you're slow. It's that you were working. {{ brand.name }}
-      answers in the ninety seconds you can't.
+
+    <p class="lede centred rise d3" style="max-width:600px;margin:46px auto 0">
+      It isn't that you're slow. It's that you were <em>working</em>.
+      {{ brand.name }} answers in the ninety seconds you don't have.
     </p>
   </div>
 </section>
 
-<!-- --------------------------------------------------------- how it works -->
-<div class="wrap" id="how">
-  <h2 class="centred">How it works</h2>
-  <p class="centred sub">Three steps. The middle one is the one nobody else offers.</p>
-  <div class="steps">
-    <div class="step">
-      <div class="n">1</div>
-      <h3>We learn your business</h3>
-      <p>
-        Your hours, services, price ranges and the way you talk to customers.
-        Nothing is invented: if a price isn't on your list, it says so and
-        offers a visit for an exact quote rather than guessing.
-      </p>
-    </div>
-    <div class="step">
-      <div class="n">2</div>
-      <h3>Two weeks of shadowing</h3>
-      <p>
-        It writes the reply, you approve it on WhatsApp. You see exactly what
-        it would have said to a real customer before a single person hears
-        from it. Change the wording and it sends yours instead.
-      </p>
-    </div>
-    <div class="step">
-      <div class="n">3</div>
-      <h3>It answers</h3>
-      <p>
-        Text and WhatsApp, day and night. Anything it shouldn't handle - a
-        complaint, an emergency, an insurance question - stops and comes
-        straight to you.
-      </p>
-    </div>
-  </div>
-</div>
+<hr class="glow-line">
 
-<!-- ------------------------------------------------------------ features -->
-<section class="strip" id="features">
-  <div class="strip-inner">
-    <h2 class="centred">What it does</h2>
-    <div class="grid">
-      <div class="card">
-        <h3>Answers in their language</h3>
-        <p>
-          Someone writes in Spanish, Polish or English and gets a reply in the
-          same language on the first try. No menus, no "press 1 for English",
-          no asking them to pick.
-        </p>
+<!-- ================================================================ how -->
+<section class="section" id="how">
+  <div class="shell">
+    <div class="section-head centred rise">
+      <span class="eyebrow" style="justify-content:center">How it works</span>
+      <h2 class="h2">Three steps. The middle one<br>is why owners say yes.</h2>
+    </div>
+
+    <div class="steps">
+      <div class="step rise">
+        <div class="num">1</div>
+        <h3>We learn your business</h3>
+        <p>Your hours, services, price ranges and the way you talk. Nothing is
+           invented: if a price isn't on your list it says so and offers a
+           visit, rather than guessing.</p>
       </div>
-      <div class="card">
-        <h3>Texts back missed calls</h3>
-        <p>
-          When a call goes unanswered the caller gets a text within seconds
-          asking what they need - before they try the next business on
-          the list.
-        </p>
+      <div class="step feature rise d1">
+        <span class="tag">no one else does this</span>
+        <div class="num">2</div>
+        <h3>Two weeks of shadowing</h3>
+        <p>It writes the reply, you approve it on WhatsApp. You see exactly
+           what it would have said to a real customer before anyone hears from
+           it. Rewrite it and yours goes instead.</p>
       </div>
-      <div class="card">
-        <h3>Books real appointments</h3>
-        <p>
-          It offers only times that are genuinely free on your calendar, and
-          never holds or promises a slot it hasn't checked.
-        </p>
-      </div>
-      <div class="card">
-        <h3>Reminds them the day before</h3>
-        <p>
-          An automatic reminder in the customer's own language, with the time
-          you actually agreed. Fewer no-shows, and not one phone call from you.
-        </p>
-      </div>
-      <div class="card">
-        <h3>Answers "is it ready yet?"</h3>
-        <p>
-          You text <span class="mono">READY</span> once - whatever it was, a
-          car, a dog, a laptop, a suit. The customer is told in their own
-          language the moment they ask.
-        </p>
-      </div>
-      <div class="card">
-        <h3>Knows when to stop</h3>
-        <p>
-          It hands the conversation to you and goes quiet. It will never argue
-          with an angry customer, quote a price you didn't give it, or invent
-          a promise.
-        </p>
-      </div>
-      <div class="card">
-        <h3>One morning summary</h3>
-        <p>
-          What happened yesterday, what's booked today, what's waiting on you.
-          One message, in your language, at the hour you choose.
-        </p>
-      </div>
-      <div class="card">
-        <h3>Runs on your own number</h3>
-        <p>
-          The same number that's on your signs and your van. Your customers
-          never need to know anything changed.
-        </p>
+      <div class="step rise d2">
+        <div class="num">3</div>
+        <h3>It answers</h3>
+        <p>Text and WhatsApp, day and night. Anything it shouldn't touch - a
+           complaint, an emergency, an insurance question - stops and comes
+           straight to your phone.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ----------------------------------------------------------- languages -->
-<div class="wrap">
-  <div class="card feature-wide">
-    <h2 style="margin-top:0">Your customers don't all speak English</h2>
-    <p class="sub">
-      Most systems make them choose a language before they can ask a question.
-      {{ brand.name }} reads what they wrote and answers in it - first reply,
-      every time. If they switch mid-conversation, it follows. A first message
-      always includes English, and always tells them they can write in whatever
-      they like.
-    </p>
-    <p class="sub" style="margin-bottom:0">
-      You never maintain a translated copy of anything. You write your hours and
-      prices once, in your own language, and they come out in theirs.
-    </p>
-  </div>
-</div>
-
-<!-- --------------------------------------------------------------- who -->
-<section class="strip" id="who">
-  <div class="strip-inner">
-    <h2 class="centred">Who it's for</h2>
-    <p class="centred sub">
-      Any small business where customers text to ask a question, book a time, or
-      check whether something is done.
-    </p>
-    <div class="trades">
-      <span>Auto repair &amp; tyres</span>
-      <span>Salons &amp; barbers</span>
-      <span>Pet grooming</span>
-      <span>Plumbers &amp; electricians</span>
-      <span>Phone &amp; appliance repair</span>
-      <span>Tailors &amp; dry cleaners</span>
-      <span>Workshops &amp; studios</span>
-      <span>Garden &amp; home services</span>
+<!-- =========================================================== features -->
+<section class="section" id="features">
+  <div class="shell">
+    <div class="section-head centred rise">
+      <span class="eyebrow" style="justify-content:center">What it does</span>
+      <h2 class="h2">A front desk that<br>never clocks off.</h2>
     </div>
-    <p class="centred sub" style="margin-top:22px">
-      If your phone rings while your hands are full, it's for you.
-    </p>
-  </div>
-</section>
 
-<!-- ----------------------------------------------------------- pricing -->
-<div class="wrap" id="pricing">
-  <h2 class="centred">Pricing</h2>
-  <div class="card price">
-    <div class="amount">{{ brand.currency }}{{ brand.price_monthly }}<span class="per"> / month</span></div>
-    <p class="price-sub">One business, one number, unlimited conversations.</p>
-    <ul class="price-list">
-      <li>Every text and WhatsApp message answered, day and night</li>
-      <li>Every language your customers write in</li>
-      <li>Missed-call text-back, appointment booking and reminders</li>
-      <li>Your daily summary, and alerts the moment something needs you</li>
-      <li>{{ brand.trial_days }} days of shadow mode first - you approve every reply</li>
-    </ul>
-    <p class="sub" style="margin:18px 0 0">
-      You only start paying when you switch it on. Cancel any time.
-    </p>
-    <a class="btn" href="#signup" style="margin-top:18px">Start free</a>
-  </div>
-</div>
-
-<!-- --------------------------------------------------------------- faq -->
-<div class="wrap" id="faq">
-  <h2 class="centred">Questions</h2>
-  <div class="card">
-    <dl class="faq">
-      <dt>Does it pretend to be a person?</dt>
-      <dd>No. It says it's your assistant, and it hands over to you the moment
-          a customer asks for a human.</dd>
-
-      <dt>What if it doesn't know something?</dt>
-      <dd>It says so and passes the question to you. It can only speak from
-          what you told us - it cannot invent a price, a time or a promise.</dd>
-
-      <dt>Do I need a computer?</dt>
-      <dd>No. Everything reaches you on WhatsApp and you reply there. There's a
-          dashboard if you want one, but you never have to open it.</dd>
-
-      <dt>Can I take over a conversation?</dt>
-      <dd>Yes. Reply to the alert and {{ brand.name }} goes quiet on that chat
-          until you hand it back. Whatever you type is sent to the customer,
-          translated into their language.</dd>
-
-      <dt>What if I don't like what it says?</dt>
-      <dd>That's what the first two weeks are for. It drafts, you approve or
-          rewrite, and we adjust it to sound like you before any customer sees
-          a word.</dd>
-
-      <dt>Which languages?</dt>
-      <dd>Whatever your customers actually write in. We switch on the ones your
-          neighbourhood uses, and English is always included.</dd>
-
-      <dt>Do I have to change my phone number?</dt>
-      <dd>No. It works on your existing number.</dd>
-
-      <dt>How do I stop it?</dt>
-      <dd>Tell us and we switch it off the same day. There's nothing to
-          uninstall.</dd>
-    </dl>
-  </div>
-</div>
-
-<!-- ------------------------------------------------------------ signup -->
-<section class="strip" id="signup">
-  <div class="strip-inner narrow-strip">
-    <h2 class="centred">Get started</h2>
-    <p class="centred sub">
-      We're onboarding {{ brand.market }} by hand right now, a few at a time.
-      Tell us where to reach you and we'll text you back.
-    </p>
-
-    {% if error %}<div class="note bad">{{ error }}</div>{% endif %}
-
-    <div class="card">
-      <form method="post" action="/signup">
-        <label>Business name
-          <input type="text" name="business_name" required maxlength="200"
-                 value="{{ (form.business_name if form else '') }}">
-        </label>
-        <label>What do you do?
-          <span class="hint">A few words is plenty - "brakes and tyres", "dog
-            grooming", "emergency plumbing".</span>
-          <input type="text" name="trade" maxlength="120"
-                 value="{{ (form.trade if form else '') }}">
-        </label>
-        <label>Your name
-          <input type="text" name="contact_name" maxlength="200"
-                 value="{{ (form.contact_name if form else '') }}">
-        </label>
-        <label>Mobile number
-          <span class="hint">We'll text you here - it's how the product works.</span>
-          <input type="tel" name="phone" required maxlength="32"
-                 value="{{ (form.phone if form else '') }}">
-        </label>
-        <label>Email <span class="hint">Optional.</span>
-          <input type="email" name="email" maxlength="200"
-                 value="{{ (form.email if form else '') }}">
-        </label>
-        <label>City
-          <input type="text" name="city" maxlength="120"
-                 value="{{ (form.city if form else brand.city) }}">
-        </label>
-        <label>Anything we should know?
-          <textarea name="message" maxlength="2000">{{ (form.message if form else '') }}</textarea>
-        </label>
-
-        <div style="position:absolute;left:-9999px" aria-hidden="true">
-          <label>Website<input type="text" name="website" tabindex="-1"
-                               autocomplete="off"></label>
+    <div class="feature-grid">
+      {% for feature in features %}
+      <div class="feature rise {{ 'd' ~ (loop.index0 % 4) if loop.index0 % 4 else '' }}">
+        <div class="ic">
+          {% with name=feature.icon %}{% include "marketing/_icons.html" %}{% endwith %}
         </div>
-
-        <div class="actions">
-          <button class="btn" type="submit">Send</button>
-        </div>
-
-        {#
-          The consent line below is not decoration. A2P 10DLC campaign approval
-          turns on being able to show how a person opted in, and this form is
-          that record.
-        #}
-        <p class="consent">
-          By sending this you agree that {{ brand.name }} may text you about
-          setting up your account. Message and data rates may apply. Message
-          frequency varies. Reply STOP to unsubscribe or HELP for help. See our
-          <a href="/messaging">messaging terms</a> and
-          <a href="/privacy">privacy policy</a>. No payment details, no contract.
-        </p>
-      </form>
+        <h3>{{ feature.title }}</h3>
+        <p>{{ feature.body }}</p>
+      </div>
+      {% endfor %}
     </div>
   </div>
 </section>
 
-{% include "marketing/_footer.html" with context %}
+<!-- ========================================================== languages -->
+<section class="section" id="languages">
+  <div class="shell">
+    <div class="section-head centred rise">
+      <span class="eyebrow" style="justify-content:center">Languages</span>
+      <h2 class="h2">Your customers don't<br>all speak English.</h2>
+    </div>
+
+    <div class="lang-stage rise" data-languages>
+      <div>
+        <div class="lang-in"><span></span></div>
+        <div class="lang-chips">
+          {% for language in languages %}
+          <button type="button" class="lang-chip">{{ language.label }}</button>
+          {% endfor %}
+        </div>
+      </div>
+      <div>
+        <p class="lede" style="margin:0 0 16px">
+          Most systems make someone choose a language before they can ask a
+          question. {{ brand.name }} reads what they wrote and answers in it -
+          first reply, every time.
+        </p>
+        <p style="color:var(--fg-3);font-size:15px;margin:0">
+          Switch mid-conversation and it follows. A first message always
+          includes English, and always tells them they can write however they
+          like. You write your hours and prices once, in your own language.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="glow-line">
+
+<!-- ================================================================ who -->
+<section class="section" id="who">
+  <div class="shell">
+    <div class="section-head centred rise">
+      <span class="eyebrow" style="justify-content:center">Who it's for</span>
+      <h2 class="h2">If your phone rings while<br>your hands are full.</h2>
+    </div>
+  </div>
+
+  <div class="marquee rise">
+    <div class="marquee-row">
+      {% for trade in trades %}<span class="trade">{{ trade }}</span>{% endfor %}
+      {% for trade in trades %}<span class="trade">{{ trade }}</span>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ reviews -->
+{% if reviews %}
+<section class="section" id="reviews">
+  <div class="shell">
+    <div class="section-head centred rise">
+      {% if reviews_are_samples %}
+      <span class="sample-flag">Sample copy — not real customer quotes</span>
+      {% endif %}
+      <h2 class="h2">What owners say.</h2>
+    </div>
+    <div class="reviews">
+      {% for review in reviews %}
+      <div class="review rise">
+        <q>{{ review.quote }}</q>
+        <div class="by">{{ review.name }} · {{ review.role }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ============================================================ pricing -->
+<section class="section" id="pricing">
+  <div class="shell">
+    <div class="section-head centred rise">
+      <span class="eyebrow" style="justify-content:center">Pricing</span>
+      <h2 class="h2">One price. Everything in it.</h2>
+    </div>
+
+    <div class="price-card rise">
+      <div class="price-amount">
+        {{ brand.currency }}{{ brand.price_monthly }}<span class="per">/month</span>
+      </div>
+      <p style="color:var(--fg-3);margin:10px 0 0;font-size:15.5px">
+        One business, one number, unlimited conversations.
+      </p>
+
+      <ul class="price-list">
+        <li>Every text and WhatsApp answered, day and night</li>
+        <li>Every language your customers write in</li>
+        <li>Missed-call text-back within seconds</li>
+        <li>Appointment booking, confirmations and reminders</li>
+        <li>Your morning summary, and an alert the moment something needs you</li>
+        <li>{{ brand.trial_days }} days of shadow mode first - you approve every reply</li>
+      </ul>
+
+      <a class="btn btn-primary btn-lg" href="#signup" style="margin-top:30px">
+        Start free
+      </a>
+      <p style="color:var(--fg-3);font-size:13.5px;margin:16px 0 0">
+        You only start paying when you switch it on. Cancel any time.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ faq -->
+<section class="section" id="faq">
+  <div class="shell">
+    <div class="section-head centred rise">
+      <span class="eyebrow" style="justify-content:center">Questions</span>
+      <h2 class="h2">The ones owners<br>actually ask.</h2>
+    </div>
+
+    <div class="faq rise">
+      {% for item in faq %}
+      <details class="qa">
+        <summary>{{ item.q }}</summary>
+        <p class="a">{{ item.a }}</p>
+      </details>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================= signup -->
+<section class="section" id="signup">
+  <div class="shell">
+    <div class="cta-band rise">
+      <div class="shell-narrow" style="padding:0">
+        <h2 class="h2" style="margin-bottom:14px">
+          Put it on your number<br>and watch it work.
+        </h2>
+        <p class="lede" style="margin:0 auto 34px;max-width:520px">
+          We're onboarding {{ brand.market }} by hand, a few at a time. Tell us
+          where to reach you and we'll text you back.
+        </p>
+
+        {% if error %}<div class="note bad">{{ error }}</div>{% endif %}
+
+        <div class="form-card" style="text-align:left">
+          <form method="post" action="/signup">
+            <label class="field">
+              <span class="lab">Business name</span>
+              <input type="text" name="business_name" required maxlength="200"
+                     value="{{ (form.business_name if form else '') }}">
+            </label>
+            <label class="field">
+              <span class="lab">What do you do?
+                <span class="hint">A few words - "brakes and tyres", "dog grooming".</span>
+              </span>
+              <input type="text" name="trade" maxlength="120"
+                     value="{{ (form.trade if form else '') }}">
+            </label>
+            <label class="field">
+              <span class="lab">Your name</span>
+              <input type="text" name="contact_name" maxlength="200"
+                     value="{{ (form.contact_name if form else '') }}">
+            </label>
+            <label class="field">
+              <span class="lab">Mobile number
+                <span class="hint">We'll text you here - it's how the product works.</span>
+              </span>
+              <input type="tel" name="phone" required maxlength="32"
+                     value="{{ (form.phone if form else '') }}">
+            </label>
+            <label class="field">
+              <span class="lab">Email <span class="hint">Optional.</span></span>
+              <input type="email" name="email" maxlength="200"
+                     value="{{ (form.email if form else '') }}">
+            </label>
+            <label class="field">
+              <span class="lab">City</span>
+              <input type="text" name="city" maxlength="120"
+                     value="{{ (form.city if form else brand.city) }}">
+            </label>
+            <label class="field">
+              <span class="lab">Anything we should know?</span>
+              <textarea name="message" maxlength="2000">{{ (form.message if form else '') }}</textarea>
+            </label>
+
+            <div style="position:absolute;left:-9999px" aria-hidden="true">
+              <label>Website<input type="text" name="website" tabindex="-1"
+                                   autocomplete="off"></label>
+            </div>
+
+            <button class="btn btn-primary btn-lg" type="submit"
+                    style="width:100%;margin-top:8px">
+              Send
+            </button>
+
+            {#
+              Not decoration: A2P 10DLC approval turns on being able to show how
+              a person opted in, and this form is that record.
+            #}
+            <p class="consent">
+              By sending this you agree that {{ brand.name }} may text you about
+              setting up your account. Message and data rates may apply. Message
+              frequency varies. Reply STOP to unsubscribe or HELP for help. See
+              our <a href="/messaging">messaging terms</a> and
+              <a href="/privacy">privacy policy</a>. No payment details, no
+              contract.
+            </p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script type="application/json" id="demo-script">{{ demo_script_json | safe }}</script>
+<script type="application/json" id="language-demo">{{ languages_json | safe }}</script>
 {% endblock %}

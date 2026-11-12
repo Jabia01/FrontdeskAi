@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "marketing/base.html" %}
 {#
   The page a carrier reviewer looks for during A2P 10DLC campaign vetting. It
   has to state, in plain language: who sends the messages, how someone opted
@@ -6,21 +6,12 @@
 #}
 {% block title %}Messaging terms - {{ brand.name }}{% endblock %}
 {% block robots %}index, follow{% endblock %}
-{% block wrapclass %}{% endblock %}
 
-{% block nav %}
-<nav class="topnav">
-  <a href="/">Home</a>
-  <a href="/privacy">Privacy</a>
-  <a href="/terms">Terms</a>
-  <a href="/messaging" class="on">Messaging</a>
-</nav>
-{% endblock %}
 
 {% block body %}
-<div class="wrap legal">
+<div class="legal">
   <h1>Messaging terms</h1>
-  <p class="sub">Last updated {{ brand.legal_updated }}</p>
+  <p class="legal-date">Last updated {{ brand.legal_updated }}</p>
 
   <p>
     {{ brand.name }} sends text and WhatsApp messages on behalf of the
@@ -107,5 +98,4 @@
   </p>
 </div>
 
-{% include "marketing/_footer.html" with context %}
 {% endblock %}

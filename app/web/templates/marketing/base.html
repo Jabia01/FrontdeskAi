@@ -1,0 +1,44 @@
+<!doctype html>
+{#
+  The public site's own shell. Deliberately does NOT extend the app's base.html:
+  the marketing design needs to change weekly without any chance of moving the
+  console or the dashboard.
+
+  Everything is served from this origin - no third-party script, font or
+  stylesheet anywhere. The site stays fast, private, and working offline in
+  development. tests/test_web_site.py enforces it.
+#}
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ brand.name }} - {{ brand.tagline }}{% endblock %}</title>
+  <meta name="description" content="{% block description %}{{ brand.description }}{% endblock %}">
+  <meta name="robots" content="{% block robots %}index, follow{% endblock %}">
+  <meta name="theme-color" content="#07080C">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{{ self.title() }}">
+  <meta property="og:description" content="{{ self.description() }}">
+  <meta property="og:site_name" content="{{ brand.name }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" href="/web-static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/web-static/site.css">
+  {# Arms the scroll reveals. Without it every section renders visible. #}
+  <script>document.documentElement.classList.add("js")</script>
+</head>
+<body>
+
+{% include "marketing/_nav.html" with context %}
+
+<main id="top">
+  {% block body %}{% endblock %}
+</main>
+
+{% include "marketing/_footer.html" with context %}
+
+<script src="/web-static/site.js" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
