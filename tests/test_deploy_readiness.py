@@ -375,3 +375,46 @@ class TestWebhookConfigIsVisible:
             ):
                 monkeypatch.delenv(key, raising=False)
             get_settings.cache_clear()
+
+
+class TestTheSuiteCannotCallAProvider:
+    """A test run must behave identically on every machine.
+
+    The adapters stub their sends only while Twilio is unconfigured, so a
+    developer adding real credentials to .env for their own deployment would
+    silently turn the whole suite into live API traffic - burning a trial
+    quota, and in principle texting whoever owns a number a fixture made up.
+    """
+
+    def test_no_twilio_credentials_are_visible_to_the_suite(self):
+        from app.config import get_settings
+
+        settings = get_settings()
+        assert settings.twilio_configured is False
+        assert not settings.twilio_account_sid
+        assert not settings.twilio_auth_token
+
+    def test_no_calendar_credentials_are_visible_to_the_suite(self):
+        from app.config import get_settings
+
+        assert get_settings().calendar_configured is False
+
+    async def test_a_send_is_stubbed_rather_than_dispatched(self, shop_a):
+        from app.channels.twilio_base import STUB_SENDS
+        from app.channels.twilio_sms import TwilioSmsAdapter
+        from app.models import Channel
+        from app.schemas import OutboundMessage
+
+        before = len(STUB_SENDS)
+        result = await TwilioSmsAdapter().send(
+            OutboundMessage(
+                channel=Channel.sms,
+                provider="twilio",
+                external_id="+13125550001",
+                to_number="+13125559876",
+                body="this must never leave the machine",
+            )
+        )
+        assert result.ok is True
+        assert result.provider_msg_id.startswith("stub-")
+        assert len(STUB_SENDS) == before + 1

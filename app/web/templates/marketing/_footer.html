@@ -1,0 +1,53 @@
+{#
+  Shared by every public page. The legal links are not decoration: Twilio's A2P
+  10DLC campaign registration requires a public privacy policy URL and a terms
+  URL, and carriers check that the contact details match the brand registration.
+#}
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="logo">{{ brand.name }}</div>
+      <p>{{ brand.description }}</p>
+      <p class="footer-meta">
+        {{ brand.legal_name }}<br>
+        {{ brand.address }}
+      </p>
+    </div>
+
+    <div class="footer-links">
+      <h4>Product</h4>
+      <a href="/#how">How it works</a>
+      <a href="/#features">What it does</a>
+      <a href="/#who">Who it is for</a>
+      <a href="/#pricing">Pricing</a>
+      <a href="/#faq">Questions</a>
+    </div>
+
+    <div class="footer-links">
+      <h4>Legal</h4>
+      <a href="/privacy">Privacy policy</a>
+      <a href="/terms">Terms of service</a>
+      <a href="/messaging">Messaging terms</a>
+    </div>
+
+    <div class="footer-links">
+      <h4>Talk to us</h4>
+      <a href="mailto:{{ brand.support_email }}">{{ brand.support_email }}</a>
+      <a href="tel:{{ brand.support_phone }}">{{ brand.support_phone }}</a>
+      <a href="/#signup">Get started</a>
+      <a href="/shop/login">Business sign in</a>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <p>
+      &copy; {{ now.year }} {{ brand.legal_name }}. All rights reserved.
+    </p>
+    <p class="footer-sms">
+      Message and data rates may apply. Message frequency varies. Reply STOP to
+      unsubscribe or HELP for help. See our
+      <a href="/messaging">messaging terms</a> and
+      <a href="/privacy">privacy policy</a>.
+    </p>
+  </div>
+</footer>

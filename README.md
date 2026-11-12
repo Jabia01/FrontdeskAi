@@ -1,4 +1,4 @@
-# AI Front Desk
+# Chichi
 
 One multi-tenant backend that answers customers for many small businesses over
 WhatsApp and SMS today, and over the phone later, without a rewrite. The AI
@@ -301,6 +301,7 @@ the models on each run.
 | `test_web_admin.py` | every console route is behind the login; CSRF; what a config save actually writes |
 | `test_web_isolation.py` | an owner cannot reach another shop's data by any route, plus the structural guards |
 | `test_web_marketing.py` | the landing form, honeypot, rate limits, and escaping of what strangers type |
+| `test_web_legal.py` | the public site, and every sentence A2P 10DLC registration requires |
 | `test_web_dashboard.py` | the data actually reaches the page, and each business's own vocabulary is used |
 | `test_reminders.py` | what is due, what is skipped, never twice, and the language it goes out in |
 | `test_summary.py` | content, timing, once-per-local-day, and quiet days staying quiet |
@@ -563,6 +564,7 @@ app/
     summary.py       the daily owner summary
     defaults.py      vertical presets and what a new business starts with
   web/
+    brand.py         the brand and legal details, in one place
     auth.py          sessions, passwords, one-time codes, the FastAPI guards
     admin.py         the console
     owner.py         the owner dashboard (read-only)

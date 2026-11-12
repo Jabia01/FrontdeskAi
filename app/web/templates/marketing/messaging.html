@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{#
+  The page a carrier reviewer looks for during A2P 10DLC campaign vetting. It
+  has to state, in plain language: who sends the messages, how someone opted
+  in, how often, that rates may apply, and how to stop. Keep all five.
+#}
+{% block title %}Messaging terms - {{ brand.name }}{% endblock %}
+{% block robots %}index, follow{% endblock %}
+{% block wrapclass %}{% endblock %}
+
+{% block nav %}
+<nav class="topnav">
+  <a href="/">Home</a>
+  <a href="/privacy">Privacy</a>
+  <a href="/terms">Terms</a>
+  <a href="/messaging" class="on">Messaging</a>
+</nav>
+{% endblock %}
+
+{% block body %}
+<div class="wrap legal">
+  <h1>Messaging terms</h1>
+  <p class="sub">Last updated {{ brand.legal_updated }}</p>
+
+  <p>
+    {{ brand.name }} sends text and WhatsApp messages on behalf of the
+    businesses that use it. This page explains what those messages are, how
+    someone comes to receive them, and how to stop them.
+  </p>
+
+  <h2>Who the messages come from</h2>
+  <p>
+    Messages are sent from the business you contacted, using their own phone
+    number. {{ brand.name }}, operated by {{ brand.legal_name }}, is the
+    service that sends them on that business's behalf. The first message in any
+    conversation identifies the business by name.
+  </p>
+
+  <h2>How you come to receive messages</h2>
+  <p>You will only receive messages if one of these is true:</p>
+  <ul>
+    <li><strong>You texted the business first.</strong> Replying to you is the
+        entire purpose of the service.</li>
+    <li><strong>You called the business and nobody answered.</strong> You get
+        one text asking what you need. If you do not reply, that is the end of
+        it.</li>
+    <li><strong>You booked an appointment,</strong> so you receive a
+        confirmation and a reminder before it.</li>
+    <li><strong>You asked the business to tell you when your job is done,</strong>
+        and they marked it ready.</li>
+    <li><strong>You asked us about using {{ brand.name }} for your own
+        business</strong> through the form on our site, so we text you about
+        setting it up.</li>
+  </ul>
+  <p>
+    We do not send marketing or promotional messages, and we do not buy phone
+    numbers from anyone.
+  </p>
+
+  <h2>How often</h2>
+  <p>
+    Message frequency varies and depends on the conversation. Most people
+    exchange a handful of messages and then nothing until they get in touch
+    again. Automated messages are limited to one reminder per appointment and
+    one notification when a job is ready.
+  </p>
+
+  <h2>Cost</h2>
+  <p>
+    <strong>Message and data rates may apply.</strong> {{ brand.name }} does
+    not charge you to receive messages; your mobile carrier may.
+  </p>
+
+  <h2>How to stop</h2>
+  <p>
+    Reply <span class="mono">STOP</span> to any message. It takes effect
+    immediately and stops everything automated, including appointment
+    reminders. You will get one confirmation that it worked, and then nothing.
+  </p>
+  <p>
+    <span class="mono">STOPALL</span>, <span class="mono">UNSUBSCRIBE</span>,
+    <span class="mono">CANCEL</span>, <span class="mono">END</span> and
+    <span class="mono">QUIT</span> all do the same thing. To start again, reply
+    <span class="mono">START</span>.
+  </p>
+
+  <h2>How to get help</h2>
+  <p>
+    Reply <span class="mono">HELP</span> to any message and you will get the
+    business's details and a way to reach a person. You can also email us at
+    <a href="mailto:{{ brand.support_email }}">{{ brand.support_email }}</a> or
+    call <a href="tel:{{ brand.support_phone }}">{{ brand.support_phone }}</a>.
+  </p>
+
+  <h2>Carriers</h2>
+  <p>
+    Carriers are not liable for delayed or undelivered messages.
+  </p>
+
+  <h2>Your information</h2>
+  <p>
+    <strong>No mobile information is shared with third parties or affiliates
+    for marketing or promotional purposes.</strong> Opt-in data and consent are
+    not shared with any third parties except subcontractors who help us deliver
+    the service, such as our messaging carrier. Our
+    <a href="/privacy">privacy policy</a> sets this out in full.
+  </p>
+</div>
+
+{% include "marketing/_footer.html" with context %}
+{% endblock %}

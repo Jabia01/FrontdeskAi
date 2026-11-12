@@ -33,6 +33,18 @@ os.environ["DATABASE_URL"] = _TEST_URL
 os.environ.setdefault("TWILIO_VALIDATE_SIGNATURE", "false")
 os.environ.setdefault("AI_ENABLED", "true")
 
+# Blank, not `setdefault` - these must override whatever is in .env.
+#
+# The adapters stub their sends only while Twilio is unconfigured. The moment a
+# developer puts real credentials in .env for their own deployment, the whole
+# suite starts making live API calls: burning a trial quota, and in principle
+# texting a real number that happens to match a fixture. A test run must behave
+# the same on every machine, so the suite never sees a credential.
+os.environ["TWILIO_ACCOUNT_SID"] = ""
+os.environ["TWILIO_AUTH_TOKEN"] = ""
+os.environ["GOOGLE_CREDENTIALS_PATH"] = ""
+os.environ["GOOGLE_CREDENTIALS_JSON"] = ""
+
 from app.config import get_settings
 from app.db import dispose_engine, get_engine, session_scope
 from app.models import (

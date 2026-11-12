@@ -28,7 +28,7 @@ class TestLanding:
     async def test_the_page_loads_without_a_session(self, client, db):
         response = await client.get("/")
         assert response.status_code == 200
-        assert "AI Front Desk" in response.text
+        assert "Chichi" in response.text
         assert 'action="/signup"' in response.text
 
     async def test_it_is_the_only_indexable_page(self, client, db):

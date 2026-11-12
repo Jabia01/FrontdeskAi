@@ -63,6 +63,29 @@ async def thanks(request: Request):
     return render(request, "marketing/thanks.html")
 
 
+# The legal pages. These are not optional furniture: A2P 10DLC campaign
+# registration requires a public privacy policy URL and a terms URL, and a
+# carrier reviewer reads them. See docs/whatsapp-templates.md and
+# app/web/brand.py.
+
+
+@router.get("/privacy", include_in_schema=False)
+async def privacy(request: Request):
+    return render(request, "marketing/privacy.html")
+
+
+@router.get("/terms", include_in_schema=False)
+async def terms(request: Request):
+    return render(request, "marketing/terms.html")
+
+
+@router.get("/messaging", include_in_schema=False)
+async def messaging(request: Request):
+    """Opt-in, frequency, rates and how to stop - what carrier vetting looks
+    for, and what the footer of every page links to."""
+    return render(request, "marketing/messaging.html")
+
+
 @router.post("/signup", include_in_schema=False)
 async def signup(
     request: Request,

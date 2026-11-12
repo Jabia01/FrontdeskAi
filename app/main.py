@@ -28,6 +28,7 @@ from app.queue.client import close_pool, describe_pool
 from app.queue.embedded import EmbeddedWorker
 from app.web.admin import router as admin_router
 from app.web.auth import NotAuthenticated
+from app.web.brand import placeholders as brand_placeholders
 from app.web.marketing import router as marketing_router
 from app.web.owner import router as owner_router
 from app.web.owner_auth import router as owner_auth_router
@@ -50,6 +51,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         "channels: %s", [c.value for c in registered_channels()]
     )
 
+    # The legal pages are a hard requirement for A2P 10DLC registration, and a
+    # placeholder in one is a rejected campaign rather than a cosmetic problem.
+    unfilled = brand_placeholders()
+    if unfilled:
+        log.warning(
+            "brand details still unfilled, and they appear on the public "
+            "legal pages: %s - see app/web/brand.py",
+            ", ".join(unfilled),
+        )
+
     # On a single-service deployment the queue worker runs here rather than as
     # its own process - see app/queue/embedded.py for why that is safe and what
     # it costs. Off by default, so running the two apart stays the normal case.
@@ -68,9 +79,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="AI Front Desk",
+        title="Chichi",
         version="0.1.0",
-        description="Multi-tenant AI front desk - WhatsApp, SMS, voice-ready.",
+        description="Chichi - the front desk that never misses a customer.",
         lifespan=lifespan,
     )
     app.include_router(gateway_router)

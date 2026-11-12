@@ -18,6 +18,7 @@ from starlette.responses import HTMLResponse
 from app.agent.language import LANGUAGE_NAMES
 from app.web import phone as phone_util
 from app.web.auth import Principal
+from app.web.brand import BRAND
 
 TEMPLATE_DIR = Path(__file__).parent / "templates"
 STATIC_DIR = Path(__file__).parent / "static"
@@ -129,6 +130,8 @@ def render(
         request=request,
         name=name,
         context={
+            # Available to every template, so the brand lives in one file.
+            "brand": BRAND,
             "principal": principal,
             "csrf_token": principal.csrf_token if principal else "",
             "now": datetime.now(UTC),

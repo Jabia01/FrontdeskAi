@@ -299,3 +299,119 @@ input:focus, select:focus, textarea:focus {
   .msg { max-width: 88%; }
   .clip { max-width: 180px; }
 }
+
+/* ------------------------------------------------- marketing site additions */
+
+.centred { text-align: center; }
+
+.logo { font-weight: 680; font-size: 19px; letter-spacing: -0.02em; }
+
+.hero-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.hero-note { font-size: 13px; color: var(--muted); margin-top: 16px; }
+
+/* the three-beat "customer you lost" sequence */
+.problem-grid { display: grid; gap: 18px; grid-template-columns: 1fr; margin-top: 22px; }
+@media (min-width: 760px) { .problem-grid { grid-template-columns: repeat(3, 1fr); } }
+.problem {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+.problem-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 680;
+  font-size: 15px;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.problem p { margin: 0; color: var(--muted); }
+.problem-note { margin-top: 24px; font-size: 15px; }
+
+.feature-wide { padding: 26px 28px; }
+
+.trades { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; margin-top: 20px; }
+.trades span {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 14px;
+}
+
+.price-sub { color: var(--muted); margin: 6px 0 18px; }
+.price-list { list-style: none; padding: 0; margin: 0 auto; max-width: 420px; text-align: left; }
+.price-list li { padding: 7px 0 7px 26px; position: relative; color: var(--text); }
+.price-list li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--ok);
+  font-weight: 700;
+}
+
+.consent {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 16px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.narrow-strip { max-width: 620px; }
+
+/* ----------------------------------------------------------- legal pages */
+
+.legal { max-width: 740px; }
+.legal h2 { margin: 30px 0 10px; font-size: 19px; }
+.legal p, .legal li { color: var(--text); line-height: 1.65; }
+.legal ul { padding-left: 20px; }
+.legal li { margin-bottom: 7px; }
+.legal-highlight {
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.legal-highlight p:last-child { margin-bottom: 0; }
+
+/* --------------------------------------------------------------- footer */
+
+.site-footer {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  margin-top: 60px;
+  padding: 44px 20px 24px;
+}
+.footer-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: grid;
+  gap: 28px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 760px) {
+  .footer-inner { grid-template-columns: 2fr 1fr 1fr 1fr; }
+}
+.footer-brand p { color: var(--muted); font-size: 14px; max-width: 320px; }
+.footer-meta { font-size: 13px; margin-top: 12px; }
+.footer-links h4 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 0 0 10px;
+}
+.footer-links a { display: block; padding: 4px 0; font-size: 14px; color: var(--text); }
+.footer-links a:hover { color: var(--accent); }
+.footer-bottom {
+  max-width: 1120px;
+  margin: 32px auto 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 13px;
+}
+.footer-sms { margin-top: 8px; font-size: 12px; line-height: 1.6; }

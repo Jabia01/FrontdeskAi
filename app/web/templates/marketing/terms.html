@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{#
+  Required as a public URL for A2P 10DLC campaign registration alongside the
+  privacy policy. Written to describe how the service actually behaves rather
+  than to be maximally protective - a lawyer should review it before the first
+  paying customer, and the limitation and indemnity sections in particular.
+#}
+{% block title %}Terms of service - {{ brand.name }}{% endblock %}
+{% block robots %}index, follow{% endblock %}
+{% block wrapclass %}{% endblock %}
+
+{% block nav %}
+<nav class="topnav">
+  <a href="/">Home</a>
+  <a href="/privacy">Privacy</a>
+  <a href="/terms" class="on">Terms</a>
+  <a href="/messaging">Messaging</a>
+</nav>
+{% endblock %}
+
+{% block body %}
+<div class="wrap legal">
+  <h1>Terms of service</h1>
+  <p class="sub">Last updated {{ brand.legal_updated }}</p>
+
+  <p>
+    These terms govern use of {{ brand.name }}, operated by
+    {{ brand.legal_name }}. They are between us and the business using the
+    service. By using {{ brand.name }} you agree to them.
+  </p>
+
+  <h2>What the service is</h2>
+  <p>
+    {{ brand.name }} answers messages sent to your business, using information
+    you give us, and alerts you when something needs a person. It can book
+    appointments against a calendar you connect, send reminders, and tell
+    customers the status of their job when you set it.
+  </p>
+
+  <h2>What it is not</h2>
+  <p>
+    It is an assistant, not an employee and not a legal or professional
+    adviser. It answers from the information you provide. It will decline to
+    quote a price you have not given it, and it will hand a conversation to you
+    rather than guess. <strong>You remain responsible for what your business
+    tells its customers</strong>, including what {{ brand.name }} says on your
+    behalf.
+  </p>
+
+  <h2>Shadow mode</h2>
+  <p>
+    New accounts start in shadow mode for {{ brand.trial_days }} days: the
+    assistant drafts replies and you approve each one before it is sent. This
+    exists so you can see exactly how it would speak to your customers before
+    it does. You decide when to switch it on.
+  </p>
+
+  <h2>Your responsibilities</h2>
+  <ul>
+    <li>Give us accurate information about your business - the assistant
+        repeats what you tell it.</li>
+    <li>Keep your prices, hours and services up to date. A wrong price in your
+        configuration becomes a wrong price in a reply.</li>
+    <li>Respond when a conversation is handed to you. The assistant stops; the
+        customer is still waiting.</li>
+    <li>Use the service only for your own business, and only for lawful
+        messages.</li>
+    <li>Comply with the messaging rules that apply to you, including
+        registration requirements for business texting in your country.</li>
+  </ul>
+
+  <h2>What you must not do</h2>
+  <ul>
+    <li>Send marketing or promotional messages through the service.</li>
+    <li>Message people who have not contacted you or asked to hear from you.</li>
+    <li>Upload numbers you bought, scraped or were given by a lead seller.</li>
+    <li>Present the assistant as a human being if asked directly.</li>
+    <li>Use it for anything the law, your carrier or common decency forbids.</li>
+  </ul>
+  <p>
+    We will suspend an account that does any of these, and we will do it
+    without much ceremony - this kind of use gets phone numbers blocked for
+    everyone.
+  </p>
+
+  <h2>Fees</h2>
+  <p>
+    The price is {{ brand.currency }}{{ brand.price_monthly }} per business per
+    month unless we have agreed otherwise in writing. Billing starts when you
+    take the service out of shadow mode, not when you sign up. Fees are billed
+    monthly in advance and are not refundable for part of a month.
+  </p>
+
+  <h2>Cancelling</h2>
+  <p>
+    You can cancel at any time and we will switch the service off the same day.
+    Any minimum term agreed in writing when you signed up still applies. We may
+    cancel with 30 days' notice, or immediately if the account breaks the rules
+    above.
+  </p>
+
+  <h2>Availability</h2>
+  <p>
+    We work to keep the service running at all times, but we do not promise it
+    will never be unavailable. It depends on third parties - messaging
+    carriers, an AI provider, hosting - and any of them can have an outage. If
+    the assistant cannot answer, it says so and alerts you rather than leaving
+    a customer in silence.
+  </p>
+
+  <h2>Your data</h2>
+  <p>
+    Your configuration and your customers' conversations are yours. We process
+    them to run the service, as described in our
+    <a href="/privacy">privacy policy</a>. You can ask for an export or for
+    deletion at any time.
+  </p>
+
+  <h2>Liability</h2>
+  <p>
+    To the extent the law allows, our total liability in any twelve-month
+    period is limited to the fees you paid us in that period. We are not liable
+    for lost profits, lost business or indirect losses. Nothing here limits
+    liability that cannot lawfully be limited.
+  </p>
+
+  <h2>Changes to these terms</h2>
+  <p>
+    We may update these terms. If a change materially affects you, we will tell
+    you before it takes effect.
+  </p>
+
+  <h2>Governing law</h2>
+  <p>
+    These terms are governed by the laws of {{ brand.jurisdiction }}.
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    {{ brand.legal_name }}<br>
+    {{ brand.address }}<br>
+    <a href="mailto:{{ brand.support_email }}">{{ brand.support_email }}</a>
+  </p>
+</div>
+
+{% include "marketing/_footer.html" with context %}
+{% endblock %}

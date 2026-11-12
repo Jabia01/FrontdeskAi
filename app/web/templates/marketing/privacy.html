@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{#
+  REQUIRED for A2P 10DLC campaign registration, and read by a carrier reviewer
+  rather than a lawyer. Two things must survive any edit:
+
+   1. The "not shared with third parties" paragraph under "Your mobile
+      information". Twilio error 30932 rejects a campaign whose privacy policy
+      does not say this, and it is one of the most common rejection reasons.
+   2. The contact details, which must match the A2P brand registration exactly.
+
+  This is a clear, honest description of what the system actually does with
+  data - it is not legal advice, and it should be reviewed by a lawyer before
+  the first paying customer.
+#}
+{% block title %}Privacy policy - {{ brand.name }}{% endblock %}
+{% block robots %}index, follow{% endblock %}
+{% block wrapclass %}{% endblock %}
+
+{% block nav %}
+<nav class="topnav">
+  <a href="/">Home</a>
+  <a href="/privacy" class="on">Privacy</a>
+  <a href="/terms">Terms</a>
+  <a href="/messaging">Messaging</a>
+</nav>
+{% endblock %}
+
+{% block body %}
+<div class="wrap legal">
+  <h1>Privacy policy</h1>
+  <p class="sub">Last updated {{ brand.legal_updated }}</p>
+
+  <p>
+    {{ brand.name }} is operated by {{ brand.legal_name }} ("we", "us"). We
+    provide a service that answers messages on behalf of small businesses. This
+    policy explains what we collect, why, and what we will never do with it.
+  </p>
+
+  <h2>Who the data belongs to</h2>
+  <p>
+    There are two kinds of people in this system, and they are treated
+    differently:
+  </p>
+  <ul>
+    <li><strong>Businesses</strong> who use {{ brand.name }} as their front
+        desk. They are our customers.</li>
+    <li><strong>The public</strong> who message those businesses. Their
+        conversation belongs to the business they contacted. We process it on
+        that business's behalf and for no other purpose.</li>
+  </ul>
+
+  <h2>What we collect</h2>
+  <p>From a business that signs up:</p>
+  <ul>
+    <li>Business name, trade, city, contact name, mobile number and email.</li>
+    <li>The information they give us to answer with: opening hours, services,
+        price ranges, policies and tone.</li>
+    <li>Sign-in records for the dashboard, and a log of configuration changes.</li>
+  </ul>
+  <p>From a member of the public who messages a business:</p>
+  <ul>
+    <li>Their phone number and the contents of their messages.</li>
+    <li>What the conversation is about - for example a vehicle, a pet or an
+        appointment - as they describe it.</li>
+    <li>The language they write in, so we can reply in it.</li>
+    <li>Appointments booked and whether a job is ready.</li>
+    <li>Records of calls to the business number: the number, the time, and
+        whether it was answered. <strong>We do not record call audio.</strong></li>
+  </ul>
+
+  <h2 id="mobile">Your mobile information</h2>
+  <div class="legal-highlight">
+    <p>
+      <strong>No mobile information will be shared with third parties or
+      affiliates for marketing or promotional purposes.</strong> Text messaging
+      originator opt-in data and consent will not be shared with any third
+      parties, except for subcontractors acting as service providers who help
+      us operate the service, such as our messaging carrier.
+    </p>
+    <p>
+      We do not sell personal information. We do not share phone numbers with
+      lead generators, data brokers, advertisers or affiliates, and we never
+      will.
+    </p>
+  </div>
+
+  <h2>Why we process it</h2>
+  <ul>
+    <li>To answer a customer's message on behalf of the business they
+        contacted.</li>
+    <li>To book, confirm and remind about appointments.</li>
+    <li>To tell the business owner when something needs them.</li>
+    <li>To keep the service working - error logs, abuse prevention, and
+        accounting for what the service costs to run.</li>
+  </ul>
+  <p>
+    We do not use anyone's messages to advertise to them, and we do not profile
+    people.
+  </p>
+
+  <h2>Who we share it with</h2>
+  <p>
+    Only the suppliers needed to deliver the service, and only the minimum each
+    one needs:
+  </p>
+  <ul>
+    <li><strong>Our messaging carrier</strong>, to deliver texts and WhatsApp
+        messages.</li>
+    <li><strong>Our AI provider</strong>, which processes message text to
+        produce a reply. Messages sent for this purpose are not used to train
+        their models.</li>
+    <li><strong>Our hosting and database providers</strong>, which store the
+        data at rest.</li>
+    <li><strong>A business's own calendar provider</strong>, where that
+        business has connected one, to check availability and write
+        appointments.</li>
+  </ul>
+  <p>
+    We will disclose information where the law requires it. We would tell the
+    affected business first unless we were forbidden from doing so.
+  </p>
+
+  <h2>How long we keep it</h2>
+  <p>
+    Conversations are kept for as long as the business uses the service,
+    because they are that business's record of what was said to its customers.
+    When a business leaves, we delete or anonymise their data within 90 days,
+    except where we must keep records for legal or accounting reasons.
+  </p>
+  <p>
+    One exception: where someone has asked us to stop messaging them, we keep
+    the minimum record needed to honour that - otherwise we would have no way
+    to know.
+  </p>
+
+  <h2>Your choices</h2>
+  <ul>
+    <li><strong>Stop messages:</strong> reply <span class="mono">STOP</span> to
+        any message. It takes effect immediately and applies to everything
+        automated, including reminders.</li>
+    <li><strong>Get help:</strong> reply <span class="mono">HELP</span>, or
+        contact us below.</li>
+    <li><strong>Access, correction or deletion:</strong> write to us and we
+        will act on it. If you contacted a business through us, we will work
+        with that business, since the conversation is theirs.</li>
+  </ul>
+
+  <h2>Security</h2>
+  <p>
+    Data is encrypted in transit. Passwords are stored hashed, never in a form
+    we could read. Dashboard sessions are stored as a hash, so a copy of our
+    database would not let anyone sign in as you. Each business's data is
+    separated at the data layer, and we test that separation automatically on
+    every change.
+  </p>
+
+  <h2>Children</h2>
+  <p>
+    The service is for businesses. It is not directed at children and we do not
+    knowingly collect their information.
+  </p>
+
+  <h2>Changes</h2>
+  <p>
+    If we change this policy we will update the date above, and tell businesses
+    directly where the change is significant.
+  </p>
+
+  <h2>Contact us</h2>
+  <p>
+    {{ brand.legal_name }}<br>
+    {{ brand.address }}<br>
+    Email: <a href="mailto:{{ brand.support_email }}">{{ brand.support_email }}</a><br>
+    Phone: <a href="tel:{{ brand.support_phone }}">{{ brand.support_phone }}</a>
+  </p>
+</div>
+
+{% include "marketing/_footer.html" with context %}
+{% endblock %}
