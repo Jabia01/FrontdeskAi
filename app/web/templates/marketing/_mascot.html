@@ -1,0 +1,124 @@
+{#
+  Chichi, the character — usually worn as an avatar.
+
+  Drawn rather than photographed: inline SVG costs no extra request, stays sharp
+  at any size, recolours with CSS and animates without a video.
+
+  The softness is faked cheaply. A blurred copy of the silhouette sits behind the
+  sharp one, which reads as felt fuzz for a fraction of the cost of an SVG
+  turbulence filter — that would re-run its noise on every animated frame, on
+  every phone.
+
+  Parameters
+    avatar  True wraps it in a round badge and zooms to the face, which is what
+            works at 28-64px. False gives the whole character standing.
+    pose    idle | typing | wave | sleep          default idle
+    size    pixels                                default 120
+    uid     unique suffix. Required whenever more than one appears on a page:
+            SVG gradient ids are global, so the second instance would silently
+            take over the first one's fill.
+
+  Usage
+    {% with avatar=True, size=40, uid="nav" %}
+      {% include "marketing/_mascot.html" %}
+    {% endwith %}
+#}
+{% set u = uid|default("a") %}
+{% set p = pose|default("idle") %}
+{% set as_avatar = avatar|default(false) %}
+<svg class="chichi chichi--{{ p }}{{ ' chichi--avatar' if as_avatar }}"
+     width="{{ size|default(120) }}" height="{{ size|default(120) }}"
+     viewBox="{{ '34 26 132 132' if as_avatar else '0 0 200 200' }}"
+     role="img" aria-label="Chichi">
+  <defs>
+    <linearGradient id="ch-body-{{ u }}" x1="70" y1="40" x2="130" y2="180"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#FDF7EE"/>
+      <stop offset="55%"  stop-color="#F3E7D6"/>
+      <stop offset="100%" stop-color="#E2D1B9"/>
+    </linearGradient>
+    <radialGradient id="ch-light-{{ u }}" cx="0.36" cy="0.26" r="0.64">
+      <stop offset="0%"   stop-color="#FFFFFF" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ch-ring-{{ u }}" x1="40" y1="30" x2="160" y2="160"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#2E7BFF"/>
+      <stop offset="52%"  stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#FF7A59"/>
+    </linearGradient>
+    {# one silhouette, reused by the fuzz layer so the two can never drift #}
+    <path id="ch-sil-{{ u }}"
+          d="M100 30c-29 0-50 21-53 48-2 17-7 27-7 42 0 27 25 44 60 44s60-17
+             60-44c0-15-5-25-7-42-3-27-24-48-53-48z"/>
+    {% if as_avatar %}
+    <clipPath id="ch-clip-{{ u }}">
+      <circle cx="100" cy="92" r="64"/>
+    </clipPath>
+    {% endif %}
+  </defs>
+
+  {% if as_avatar %}
+  <circle class="chichi-badge" cx="100" cy="92" r="64"/>
+  <g clip-path="url(#ch-clip-{{ u }})">
+  {% endif %}
+
+  {% if not as_avatar %}
+  {# without a contact shadow the character floats instead of sitting #}
+  <ellipse class="chichi-shadow" cx="100" cy="172" rx="44" ry="8"/>
+  {% endif %}
+
+  <g class="chichi-body">
+    <use href="#ch-sil-{{ u }}" class="chichi-fuzz"/>
+    <use href="#ch-sil-{{ u }}" fill="url(#ch-body-{{ u }})"/>
+    <use href="#ch-sil-{{ u }}" fill="url(#ch-light-{{ u }})"/>
+
+    {# ears: barely there, but enough that it does not read as an egg #}
+    <path class="chichi-ear" d="M60 62c-8-9-9-19-4-23s13 2 17 11"/>
+    <path class="chichi-ear" d="M140 62c8-9 9-19 4-23s-13 2-17 11"/>
+
+    {% if p == "typing" %}
+    <path class="chichi-band" d="M63 76a37 37 0 0174 0"/>
+    <rect class="chichi-cup" x="53" y="74" width="15" height="23" rx="7.5"/>
+    <rect class="chichi-cup" x="132" y="74" width="15" height="23" rx="7.5"/>
+    {% endif %}
+
+    <g class="chichi-face">
+      <g class="chichi-eyes">
+        <ellipse class="chichi-eye" cx="83" cy="102" rx="5.6" ry="6.6"/>
+        <ellipse class="chichi-eye" cx="117" cy="102" rx="5.6" ry="6.6"/>
+      </g>
+      {% if p == "sleep" %}
+      <path class="chichi-lid" d="M76 102q7 7 14 0"/>
+      <path class="chichi-lid" d="M110 102q7 7 14 0"/>
+      {% endif %}
+      <ellipse class="chichi-blush" cx="69" cy="114" rx="7.5" ry="4.8"/>
+      <ellipse class="chichi-blush" cx="131" cy="114" rx="7.5" ry="4.8"/>
+      <path class="chichi-smile" d="M92 116q8 7 16 0"/>
+    </g>
+
+    <g class="chichi-arm chichi-arm--l"><ellipse cx="52" cy="138" rx="12" ry="9"/></g>
+    <g class="chichi-arm chichi-arm--r"><ellipse cx="148" cy="138" rx="12" ry="9"/></g>
+  </g>
+
+  {% if p == "typing" and not as_avatar %}
+  <g class="chichi-laptop">
+    <rect x="66" y="148" width="68" height="8" rx="4"/>
+    <path class="chichi-screen" d="M74 148v-18a3 3 0 013-3h46a3 3 0 013 3v18z"/>
+  </g>
+  {% endif %}
+
+  {% if as_avatar %}
+  </g>
+  <circle class="chichi-ring" cx="100" cy="92" r="64"
+          stroke="url(#ch-ring-{{ u }})"/>
+  {% endif %}
+
+  {% if p == "sleep" %}
+  <g class="chichi-z">
+    <text class="chichi-zz z1" x="140" y="60">z</text>
+    <text class="chichi-zz z2" x="153" y="44">z</text>
+    <text class="chichi-zz z3" x="165" y="30">z</text>
+  </g>
+  {% endif %}
+</svg>

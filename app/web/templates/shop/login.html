@@ -1,5 +1,8 @@
 {% extends "base.html" %}
-{% block head %}<link rel="stylesheet" href="/web-static/shop.css">{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="/web-static/shop.css">
+  <link rel="stylesheet" href="/web-static/chichi.css">
+{% endblock %}
 {% block bodyclass %}premium gate{% endblock %}
 {% block title %}Sign in to your shop{% endblock %}
 {% block wrapclass %}wrap narrow{% endblock %}
@@ -10,7 +13,12 @@
 {% block nav %}{% endblock %}
 {% block body %}
 <div class="card">
-  <h1>Sign in</h1>
+  <div style="display:flex;justify-content:center;margin-bottom:6px">
+    {% with pose="wave", size=120, uid="login" %}
+      {% include "marketing/_mascot.html" %}
+    {% endwith %}
+  </div>
+  <h1 style="text-align:center">Sign in</h1>
   <p class="sub">
     Enter the mobile number we text you on. We will send you a code.
   </p>

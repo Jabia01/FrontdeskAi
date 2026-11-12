@@ -248,3 +248,81 @@ class TestItWorksWithoutJavaScript:
         assert BRAND["currency"] + str(BRAND["price_monthly"]) in body
         for item in content.FAQ[:3]:
             assert item["q"] in body
+
+
+class TestTheCharacter:
+    """Chichi the mascot. Drawn in SVG, so it is testable in a way an image
+    never is."""
+
+    POSES = ("idle", "typing", "wave", "sleep")
+
+    def test_the_partial_handles_every_pose(self):
+        from app.web.templating import templates
+
+        template = templates.get_template("marketing/_mascot.html")
+        for pose in self.POSES:
+            svg = template.render(pose=pose, size=120, uid=pose, brand={})
+            assert "<svg" in svg
+            assert f"chichi--{pose}" in svg
+
+    def test_each_pose_is_valid_svg(self):
+        import xml.dom.minidom
+
+        from app.web.templating import templates
+
+        template = templates.get_template("marketing/_mascot.html")
+        for pose in self.POSES:
+            for avatar in (True, False):
+                svg = template.render(
+                    pose=pose, size=120, uid="t", avatar=avatar, brand={}
+                )
+                xml.dom.minidom.parseString(svg.strip())
+
+    async def test_it_appears_on_the_landing_page(self, client, db):
+        body = (await client.get("/")).text
+        assert body.count("<svg class=\"chichi") >= 2
+
+    async def test_it_waves_on_the_thank_you_page(self, client, db):
+        body = (await client.get("/thanks")).text
+        assert "chichi--wave" in body
+
+    async def test_the_avatar_form_is_round_and_clipped(self, client, db):
+        """At 30px the body is unreadable, so the avatar zooms to the face and
+        clips to a circle."""
+        body = (await client.get("/")).text
+        assert "chichi--avatar" in body
+        assert "ch-clip-" in body
+
+    async def test_gradient_ids_are_unique_per_instance(self, client, db):
+        """SVG ids are global. Two instances sharing one would mean the second
+        silently repaints the first."""
+        ids = re.findall(r'id="(ch-[a-z]+-[a-z0-9]+)"', (await client.get("/")).text)
+        assert ids
+        assert len(ids) == len(set(ids)), [i for i in ids if ids.count(i) > 1]
+
+    def test_the_motion_is_compositor_only(self):
+        """Every keyframe animates transform or opacity. Anything else would
+        force layout on each frame, on phones, forever."""
+        css = (STATIC / "chichi.css").read_text(encoding="utf-8")
+        blocks = re.findall(r"@keyframes\s+chichi-[\w-]+\s*\{(.*?)\n\}", css, re.DOTALL)
+        assert blocks, "no chichi keyframes found"
+        allowed = {"transform", "opacity", "font-size"}
+        for block in blocks:
+            for prop in re.findall(r"([a-z-]+)\s*:", block):
+                assert prop in allowed, prop
+
+    def test_the_character_stops_moving_when_asked(self):
+        css = (STATIC / "chichi.css").read_text(encoding="utf-8")
+        tail = css[css.index("prefers-reduced-motion"):]
+        assert "animation: none" in tail
+
+    async def test_the_dashboard_has_it_too(self, owner_client, shop_a):
+        body = (await owner_client.get("/shop")).text
+        assert "chichi" in body
+        assert "chichi.css" in body
+
+    async def test_the_console_still_does_not(self, client, db):
+        """The character belongs to the brand and the owner's surfaces, not to
+        the internal console."""
+        body = (await client.get("/admin/login")).text
+        assert "chichi.css" not in body

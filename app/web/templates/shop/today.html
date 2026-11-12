@@ -90,7 +90,10 @@
       {% endfor %}
     </tbody></table>
     {% else %}
-    <p class="empty">Nothing booked.</p>
+    <div class="empty">
+      {% with pose="sleep", size=96, uid="e1" %}{% include "marketing/_mascot.html" %}{% endwith %}
+      <p style="margin:6px 0 0">Nothing booked today.</p>
+    </div>
     {% endif %}
   </div>
 

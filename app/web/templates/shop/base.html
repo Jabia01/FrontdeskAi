@@ -1,8 +1,13 @@
 {% extends "base.html" %}
-{% block head %}<link rel="stylesheet" href="/web-static/shop.css">{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="/web-static/shop.css">
+  <link rel="stylesheet" href="/web-static/chichi.css">
+{% endblock %}
 {% block bodyclass %}premium{% endblock %}
 {% block brand %}
-  {% with size=26, flat=True %}{% include "marketing/_logo.html" %}{% endwith %}
+  {% with avatar=True, size=30, uid="shopnav" %}
+    {% include "marketing/_mascot.html" %}
+  {% endwith %}
   {{ shop.name if shop else "Your business" }}
 {% endblock %}
 {% block home %}/shop{% endblock %}

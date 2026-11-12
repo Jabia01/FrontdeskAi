@@ -853,3 +853,31 @@ h1, h2, h3, h4 { margin: 0; font-weight: 640; letter-spacing: -0.035em; }
   .ch-logo-stroke { stroke-dashoffset: 0; }
   .timeline::before { transform: scaleX(1); }
 }
+
+/* the introduction section */
+.meet {
+  display: grid;
+  gap: clamp(30px, 6vw, 70px);
+  grid-template-columns: 1fr;
+  align-items: center;
+}
+@media (min-width: 900px) { .meet { grid-template-columns: 0.9fr 1.1fr; } }
+.meet-art {
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+.meet-art::before {
+  content: "";
+  position: absolute;
+  width: 78%; aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.26), transparent 68%);
+  filter: blur(34px);
+}
+.meet-art .chichi { position: relative; }
+
+/* the avatar sitting in the phone header */
+.phone-av { background: none; padding: 0; width: 34px; height: 34px; }
+.phone-av .chichi { width: 34px; height: 34px; }
+.phone-sub { display: flex; align-items: center; gap: 6px; }

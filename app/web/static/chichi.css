@@ -1,0 +1,125 @@
+/* ===========================================================================
+   Chichi, the character — shared by the public site and the owner dashboard.
+
+   Its own file because both load it and neither owns it: site.css is the
+   marketing design, shop.css is a skin over the app, and the character
+   belongs to the brand rather than to either surface.
+   =========================================================================== */
+
+.chichi { display: block; overflow: visible; }
+
+/* the felt edge: a blurred copy of the silhouette, peeking out behind */
+.chichi-fuzz { fill: #EFE2CE; filter: blur(3.2px); opacity: 0.85; }
+.chichi-shadow { fill: rgba(0, 0, 0, 0.3); filter: blur(5px); }
+
+.chichi-ear { fill: none; stroke: #E8D9C2; stroke-width: 9; stroke-linecap: round; }
+.chichi-eye { fill: #2A2622; }
+.chichi-blush { fill: #F3B9A4; opacity: 0.5; }
+.chichi-smile {
+  fill: none; stroke: #2A2622;
+  stroke-width: 3.2; stroke-linecap: round;
+}
+.chichi-lid {
+  fill: none; stroke: #2A2622;
+  stroke-width: 3.2; stroke-linecap: round;
+}
+.chichi-arm ellipse { fill: #EFE2CE; }
+
+.chichi-band { fill: none; stroke: #2F3340; stroke-width: 7; stroke-linecap: round; }
+.chichi-cup { fill: #2F3340; }
+.chichi-laptop rect { fill: #2F3340; }
+.chichi-screen { fill: #596078; }
+
+/* the avatar badge */
+.chichi-badge { fill: #12141D; }
+.chichi-ring { fill: none; stroke-width: 3; }
+.chichi--avatar .chichi-shadow { display: none; }
+
+/* ---------------------------------------------------------------- motion */
+
+/* breathing: the difference between a drawing and a creature */
+.chichi-body {
+  transform-origin: 100px 150px;
+  animation: chichi-breathe 4.2s ease-in-out infinite;
+}
+@keyframes chichi-breathe {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50%      { transform: scale(1.025, 0.985) translateY(1.5px); }
+}
+
+/* blinking: long gaps, two quick closes, which is what eyes actually do */
+.chichi-eyes {
+  transform-origin: 100px 102px;
+  animation: chichi-blink 6.4s infinite;
+}
+@keyframes chichi-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  94%           { transform: scaleY(0.08); }
+  96%           { transform: scaleY(1); }
+  97.5%         { transform: scaleY(0.08); }
+  99%           { transform: scaleY(1); }
+}
+
+.chichi-arm { transform-origin: 100px 140px; }
+
+/* typing: arms tapping out of phase, head bobbing along */
+.chichi--typing .chichi-arm--l {
+  animation: chichi-tap 0.52s ease-in-out infinite;
+}
+.chichi--typing .chichi-arm--r {
+  animation: chichi-tap 0.52s ease-in-out infinite 0.26s;
+}
+@keyframes chichi-tap {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-5px) rotate(-4deg); }
+}
+.chichi--typing .chichi-face {
+  animation: chichi-nod 2.6s ease-in-out infinite;
+}
+@keyframes chichi-nod {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(1.6px); }
+}
+
+/* waving */
+.chichi--wave .chichi-arm--r {
+  transform-origin: 140px 140px;
+  animation: chichi-wave 1.5s ease-in-out infinite;
+}
+@keyframes chichi-wave {
+  0%, 100% { transform: rotate(0deg); }
+  25%      { transform: rotate(-22deg) translateY(-7px); }
+  60%      { transform: rotate(14deg) translateY(-7px); }
+}
+
+/* sleeping */
+.chichi--sleep .chichi-eyes { display: none; }
+.chichi--sleep .chichi-body { animation-duration: 6s; }
+.chichi-zz {
+  fill: #9FB0D0;
+  font: 600 20px -apple-system, "Segoe UI", sans-serif;
+  opacity: 0;
+  animation: chichi-float 3.6s ease-in-out infinite;
+}
+.chichi-zz.z2 { animation-delay: 1.2s; font-size: 16px; }
+.chichi-zz.z3 { animation-delay: 2.4s; font-size: 13px; }
+@keyframes chichi-float {
+  0%   { opacity: 0; transform: translateY(6px) scale(0.8); }
+  30%  { opacity: 0.9; }
+  100% { opacity: 0; transform: translateY(-16px) scale(1.1); }
+}
+
+/* a little life on hover, wherever it sits next to something clickable */
+.chichi-hover { transition: transform 420ms var(--ease); }
+a:hover > .chichi-hover, .chichi-hover:hover { transform: translateY(-3px) rotate(-3deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .chichi-body, .chichi-eyes, .chichi-arm, .chichi-face, .chichi-zz {
+    animation: none !important;
+  }
+}
+
+/* where the character sits in the dashboard */
+body.premium .brand .chichi { flex: none; }
+body.premium .empty .chichi { margin: 0 auto 4px; opacity: 0.9; }
+body.premium.gate .chichi { margin-bottom: 4px; }

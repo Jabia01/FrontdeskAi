@@ -25,7 +25,10 @@
     </tbody>
   </table>
   {% else %}
-  <p class="empty">No jobs recorded yet.</p>
+  <div class="empty">
+    {% with pose="sleep", size=96, uid="e2" %}{% include "marketing/_mascot.html" %}{% endwith %}
+    <p style="margin:6px 0 0">No jobs recorded yet.</p>
+  </div>
   {% endif %}
 </div>
 {% endblock %}

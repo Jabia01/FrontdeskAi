@@ -567,6 +567,7 @@ app/
   web/
     brand.py         the brand and legal details, in one place
     content.py       everything the public site says: demo, reviews, FAQ
+    templates/marketing/_mascot.html  Chichi the character, in SVG
     auth.py          sessions, passwords, one-time codes, the FastAPI guards
     admin.py         the console
     owner.py         the owner dashboard (read-only)

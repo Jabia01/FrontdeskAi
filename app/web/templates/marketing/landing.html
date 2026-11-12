@@ -42,10 +42,17 @@
         <div class="phone-notch"></div>
         <div class="phone-screen">
           <div class="phone-top">
-            <div class="phone-av">W</div>
+            <div class="phone-av">
+              {% with avatar=True, pose="typing", size=34, uid="phone" %}
+                {% include "marketing/_mascot.html" %}
+              {% endwith %}
+            </div>
             <div>
               <div class="phone-who">{{ demo_shop }}</div>
-              <div class="phone-sub">answering now</div>
+              <div class="phone-sub">
+                <span class="dot-ok" style="display:inline-block"></span>
+                Chichi is answering
+              </div>
             </div>
           </div>
           <div class="thread" data-thread></div>
@@ -164,6 +171,32 @@
         <p>{{ feature.body }}</p>
       </div>
       {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================= meet -->
+<section class="section" id="meet">
+  <div class="shell meet">
+    <div class="meet-art rise">
+      {% with pose="typing", size=280, uid="meet" %}
+        {% include "marketing/_mascot.html" %}
+      {% endwith %}
+    </div>
+    <div class="rise d1">
+      <span class="eyebrow">Meet Chichi</span>
+      <h2 class="h2" style="margin-bottom:18px">
+        It's already<br>at the desk.
+      </h2>
+      <p class="lede" style="margin-bottom:18px">
+        Chichi doesn't take lunch, doesn't put anyone on hold and doesn't lose
+        the note it wrote on the back of an invoice. It answers, it books, and
+        when something needs a human it stops and taps you on the shoulder.
+      </p>
+      <p style="color:var(--fg-3);font-size:15.5px;margin:0">
+        It knows your prices because you told it. It knows your hours because
+        you told it. Everything else, it hands to you.
+      </p>
     </div>
   </div>
 </section>

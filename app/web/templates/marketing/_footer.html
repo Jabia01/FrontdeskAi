@@ -12,6 +12,11 @@
           <span>{{ brand.name }}</span>
         </a>
         <p>{{ brand.description }}</p>
+        <div style="margin-top:18px">
+          {% with avatar=True, size=46, uid="foot" %}
+            {% include "marketing/_mascot.html" %}
+          {% endwith %}
+        </div>
         <p class="foot-meta">
           {{ brand.legal_name }}<br>
           {{ brand.address }}
