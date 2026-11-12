@@ -25,6 +25,7 @@ from app.config import get_settings
 from app.db import dispose_engine, session_scope
 from app.gateway.routes import router as gateway_router
 from app.queue.client import close_pool, describe_pool
+from app.queue.embedded import EmbeddedWorker
 from app.web.admin import router as admin_router
 from app.web.auth import NotAuthenticated
 from app.web.marketing import router as marketing_router
@@ -48,9 +49,19 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logging.getLogger(__name__).info(
         "channels: %s", [c.value for c in registered_channels()]
     )
+
+    # On a single-service deployment the queue worker runs here rather than as
+    # its own process - see app/queue/embedded.py for why that is safe and what
+    # it costs. Off by default, so running the two apart stays the normal case.
+    worker = EmbeddedWorker()
+    app.state.worker = worker
+    if settings.run_worker_in_process:
+        await worker.start()
+
     try:
         yield
     finally:
+        await worker.stop()
         await close_pool()
         await dispose_engine()
 
@@ -98,7 +109,7 @@ def create_app() -> FastAPI:
         return await http_exception_handler(request, exc)
 
     @app.get("/health")
-    async def health(response: Response) -> dict:
+    async def health(request: Request, response: Response) -> dict:
         """Readiness, not just liveness.
 
         The database is actually queried, and a failure returns 503. This is
@@ -118,9 +129,22 @@ def create_app() -> FastAPI:
             log.error("health check could not reach the database: %s", exc)
             response.status_code = 503
 
+        # A worker that has died takes the whole product down quietly: replies
+        # queue up and nobody is told. Reporting it here is what makes the
+        # platform restart the service instead.
+        worker = getattr(request.app.state, "worker", None)
+        worker_status = worker.status() if worker is not None else {"embedded": False}
+        if worker_status.get("embedded") and not worker_status.get("alive"):
+            response.status_code = 503
+
         return {
-            "status": "ok" if database == "ok" else "degraded",
+            "status": (
+                "ok"
+                if database == "ok" and response.status_code != 503
+                else "degraded"
+            ),
             "database": database,
+            "worker": worker_status,
             "channels": [c.value for c in registered_channels()],
             "ai_enabled": settings.ai_enabled,
             "anthropic_key_configured": bool(settings.anthropic_api_key),

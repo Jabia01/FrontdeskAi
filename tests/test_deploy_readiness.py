@@ -163,62 +163,120 @@ class TestTheBlueprint:
         yaml = pytest.importorskip("yaml")
         return yaml.safe_load((REPO / "render.yaml").read_text(encoding="utf-8"))
 
-    def test_it_declares_a_web_service_a_worker_and_a_key_value_store(
-        self, blueprint
-    ):
-        types = {service["type"] for service in blueprint["services"]}
-        assert types == {"web", "worker", "keyvalue"}
+    @pytest.fixture(scope="class")
+    def web(self, blueprint):
+        return next(s for s in blueprint["services"] if s["type"] == "web")
 
-    def test_the_worker_runs_arq(self, blueprint):
-        worker = next(s for s in blueprint["services"] if s["type"] == "worker")
-        assert "arq app.queue.worker.WorkerSettings" in worker["dockerCommand"]
+    def test_it_is_a_single_always_on_service(self, blueprint, web):
+        """One service, because two cost twice as much. Deliberately not the
+        `free` plan: a free service sleeps, and a sleeping webhook receiver
+        means Twilio times out and the morning's first text is lost."""
+        assert [s["type"] for s in blueprint["services"]] == ["web"]
+        assert web["plan"] != "free"
 
-    def test_the_web_service_runs_migrations_before_taking_traffic(self, blueprint):
-        web = next(s for s in blueprint["services"] if s["type"] == "web")
+    def test_the_worker_runs_inside_it(self, web):
+        env = {e["key"]: e.get("value") for e in web["envVars"]}
+        assert env["RUN_WORKER_IN_PROCESS"] == "true"
+
+    def test_only_one_instance(self, web):
+        """A second instance would run a second copy of the cron sweeps."""
+        env = {e["key"]: e.get("value") for e in web["envVars"]}
+        assert env["WEB_CONCURRENCY"] == "1"
+
+    def test_it_runs_migrations_before_taking_traffic(self, web):
         assert "alembic upgrade head" in web["preDeployCommand"]
         assert web["healthCheckPath"] == "/health"
 
-    def test_the_web_service_trusts_the_proxy(self, blueprint):
-        """Without this, the signup form's per-address rate limit sees every
+    def test_it_trusts_the_proxy(self, web):
+        """Without this the signup form's per-address rate limit sees every
         visitor as the proxy."""
-        web = next(s for s in blueprint["services"] if s["type"] == "web")
         assert "--proxy-headers" in web["dockerCommand"]
 
-    def test_no_secret_is_committed(self, blueprint):
+    def test_no_secret_is_committed(self, web):
         secrets = {
             "DATABASE_URL",
+            "REDIS_URL",
             "ANTHROPIC_API_KEY",
             "TWILIO_ACCOUNT_SID",
             "TWILIO_AUTH_TOKEN",
             "GOOGLE_CREDENTIALS_JSON",
             "PUBLIC_BASE_URL",
         }
-        for service in blueprint["services"]:
-            for env in service.get("envVars", []):
-                if env["key"] in secrets:
-                    assert env.get("sync") is False, env["key"]
-                    assert "value" not in env, env["key"]
+        provided = {e["key"] for e in web["envVars"]}
+        assert secrets <= provided, secrets - provided
+        for env in web["envVars"]:
+            if env["key"] in secrets:
+                assert env.get("sync") is False, env["key"]
+                assert "value" not in env, env["key"]
 
-    def test_both_processes_get_the_same_credentials(self, blueprint):
-        """The worker answers customers too. A credential the web service has
-        and the worker does not is a failure that only happens in the
-        background, where nobody is looking."""
-        web, worker = (
-            next(s for s in blueprint["services"] if s["type"] == kind)
-            for kind in ("web", "worker")
-        )
-        needed = {
-            "DATABASE_URL",
-            "ANTHROPIC_API_KEY",
-            "REDIS_URL",
-            "TWILIO_ACCOUNT_SID",
-            "TWILIO_AUTH_TOKEN",
-        }
-        for service in (web, worker):
-            keys = {env["key"] for env in service["envVars"]}
-            assert needed <= keys, (service["name"], needed - keys)
+    def test_the_standalone_worker_entrypoint_still_exists(self):
+        """Splitting the processes again must stay a config change, not a
+        rewrite - so the standalone worker keeps working."""
+        from app.queue.worker import WorkerSettings
 
-    def test_the_queue_never_evicts_a_job(self, blueprint):
-        """An evicted job is a customer who never got an answer."""
-        store = next(s for s in blueprint["services"] if s["type"] == "keyvalue")
-        assert store["maxmemoryPolicy"] == "noeviction"
+        assert len(WorkerSettings.functions) >= 5
+        assert len(WorkerSettings.cron_jobs) == 2
+
+
+class TestTheEmbeddedWorker:
+    """The single-service deployment runs the queue inside the web process."""
+
+    async def test_it_is_off_unless_asked_for(self, client, db):
+        body = (await client.get("/health")).json()
+        assert body["worker"] == {"embedded": False}
+
+    async def test_signals_stay_with_the_server(self):
+        """arq installs its own SIGTERM handler by default. Sharing a process
+        with uvicorn, that makes shutdown unpredictable."""
+        import inspect
+
+        from app.queue import embedded
+
+        source = inspect.getsource(embedded.EmbeddedWorker.start)
+        assert "handle_signals=False" in source
+
+    async def test_it_does_not_dispose_the_shared_engine(self):
+        """The standalone worker's shutdown hook disposes the SQLAlchemy
+        engine. In a shared process that engine belongs to the web app too."""
+        import inspect
+
+        from app.queue import embedded
+
+        source = inspect.getsource(embedded.EmbeddedWorker.start)
+        assert "on_shutdown=None" in source
+
+    async def test_a_dead_worker_makes_the_service_unhealthy(self, client, db):
+        """Otherwise the failure is silent: replies queue up forever and
+        nothing tells anyone."""
+        import asyncio
+
+        from app.queue.embedded import EmbeddedWorker
+
+        worker = EmbeddedWorker()
+
+        async def finished():
+            return None
+
+        worker._task = asyncio.create_task(finished())
+        await asyncio.sleep(0)
+        assert worker.started is True
+        assert worker.alive is False
+
+        from app.main import app
+
+        previous = getattr(app.state, "worker", None)
+        app.state.worker = worker
+        try:
+            response = await client.get("/health")
+            assert response.status_code == 503
+            body = response.json()
+            assert body["status"] == "degraded"
+            assert body["worker"]["embedded"] is True
+            assert body["worker"]["alive"] is False
+        finally:
+            app.state.worker = previous
+
+    async def test_stopping_a_worker_that_never_started_is_harmless(self):
+        from app.queue.embedded import EmbeddedWorker
+
+        await EmbeddedWorker().stop()

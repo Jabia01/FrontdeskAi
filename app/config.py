@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     # Behaviour
     ai_enabled: bool = True
     log_level: str = "INFO"
+    #: Run the queue worker inside the web process instead of as its own
+    #: service. Halves the hosting bill at the cost of the two halves sharing a
+    #: fate; see app/queue/embedded.py. Off by default.
+    run_worker_in_process: bool = False
 
     # Agent tuning
     model_default: str = "claude-haiku-5-5"

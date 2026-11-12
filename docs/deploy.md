@@ -4,10 +4,21 @@ Written for whoever runs the deploy — probably you, once. Follow it in order;
 the ordering is the point, because three steps involve waiting on other
 companies and they should be started on day one.
 
-**Target:** Render for the two processes and Redis, Supabase for Postgres.
+**Target:** one Render service, Supabase for Postgres, Upstash for Redis.
+About **$7/month** all in, because the only paid piece is the one always-on
+instance.
+
 `Dockerfile` and `render.yaml` are committed, and the image has been built and
-run locally against the real Postgres — migrations, the worker and the web
-service all start, and a wrong `DATABASE_URL` correctly fails the health check.
+run locally against the real Postgres and Redis: it serves every page, starts
+the queue worker in-process with both cron sweeps, answered a real Spanish
+message end to end through Claude in twelve seconds, and a wrong `DATABASE_URL`
+correctly fails its health check.
+
+**One service runs both halves.** The web process also runs the queue worker
+and the two cron sweeps — see `app/queue/embedded.py` for why that is safe
+(both halves are pure async I/O, so the worker's waiting never delays a webhook
+acknowledgement) and what it costs (a crash takes both down, and they scale
+together). The last section here is how to split them apart again.
 
 ---
 
@@ -67,7 +78,20 @@ not pretending you have in the meantime.
 
 ---
 
-## 2. Render: the two processes
+## 2. Upstash: Redis for the queue
+
+Free tier, and the queue is the only thing using it.
+
+1. Create a database at upstash.com — same region as Render (`us-east-1`).
+2. Copy the **`rediss://`** URL from its details page. Note the two s's: it is
+   TLS, which `arq` handles without any extra configuration.
+3. Keep it for the next step.
+
+The queue holds nothing you cannot lose — a job is one reply waiting to be
+written — so Redis needs no backups. If it is briefly unreachable, arq retries
+and the engine's holding-reply path means the customer still gets an answer.
+
+## 3. Render: the service
 
 1. Push this repo to GitHub.
 2. Render → **New → Blueprint** → select the repo. It reads `render.yaml` and
@@ -76,13 +100,12 @@ not pretending you have in the meantime.
 
    | Variable | Value |
    | --- | --- |
-   | `DATABASE_URL` | the Supabase string from step 1 |
+   | `DATABASE_URL` | the Supabase session-pooler string from step 1 |
+   | `REDIS_URL` | the Upstash `rediss://` URL from step 2 |
    | `ANTHROPIC_API_KEY` | your key |
    | `PUBLIC_BASE_URL` | **leave as a placeholder for now** — see below |
-   | `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` | blank until step 4; sends stay stubbed |
-   | `GOOGLE_CREDENTIALS_JSON` | blank until step 5; the calendar stays an in-memory stub |
-
-   `REDIS_URL` is wired automatically from the Key Value service.
+   | `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` | blank until step 5; sends stay stubbed |
+   | `GOOGLE_CREDENTIALS_JSON` | blank until step 6; the calendar stays an in-memory stub |
 
 4. Deploy. The web service runs `alembic upgrade head` as its pre-deploy step,
    so the schema is created on first boot. Watch the log for
@@ -93,9 +116,10 @@ not pretending you have in the meantime.
    cannot know the URL before the first deploy, and Twilio signature validation
    is computed against this exact string rather than against the incoming
    request. A mismatch rejects every webhook with a 403.
-6. Check `https://<your-url>/health`. You want `"status":"ok"` and
-   `"database":"ok"`. A 503 means the database string is wrong — and the deploy
-   will have failed rather than served broken pages, which is deliberate.
+6. Check `https://<your-url>/health`. You want `"status":"ok"`,
+   `"database":"ok"` and `"worker":{"embedded":true,"alive":true}`. A 503 means
+   either the database string is wrong or the worker died — and the deploy will
+   have failed rather than served broken pages, which is deliberate.
 7. Create your console account. Render → `frontdesk-web` → **Shell**:
    ```
    python -m seeds.admin_user --email you@example.com
@@ -106,12 +130,16 @@ not pretending you have in the meantime.
 
 ### What the blueprint deliberately does
 
-- **One web instance** (`WEB_CONCURRENCY=1`). The tenant-router config cache and
-  the admin login throttle are both in-process, so a second instance holds its
-  own copy of each. Neither is worth moving to Redis for a pilot; both are
-  documented where they live. If you scale out, move the login throttle first —
-  the config cache being per-instance only means a config edit takes up to a
-  minute longer to apply on one of them.
+- **Not the `free` plan.** A free Render service sleeps after inactivity and
+  takes tens of seconds to wake. Twilio times out long before that, so the
+  first customer text of a quiet morning would simply be lost. This is the one
+  cost that cannot be cut.
+- **One instance** (`WEB_CONCURRENCY=1`). Three things here are in-process: the
+  tenant-router config cache, the admin login throttle, and now the queue
+  worker itself. A second instance would run a second copy of all three —
+  including the cron sweeps, which would mean two reminders per appointment.
+  **Scaling out means splitting the worker out first**, not raising this
+  number.
 - **`--proxy-headers`.** Behind Render's proxy every request would otherwise
   appear to come from the proxy, and the signup form's per-address rate limit
   would treat all visitors as one.
@@ -123,7 +151,7 @@ not pretending you have in the meantime.
 
 ---
 
-## 3. First real business
+## 4. First real business
 
 Through the console, not SQL:
 
@@ -142,7 +170,7 @@ Through the console, not SQL:
 
 ---
 
-## 4. Twilio
+## 5. Twilio
 
 1. Buy a number in the business's area code.
 2. Point the number's **messaging webhook** at
@@ -169,7 +197,7 @@ in Usage.
 
 ---
 
-## 5. Google Calendar
+## 6. Google Calendar
 
 One service account for all businesses; no owner ever sees an OAuth screen.
 
@@ -188,7 +216,7 @@ state to pilot in, and it is how every test runs.
 
 ---
 
-## 6. WhatsApp
+## 7. WhatsApp
 
 See `docs/whatsapp-templates.md`. The short version: conversations work the
 moment the sender is verified, but anything *we* initiate outside the 24-hour
@@ -207,8 +235,10 @@ no window.
   so that the previous code keeps working against the new schema — but a
   rollback across a destructive migration is still a restore-from-backup job,
   not a click. Supabase takes daily backups; check they are on.
-- **No reminders going out?** The worker is what runs the sweeps. Check it is
-  running at all, then `/admin/audit` and the worker log.
+- **No replies and no reminders at all?** The worker is what produces both.
+  `/health` reports `worker.alive`; if it is false the service is returning 503
+  and should already be restarting. The log line to look for at boot is
+  `queue worker started in-process`.
 - **Every webhook 403?** `PUBLIC_BASE_URL` does not match what Twilio is
   calling. It is compared as an exact string.
 - **`prepared statement does not exist`, intermittently?** You are on the
@@ -222,14 +252,13 @@ no window.
 
 | | Monthly |
 | --- | --- |
-| Render web (`0.5c-512mb`) | ~$7 |
-| Render worker (`0.5c-512mb`) | ~$7 |
-| Render Key Value (`256mb`) | ~$10 |
+| Render, one service (`0.5c-512mb`) | ~$7 |
+| Upstash Redis | free tier |
 | Supabase | free tier is enough for a pilot; ~$25 for Pro |
 | Twilio number | ~$1-2, plus per-message |
 | Claude | measured at ~$0.0004 per Haiku turn |
 
-So roughly **$25-35/month plus usage** to run the whole platform for the first
+So roughly **$8-10/month plus usage** to run the whole platform for the first
 few businesses. The landing page's placeholder price is $249/month per
 business.
 
@@ -240,3 +269,30 @@ business.
 - No CI. Tests run locally; nothing stops a red build from deploying. A GitHub
   Action running `pytest` and `ruff` on push is twenty lines and worth having
   before a second person touches this.
+
+---
+
+## When to split the worker out again
+
+The single service is a cost decision for a pilot, not an architecture. Split
+them when any of these becomes true:
+
+- You want more than one web instance (for availability, or for load).
+- A slow or stuck job starts delaying webhook acknowledgements — watch for
+  Twilio retries in the log.
+- The worker's crashes start taking the webhook endpoint down with them often
+  enough to notice.
+
+Splitting is configuration, not a rewrite, because `app/queue/worker.py` never
+stopped being a standalone entrypoint:
+
+1. Set `RUN_WORKER_IN_PROCESS=false` on the web service.
+2. Add a second Render service to `render.yaml`, `type: worker`, same
+   `dockerfilePath`, with `dockerCommand: python -m arq app.queue.worker.WorkerSettings`.
+3. Give it **the same environment variables** as the web service. A credential
+   the web service has and the worker does not produces failures that only
+   happen in the background, where nobody is looking.
+4. Deploy. Nothing in the application code changes.
+
+The git history has the two-service blueprint if you want to copy it back
+verbatim: it is the version of `render.yaml` in the initial commit.

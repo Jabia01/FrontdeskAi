@@ -493,10 +493,19 @@ in-memory calendar — they just will not appear in a real Google Calendar.
 
 ## Deploying
 
-`Dockerfile` and `render.yaml` are committed: one image, two processes (the web
-service and the arq worker), Redis from Render, Postgres from Supabase.
+`Dockerfile` and `render.yaml` are committed: **one Render service** (~$7/mo),
+Postgres from Supabase, Redis from Upstash - both on free tiers at pilot scale.
 **`docs/deploy.md` is the runbook** - follow it in order, because three of its
 steps are waits on other companies.
+
+The single service runs the queue worker and both cron sweeps *inside* the web
+process (`RUN_WORKER_IN_PROCESS=true`). That is a cost decision, not an
+architecture: two always-on services cost twice as much, and both halves of
+this app are pure async I/O, so the worker's waiting never delays a webhook's
+acknowledgement - the one latency that matters, because Twilio times out. What
+it costs is shared fate: a crash takes both halves down, and they scale
+together. `app/queue/worker.py` is still a standalone entrypoint, so splitting
+them again is four lines of config - the last section of `docs/deploy.md`.
 
 ```bash
 docker build -t frontdesk .
@@ -514,6 +523,10 @@ Three things in there are worth knowing even if you never deploy:
   platform's health check is the only thing that can turn a wrong
   `DATABASE_URL` into a failed deploy rather than into every webhook 500ing one
   at a time.
+- **A dead worker makes the service unhealthy on purpose.** With the worker
+  in-process, its death would otherwise be silent: replies queue up and nobody
+  is told. `/health` reports it, which makes the platform restart the service -
+  noisy recovery in preference to quiet failure.
 - **`PUBLIC_BASE_URL` is compared as an exact string.** Twilio signatures are
   computed against it, not against the incoming request, so it has to match
   what Twilio is configured with - `https`, no trailing slash. A mismatch

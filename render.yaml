@@ -1,25 +1,34 @@
-# Render blueprint: the web service, the arq worker, and Redis.
+# Render blueprint: one service.
 #
-# Postgres is NOT here on purpose - it lives on Supabase, so `DATABASE_URL` is a
-# secret you paste in once (see docs/deploy.md for which of Supabase's three
-# connection strings to use; the wrong one fails in ways that look like our bug).
+# The web process also runs the queue worker and both cron sweeps, because two
+# always-on services cost twice as much as one and both halves of this app are
+# pure async I/O. See app/queue/embedded.py for why that is safe and what it
+# costs, and the end of docs/deploy.md for how to split them when it stops
+# being the right trade.
+#
+# Not here, on purpose:
+#   Postgres - Supabase. `DATABASE_URL` is a secret you paste in once.
+#   Redis    - Upstash's free tier. `REDIS_URL` likewise.
+# Both are free at pilot scale, which puts the whole platform at ~$7/month.
 #
 # Create with: Render dashboard -> New -> Blueprint -> point at this repo.
-# Every `sync: false` value is prompted for on that first create, and never
-# again - change them afterwards in each service's Environment tab.
+# Every `sync: false` value is prompted for on that first create and never
+# again; change them afterwards in the service's Environment tab.
 
 services:
   - type: web
-    name: frontdesk-web
+    name: frontdesk
     runtime: docker
     dockerfilePath: ./Dockerfile
+    # The cheapest always-on plan. NOT `free`: a free service sleeps after
+    # inactivity and takes tens of seconds to wake, and Twilio times out long
+    # before that - the first customer text of the morning would be lost.
     plan: 0.5c-512mb
     region: ohio
     healthCheckPath: /health
     # Migrations run once per deploy, before any new instance takes traffic.
-    # Needs a paid plan; on free, run `alembic upgrade head` by hand instead.
     preDeployCommand: python -m alembic upgrade head
-    # --proxy-headers is load-bearing: behind Render's proxy, every request
+    # --proxy-headers is load-bearing: behind Render's proxy every request
     # otherwise appears to come from the proxy's own address, and the signup
     # form's per-address rate limit would see all visitors as one.
     dockerCommand: >-
@@ -28,10 +37,13 @@ services:
       --proxy-headers --forwarded-allow-ips='*'
     autoDeployTrigger: commit
     envVars:
-      # Deliberately one web instance. The tenant-router config cache and the
-      # admin login throttle are both in-process, so a second instance would
-      # hold its own copy of each. Both are documented as such; neither is
-      # worth moving to Redis for a pilot.
+      # This is what starts the queue worker inside the web process.
+      - key: RUN_WORKER_IN_PROCESS
+        value: "true"
+      # One instance. The tenant-router config cache and the admin login
+      # throttle are both in-process, and so is the worker - a second instance
+      # would run a second copy of all three, including the cron sweeps.
+      # Scaling out means splitting the worker out first.
       - key: WEB_CONCURRENCY
         value: "1"
       - key: PYTHONPATH
@@ -41,11 +53,16 @@ services:
       - key: AI_ENABLED
         value: "true"
       # Twilio signatures are verified against this exact string, not against
-      # the incoming request, so it has to match what Twilio is configured with
-      # - including https and no trailing slash.
+      # the incoming request, so it must match what Twilio is configured with:
+      # https, no trailing slash.
       - key: PUBLIC_BASE_URL
         sync: false
+      # Supabase: the *session pooler* string, port 5432, with the scheme
+      # changed to postgresql+asyncpg://. See docs/deploy.md.
       - key: DATABASE_URL
+        sync: false
+      # Upstash: the rediss:// URL from the database's details page.
+      - key: REDIS_URL
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
@@ -55,59 +72,7 @@ services:
         sync: false
       - key: TWILIO_VALIDATE_SIGNATURE
         value: "true"
-      # The whole service-account JSON, pasted in. A file path is no use on a
+      # The whole service-account JSON pasted in - a file path is no use on a
       # platform with no persistent disk.
       - key: GOOGLE_CREDENTIALS_JSON
         sync: false
-      - key: REDIS_URL
-        fromService:
-          name: frontdesk-redis
-          type: keyvalue
-          property: connectionString
-
-  - type: worker
-    name: frontdesk-worker
-    runtime: docker
-    dockerfilePath: ./Dockerfile
-    plan: 0.5c-512mb
-    region: ohio
-    # The worker answers customers AND runs the two cron sweeps (reminders every
-    # fifteen minutes, the daily summary hourly). If it is not running, replies
-    # queue up and no reminder goes out.
-    dockerCommand: python -m arq app.queue.worker.WorkerSettings
-    autoDeployTrigger: commit
-    envVars:
-      - key: PYTHONPATH
-        value: /app
-      - key: LOG_LEVEL
-        value: INFO
-      - key: AI_ENABLED
-        value: "true"
-      - key: PUBLIC_BASE_URL
-        sync: false
-      - key: DATABASE_URL
-        sync: false
-      - key: ANTHROPIC_API_KEY
-        sync: false
-      - key: TWILIO_ACCOUNT_SID
-        sync: false
-      - key: TWILIO_AUTH_TOKEN
-        sync: false
-      - key: GOOGLE_CREDENTIALS_JSON
-        sync: false
-      - key: REDIS_URL
-        fromService:
-          name: frontdesk-redis
-          type: keyvalue
-          property: connectionString
-
-  - type: keyvalue
-    name: frontdesk-redis
-    plan: 256mb
-    region: ohio
-    # Reachable only from inside this Render account's private network.
-    ipAllowList: []
-    # The queue must not drop jobs under memory pressure - an evicted job is a
-    # customer who never got an answer. `noeviction` makes the worker fail
-    # loudly instead, and arq retries.
-    maxmemoryPolicy: noeviction
