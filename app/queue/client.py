@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 import uuid
 from typing import Any
+from urllib.parse import urlsplit
 
 from arq import create_pool
 from arq.connections import ArqRedis, RedisSettings
@@ -101,4 +102,15 @@ async def enqueue_missed_call(
 
 
 def describe_pool() -> dict[str, Any]:
-    return {"connected": _pool is not None, "redis_url": get_settings().redis_url}
+    """For `/health`, which is public and unauthenticated.
+
+    Never return the URL itself. A Redis DSN carries its password, and this was
+    being served to anyone who asked - a credential leak with no login in front
+    of it. Host and port are enough to tell one environment from another.
+    """
+    url = get_settings().redis_url
+    host = "not configured"
+    if url:
+        parts = urlsplit(url.strip())
+        host = f"{parts.hostname or '?'}:{parts.port or '?'}"
+    return {"connected": _pool is not None, "host": host}

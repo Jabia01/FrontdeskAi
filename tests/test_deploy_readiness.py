@@ -280,3 +280,53 @@ class TestTheEmbeddedWorker:
         from app.queue.embedded import EmbeddedWorker
 
         await EmbeddedWorker().stop()
+
+
+class TestHealthLeaksNoSecrets:
+    """`/health` is public and unauthenticated, and it was serving the Redis
+    DSN - password and all - to anyone who asked. It is the one endpoint on
+    this app with no login in front of it, so everything it returns is
+    published."""
+
+    async def test_no_credential_appears_in_the_payload(
+        self, client, db, monkeypatch
+    ):
+        from app.config import get_settings
+
+        secret = "super-secret-password-9z8y7x"
+        monkeypatch.setenv(
+            "REDIS_URL", f"rediss://default:{secret}@fake.upstash.io:6379"
+        )
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-not-a-real-key-123")
+        monkeypatch.setenv("TWILIO_AUTH_TOKEN", "twilio-token-abcdef")
+        get_settings.cache_clear()
+        try:
+            response = await client.get("/health")
+            body = response.text
+        finally:
+            get_settings.cache_clear()
+
+        for leaked in (secret, "sk-ant-not-a-real-key-123", "twilio-token-abcdef"):
+            assert leaked not in body, f"/health leaked {leaked[:12]}..."
+        # The host is fine and useful - it says which environment this is.
+        assert "fake.upstash.io" in body
+
+    async def test_the_database_url_never_appears_either(self, client, db):
+        from app.config import get_settings
+
+        body = (await client.get("/health")).text
+        url = get_settings().database_url
+        assert url not in body
+        # Not even the password portion on its own.
+        from urllib.parse import urlsplit
+
+        password = urlsplit(url).password
+        if password:
+            assert password not in body
+
+    def test_describe_pool_returns_a_host_not_a_dsn(self):
+        from app.queue.client import describe_pool
+
+        described = describe_pool()
+        assert "redis_url" not in described
+        assert "://" not in str(described.get("host", ""))
