@@ -15,7 +15,7 @@
   <div class="shell hero-grid">
 
     <div class="hero-copy">
-      <span class="eyebrow rise in">For {{ brand.market }}</span>
+      <span class="eyebrow rise in">Take the phone back</span>
       <h1 class="display rise in d1">
         Never lose another customer to
         <span class="grad">a phone you couldn't reach.</span>
@@ -31,6 +31,12 @@
         </a>
         <a class="btn btn-ghost btn-lg" href="#how">See how it works</a>
       </div>
+      <ul class="hero-points rise in d4">
+        <li><strong>Answers in seconds</strong>, at 2am, in any language</li>
+        <li><strong>Stops losing the jobs</strong> you already paid to win</li>
+        <li><strong>{{ brand.currency }}{{ brand.price_monthly }} a month</strong>,
+            cancel any time, nothing to install</li>
+      </ul>
       <p class="hero-note rise in d4">
         <span class="dot-ok"></span>
         Nothing reaches a customer until you've approved it.
@@ -38,7 +44,7 @@
     </div>
 
     <div class="phone-wrap rise in d2">
-      <div class="phone">
+      <div class="phone" data-phone data-accent="violet">
         <div class="phone-notch"></div>
         <div class="phone-screen">
           <div class="phone-top">
@@ -51,7 +57,7 @@
               <div class="phone-who">{{ demo_shop }}</div>
               <div class="phone-sub">
                 <span class="dot-ok" style="display:inline-block"></span>
-                Chichi is answering
+                answering in <span data-current-language>Spanish</span>
               </div>
             </div>
           </div>
@@ -59,9 +65,26 @@
         </div>
       </div>
 
-      <div class="owner-card">
-        <div class="who">your phone</div>
-        {{ owner_alert.text }}
+      {# The owner's phone, as a little chat window of its own. #}
+      <aside class="owner-window" data-owner-window>
+        <header>
+          <span class="owner-dots"><i></i><i></i><i></i></span>
+          Your phone
+        </header>
+        <div class="owner-thread">
+          <div class="owner-msg">
+            <strong>{{ owner_alert.title }}</strong>
+            {{ owner_alert.body }}
+          </div>
+          <div class="owner-reply">OK</div>
+        </div>
+      </aside>
+
+      <div class="lang-chips phone-langs" data-phone-langs>
+        {% for conversation in conversations %}
+        <button type="button" class="lang-chip{{ ' on' if loop.first }}"
+                data-conversation="{{ loop.index0 }}">{{ conversation.label }}</button>
+        {% endfor %}
       </div>
     </div>
 
@@ -417,6 +440,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script type="application/json" id="demo-script">{{ demo_script_json | safe }}</script>
+<script type="application/json" id="demo-conversations">{{ conversations_json | safe }}</script>
 <script type="application/json" id="language-demo">{{ languages_json | safe }}</script>
 {% endblock %}

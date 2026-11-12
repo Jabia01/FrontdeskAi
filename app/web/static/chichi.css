@@ -123,3 +123,7 @@ a:hover > .chichi-hover, .chichi-hover:hover { transform: translateY(-3px) rotat
 body.premium .brand .chichi { flex: none; }
 body.premium .empty .chichi { margin: 0 auto 4px; opacity: 0.9; }
 body.premium.gate .chichi { margin-bottom: 4px; }
+
+/* the character as the brand mark: it sits in the nav and the footer */
+.wordmark .chichi { flex: none; }
+.wordmark { gap: 10px; }

@@ -63,7 +63,10 @@ def _landing_context() -> dict:
     cannot break the script tag.
     """
     return {
-        "demo_script_json": json.dumps(content.DEMO_SCRIPT, ensure_ascii=False),
+        "conversations": content.DEMO_CONVERSATIONS,
+        "conversations_json": json.dumps(
+            content.DEMO_CONVERSATIONS, ensure_ascii=False
+        ),
         "demo_shop": content.DEMO_SHOP,
         "demo_caption": content.DEMO_CAPTION,
         "owner_alert": content.OWNER_ALERT,

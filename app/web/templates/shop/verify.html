@@ -7,7 +7,9 @@
 {% block title %}Enter your code{% endblock %}
 {% block wrapclass %}wrap narrow{% endblock %}
 {% block brand %}
-  {% with size=26, flat=True %}{% include "marketing/_logo.html" %}{% endwith %}
+  {% with avatar=True, size=30, uid="verifymark" %}
+    {% include "marketing/_mascot.html" %}
+  {% endwith %}
   {{ brand.name }}
 {% endblock %}
 {% block nav %}{% endblock %}

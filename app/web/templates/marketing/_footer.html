@@ -7,16 +7,13 @@
   <div class="shell">
     <div class="foot-grid">
       <div class="foot-brand">
-        <a class="wordmark" href="/">
-          {% with size=30 %}{% include "marketing/_logo.html" %}{% endwith %}
+        <a class="wordmark chichi-hover" href="/">
+          {% with avatar=True, size=34, uid="footmark" %}
+            {% include "marketing/_mascot.html" %}
+          {% endwith %}
           <span>{{ brand.name }}</span>
         </a>
         <p>{{ brand.description }}</p>
-        <div style="margin-top:18px">
-          {% with avatar=True, size=46, uid="foot" %}
-            {% include "marketing/_mascot.html" %}
-          {% endwith %}
-        </div>
         <p class="foot-meta">
           {{ brand.legal_name }}<br>
           {{ brand.address }}

@@ -41,20 +41,30 @@
   /* ------------------------------------------------------- the phone demo */
   var thread = document.querySelector("[data-thread]");
   if (thread) {
-    var script = [];
+    var conversations = [];
     try {
-      script = JSON.parse(
-        document.getElementById("demo-script").textContent
+      conversations = JSON.parse(
+        document.getElementById("demo-conversations").textContent
       );
     } catch (e) {
-      script = [];
+      conversations = [];
     }
 
-    var bubble = function (turn) {
+    var phone = document.querySelector("[data-phone]");
+    var langLabel = document.querySelector("[data-current-language]");
+    var chips = Array.prototype.slice.call(
+      document.querySelectorAll("[data-phone-langs] .lang-chip")
+    );
+    var ownerWindow = document.querySelector("[data-owner-window]");
+    var current = 0;
+    var run = 0; /* bumped on every switch so an abandoned replay stops itself */
+
+    var bubble = function (turn, rtl) {
       var el = document.createElement("div");
       el.className =
         "bubble " + (turn.from === "customer" ? "customer" : "chichi") +
         (turn.booked ? " booked" : "");
+      if (rtl) el.setAttribute("dir", "rtl");
       el.textContent = turn.text;
       if (turn.stamp) {
         var stamp = document.createElement("span");
@@ -72,8 +82,7 @@
       return el;
     };
 
-    /* Keep the thread from outgrowing the screen: once it is taller than the
-       frame, drop the oldest bubble as each new one lands. */
+    /* Keep the thread inside the frame: drop the oldest as each new one lands. */
     var trim = function () {
       while (thread.scrollHeight > thread.clientHeight && thread.children.length > 1) {
         thread.removeChild(thread.firstElementChild);
@@ -84,61 +93,87 @@
       return new Promise(function (resolve) { setTimeout(resolve, ms); });
     };
 
-    var play = function () {
+    var dress = function (conversation, index) {
+      if (phone) phone.setAttribute("data-accent", conversation.accent);
+      if (langLabel) langLabel.textContent = conversation.label;
+      chips.forEach(function (chip, i) {
+        chip.classList.toggle("on", i === index);
+      });
+      if (ownerWindow) ownerWindow.classList.remove("in");
+    };
+
+    var play = function (index) {
+      current = index;
+      run += 1;
+      var mine = run;
+      var conversation = conversations[index];
+      thread.innerHTML = "";
+      dress(conversation, index);
+
       if (still) {
-        /* No animation: show the whole exchange at once. */
-        script.forEach(function (turn) {
-          var el = bubble(turn);
+        conversation.turns.forEach(function (turn) {
+          var el = bubble(turn, conversation.rtl);
           el.style.animation = "none";
           el.style.opacity = 1;
           el.style.transform = "none";
           thread.appendChild(el);
         });
         trim();
+        if (ownerWindow) ownerWindow.classList.add("in");
         return;
       }
 
-      var step = function (index) {
-        if (index >= script.length) {
-          /* Hold on the finished conversation, then run it again. */
-          return wait(6500).then(function () {
-            thread.innerHTML = "";
-            return step(0);
+      var step = function (at) {
+        if (mine !== run) return null; /* another conversation took over */
+        if (at >= conversation.turns.length) {
+          return wait(4200).then(function () {
+            if (mine !== run) return null;
+            return play((index + 1) % conversations.length);
           });
         }
-        var turn = script[index];
-        return wait(turn.delay || 500)
+        var turn = conversation.turns[at];
+        return wait(turn.from === "customer" ? 850 : 300)
           .then(function () {
-            if (turn.from === "customer") return null;
+            if (mine !== run || turn.from === "customer") return null;
             var dots = typing();
             thread.appendChild(dots);
             trim();
-            return wait(turn.typing || 1200).then(function () {
-              thread.removeChild(dots);
+            return wait(1250).then(function () {
+              if (dots.parentNode) dots.parentNode.removeChild(dots);
             });
           })
           .then(function () {
-            thread.appendChild(bubble(turn));
+            if (mine !== run) return null;
+            thread.appendChild(bubble(turn, conversation.rtl));
             trim();
-            return step(index + 1);
+            /* the owner's phone buzzes on the booking beat */
+            if (turn.booked && ownerWindow) {
+              setTimeout(function () { ownerWindow.classList.add("in"); }, 500);
+            }
+            return step(at + 1);
           });
       };
 
-      step(0);
+      return step(0);
     };
 
-    /* Only start once it is actually on screen - nobody should be paying for
-       a battery to animate a phone they cannot see. */
-    if ("IntersectionObserver" in window) {
-      var watcher = new IntersectionObserver(function (entries) {
-        if (entries[0].isIntersecting) {
-          watcher.disconnect();
-          play();
-        }
-      }, { threshold: 0.3 });
-      watcher.observe(thread);
-    } else {
-      play();
+    chips.forEach(function (chip, i) {
+      chip.addEventListener("click", function () { play(i); });
+    });
+
+    /* Nobody should pay battery to animate a phone they cannot see. */
+    if (conversations.length) {
+      if ("IntersectionObserver" in window) {
+        var watcher = new IntersectionObserver(function (entries) {
+          if (entries[0].isIntersecting) {
+            watcher.disconnect();
+            play(0);
+          }
+        }, { threshold: 0.3 });
+        watcher.observe(thread);
+      } else {
+        play(0);
+      }
     }
   }
 

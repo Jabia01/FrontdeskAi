@@ -418,34 +418,130 @@ h1, h2, h3, h4 { margin: 0; font-weight: 640; letter-spacing: -0.035em; }
   max-width: 330px;
 }
 
-/* the owner's alert, floating beside the phone */
-.owner-card {
+
+/* ------------------------------------------------- the phone's accents */
+
+/* One accent per language, so cycling is visible at a glance and the page
+   never looks like a Spanish-only product. */
+.phone[data-accent="violet"] { --accent-a: #2E7BFF; --accent-b: #7C5CF6; }
+.phone[data-accent="teal"]   { --accent-a: #0EA5A5; --accent-b: #2E7BFF; }
+.phone[data-accent="amber"]  { --accent-a: #D97706; --accent-b: #F43F5E; }
+.phone[data-accent="rose"]   { --accent-a: #DB2777; --accent-b: #8B5CF6; }
+.phone { transition: box-shadow 700ms var(--ease); }
+.phone[data-accent] {
+  box-shadow: 0 50px 110px -34px rgba(0, 0, 0, 0.95),
+              0 0 0 1px rgba(255, 255, 255, 0.07) inset,
+              0 0 90px -28px var(--accent-b);
+}
+.bubble.chichi,
+.typing {
+  background: linear-gradient(135deg, var(--accent-a, #2E7BFF), var(--accent-b, #7C5CF6));
+  transition: background 700ms var(--ease);
+}
+.bubble[dir="rtl"] { text-align: right; }
+
+.phone-langs { justify-content: center; margin-top: 20px; }
+.phone-langs .lang-chip { cursor: pointer; background: none; font: inherit; font-size: 12.5px; }
+.phone-langs .lang-chip.on { background: linear-gradient(100deg, var(--g1), var(--g2) 52%, var(--g3)); }
+
+/* ------------------------------------------- the owner's own chat window */
+
+.owner-window {
   position: absolute;
-  right: -8px; bottom: 60px;
-  width: 248px;
-  padding: 14px 15px;
-  border-radius: var(--r);
-  background: rgba(18, 20, 29, 0.92);
+  right: -58px;
+  bottom: 22px;
+  width: 266px;
+  border-radius: 18px;
+  background: rgba(14, 16, 24, 0.94);
   border: 1px solid var(--line-bright);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 30px 70px -22px rgba(0, 0, 0, 0.95);
+  overflow: hidden;
+  display: none;
+  opacity: 0;
+  transform: translateY(12px) scale(0.97);
+  transition: opacity 520ms var(--ease), transform 520ms var(--ease);
+}
+/* Only where there is genuinely room beside the phone for it. */
+@media (min-width: 1300px) { .owner-window { display: block; } }
+.owner-window.in { opacity: 1; transform: none; }
+
+.owner-window header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 14px;
+  font-size: 11.5px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+}
+.owner-dots { display: inline-flex; gap: 4px; }
+.owner-dots i {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+.owner-dots i:first-child { background: #FF6B5E; }
+
+.owner-thread { padding: 14px; display: flex; flex-direction: column; gap: 9px; }
+.owner-msg {
+  align-self: flex-start;
+  max-width: 94%;
+  padding: 10px 13px;
+  border-radius: 15px;
+  border-bottom-left-radius: 5px;
+  background: #1B1E2A;
   font-size: 12.5px;
   line-height: 1.5;
   white-space: pre-line;
-  display: none;
+  color: var(--fg-2);
 }
-@media (min-width: 1240px) { .owner-card { display: block; } }
-.owner-card .who {
-  display: flex; align-items: center; gap: 7px;
-  font-weight: 650; font-size: 11.5px;
-  color: var(--fg-3); margin-bottom: 7px;
-  text-transform: uppercase; letter-spacing: 0.07em;
+.owner-msg strong { display: block; color: var(--fg); margin-bottom: 4px; }
+.owner-reply {
+  align-self: flex-end;
+  padding: 7px 16px;
+  border-radius: 15px;
+  border-bottom-right-radius: 5px;
+  background: linear-gradient(135deg, #2E7BFF, #7C5CF6);
+  font-size: 13px;
+  font-weight: 620;
+  color: #fff;
+  animation: owner-reply 600ms var(--ease) 900ms both;
 }
-.owner-card .who::before {
-  content: ""; width: 6px; height: 6px; border-radius: 50%;
-  background: var(--ok);
+@keyframes owner-reply {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
 }
+
+/* --------------------------------------------------------- hero points */
+
+.hero-points {
+  list-style: none;
+  padding: 0;
+  margin: 26px 0 0;
+  display: grid;
+  gap: 9px;
+}
+.hero-points li {
+  position: relative;
+  padding-left: 26px;
+  font-size: 15.5px;
+  color: var(--fg-2);
+}
+.hero-points li::before {
+  content: "";
+  position: absolute;
+  left: 2px; top: 8px;
+  width: 12px; height: 6px;
+  border-left: 2px solid var(--ok);
+  border-bottom: 2px solid var(--ok);
+  transform: rotate(-45deg);
+}
+.hero-points strong { color: var(--fg); font-weight: 600; }
 
 /* ---------------------------------------------------------------- metrics */
 

@@ -1,7 +1,9 @@
 <header class="nav">
   <div class="nav-inner">
-    <a class="wordmark" href="/" aria-label="{{ brand.name }} home">
-      {% with size=32 %}{% include "marketing/_logo.html" %}{% endwith %}
+    <a class="wordmark chichi-hover" href="/" aria-label="{{ brand.name }} home">
+      {% with avatar=True, size=36, uid="nav" %}
+        {% include "marketing/_mascot.html" %}
+      {% endwith %}
       <span>{{ brand.name }}</span>
     </a>
 

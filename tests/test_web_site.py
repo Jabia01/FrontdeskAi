@@ -33,7 +33,8 @@ class TestEveryPageIsWhole:
     async def test_it_wears_the_brand(self, client, db, path):
         body = (await client.get(path)).text
         assert BRAND["name"] in body
-        assert "ch-logo" in body, "the mark should be on every page"
+        # The character is the mark - there is no separate logo any more.
+        assert "chichi" in body, "the character should be on every page"
         assert "favicon.svg" in body
 
     @pytest.mark.parametrize("path", PUBLIC)
@@ -74,48 +75,97 @@ class TestNothingIsLoadedFromAnyoneElse:
 
 
 class TestTheDemoIsReal:
-    """The hero replays a captured conversation. If it ever stops being a real
-    capture, it becomes the one lie a visitor can catch - they will try it."""
+    """The hero replays captured conversations in four languages. If one ever
+    stops being a real capture it becomes the single claim on this site a
+    visitor can disprove in thirty seconds - they will simply try it."""
 
-    def test_the_script_alternates_speakers(self):
-        roles = [turn["from"] for turn in content.DEMO_SCRIPT]
+    def test_there_is_more_than_one_language(self):
+        """A one-language demo invites the obvious suspicion that one language
+        is all it does."""
+        codes = [c["code"] for c in content.DEMO_CONVERSATIONS]
+        assert len(codes) >= 3
+        assert len(set(codes)) == len(codes)
+        assert "es" in codes and "en" in codes
+
+    @pytest.mark.parametrize(
+        "conversation", content.DEMO_CONVERSATIONS, ids=lambda c: c["code"]
+    )
+    def test_it_alternates_speakers(self, conversation):
+        roles = [turn["from"] for turn in conversation["turns"]]
         assert roles[0] == "customer"
         for first, second in itertools.pairwise(roles):
             assert first != second, roles
 
-    def test_every_turn_has_text(self):
-        for turn in content.DEMO_SCRIPT:
+    @pytest.mark.parametrize(
+        "conversation", content.DEMO_CONVERSATIONS, ids=lambda c: c["code"]
+    )
+    def test_every_turn_is_populated(self, conversation):
+        for turn in conversation["turns"]:
             assert turn["text"].strip()
             assert turn["from"] in ("customer", "chichi")
 
-    def test_the_replies_carry_their_measured_timing(self):
-        replies = [t for t in content.DEMO_SCRIPT if t["from"] == "chichi"]
-        assert replies, "the demo has to contain at least one reply"
+    @pytest.mark.parametrize(
+        "conversation", content.DEMO_CONVERSATIONS, ids=lambda c: c["code"]
+    )
+    def test_every_reply_carries_its_measured_timing(self, conversation):
+        replies = [t for t in conversation["turns"] if t["from"] == "chichi"]
+        assert replies
         for reply in replies:
             assert reply.get("stamp", "").endswith("s"), reply
 
-    def test_it_ends_with_something_booked(self):
+    @pytest.mark.parametrize(
+        "conversation", content.DEMO_CONVERSATIONS, ids=lambda c: c["code"]
+    )
+    def test_each_has_its_own_accent(self, conversation):
+        assert conversation["accent"] in ("violet", "teal", "amber", "rose")
+        assert conversation["label"].strip()
+
+    def test_the_accents_differ(self):
+        """The colour changing is how a visitor notices the language changed."""
+        accents = [c["accent"] for c in content.DEMO_CONVERSATIONS]
+        assert len(set(accents)) == len(accents)
+
+    def test_at_least_one_ends_in_a_booking(self):
         """The demo exists to show the outcome, not the chat."""
-        assert content.DEMO_SCRIPT[-1].get("booked") is True
+        assert any(
+            turn.get("booked")
+            for conversation in content.DEMO_CONVERSATIONS
+            for turn in conversation["turns"]
+        )
+
+    def test_right_to_left_is_declared_where_it_applies(self):
+        arabic = [c for c in content.DEMO_CONVERSATIONS if c["code"] == "ar"]
+        for conversation in arabic:
+            assert conversation.get("rtl") is True
 
     def test_the_caption_discloses_what_it_is(self):
         caption = content.DEMO_CAPTION.lower()
         assert "real" in caption
         assert "demo" in caption or "trimmed" in caption
 
-    async def test_the_page_embeds_it_as_valid_json(self, client, db):
+    async def test_the_page_embeds_them_as_valid_json(self, client, db):
         body = (await client.get("/")).text
-        match = re.search(r'id="demo-script">(.*?)</script>', body, re.DOTALL)
-        assert match, "the demo script is not on the page"
-        turns = json.loads(match.group(1))
-        assert len(turns) == len(content.DEMO_SCRIPT)
+        match = re.search(r'id="demo-conversations">(.*?)</script>', body, re.DOTALL)
+        assert match, "the conversations are not on the page"
+        assert len(json.loads(match.group(1))) == len(content.DEMO_CONVERSATIONS)
 
-    async def test_accented_text_survives_to_the_page(self, client, db):
-        """The demo is in Spanish. A mangled encoding would be visible to
-        every visitor and invisible to a test that only counted turns."""
+    async def test_a_chip_per_language(self, client, db):
         body = (await client.get("/")).text
-        assert "cuánto" in body
-        assert "mañana" in body
+        chips = re.findall(r'data-conversation="(\d+)"', body)
+        assert len(chips) == len(content.DEMO_CONVERSATIONS)
+
+    async def test_non_latin_text_survives_to_the_page(self, client, db):
+        """Spanish, Polish and Arabic all carry characters an encoding slip
+        would mangle - visibly to every visitor, and invisibly to a test that
+        only counted turns. Taken from the data rather than retyped, so this
+        cannot drift from what the demo actually says."""
+        body = (await client.get("/")).text
+        for conversation in content.DEMO_CONVERSATIONS:
+            for turn in conversation["turns"]:
+                exotic = [w for w in turn["text"].split() if not w.isascii()]
+                if exotic:
+                    assert exotic[0] in body, (conversation["code"], exotic[0])
+                    break
 
 
 class TestReviewsStayOffUntilTheyAreTrue:
@@ -277,6 +327,14 @@ class TestTheCharacter:
                     pose=pose, size=120, uid="t", avatar=avatar, brand={}
                 )
                 xml.dom.minidom.parseString(svg.strip())
+
+    async def test_it_is_the_brand_mark_in_the_nav(self, client, db):
+        """It replaced the old C logo, so losing it would leave an unbranded
+        header rather than a fallback."""
+        body = (await client.get("/")).text
+        nav = body[body.index("<header"):body.index("</header>")]
+        assert "chichi--avatar" in nav
+        assert "ch-logo" not in body, "the old mark should be gone entirely"
 
     async def test_it_appears_on_the_landing_page(self, client, db):
         body = (await client.get("/")).text

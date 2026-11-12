@@ -23,63 +23,165 @@ from typing import Any
 # --------------------------------------------------------------------- the demo
 
 #: Captured 12 November 2026 against the real deployment, seeded demo shop
-#: "Westside Auto Repair". Turns 1 and 2 are verbatim. The final reply is
-#: verbatim apart from one sentence trimmed for length, which the caption on
-#: the page discloses.
+#: "Westside Auto Repair". Four languages, four real conversations - the hero
+#: cycles them so nobody can think this is a Spanish-only trick.
+#:
+#: Every reply is verbatim and every `stamp` is the time that reply actually
+#: took. One sentence was trimmed from the end of the Spanish conversation for
+#: length, which the caption on the page discloses.
+#:
+#: To replace these, run a conversation against a real deployment and paste the
+#: result. Do not write one by hand: a fabricated demo is the single claim on
+#: this site a visitor can disprove in thirty seconds.
 DEMO_SHOP = "Westside Auto Repair"
-DEMO_CAPTION = "A real conversation with a demo shop. Trimmed for length."
+DEMO_CAPTION = (
+    "Real conversations, replayed. Captured against a demo shop on "
+    "12 November 2026 and trimmed for length."
+)
 
-DEMO_SCRIPT: list[dict[str, Any]] = [
+DEMO_CONVERSATIONS: list[dict[str, Any]] = [
     {
-        "from": "customer",
-        "text": "Hola, cuánto cuesta un cambio de aceite?",
-        "delay": 600,
+        "code": "es",
+        "label": "Spanish",
+        "accent": "violet",
+        "shop": "Westside Auto Repair",
+        "turns": [
+            {
+                "from": "customer",
+                "text": "Hola, cuanto cuesta un cambio de aceite?",
+            },
+            {
+                "from": "chichi",
+                "text": "Hola! Un cambio de aceite sintético en Westside Auto Repair cuesta entre $70 y $110 aproximadamente. Son solo estimados; si quiere un precio exacto, puede pasar por el taller y lo revisamos. ¿Le gustaría que le ayude a agendar una visita?",
+                "stamp": "3.2s",
+            },
+            {
+                "from": "customer",
+                "text": "Perfecto. Mi Civic 2014 tambien necesita frenos, puedo llevarlo manana?",
+            },
+            {
+                "from": "chichi",
+                "text": "Sí, tenemos lugar mañana viernes 13 de noviembre. Le puedo ofrecer estos horarios: 8:00 am, 8:30 am o 9:00 am. Para frenos, el precio de pastillas y discos delanteros suele estar entre $320 y $480 (es un estimado; el precio exacto lo confirmamos al revisar el carro). ¿Cuál horario le funciona mejor?",
+                "stamp": "4.2s",
+            },
+            {
+                "from": "customer",
+                "text": "La primera opcion esta bien",
+            },
+            {
+                "from": "chichi",
+                "text": "Listo, quedó agendado su Civic 2014 para frenos el viernes 13 de noviembre a las 8:00 am. El precio de pastillas y discos delanteros es un estimado entre $320 y $480, y lo confirmamos al revisar el carro. ¿Me podría dar su nombre para anotarlo en la cita?",
+                "stamp": "6.6s",
+                "booked": True,
+            },
+        ],
     },
     {
-        "from": "chichi",
-        "text": (
-            "Hola! Un cambio de aceite sintético en Westside Auto Repair "
-            "cuesta entre $70 y $110 aproximadamente. Son solo estimados; si "
-            "quiere un precio exacto, puede pasar por el taller y lo "
-            "revisamos. ¿Le gustaría que le ayude a agendar una visita?"
-        ),
-        "typing": 1500,
-        "stamp": "3.2s",
+        "code": "en",
+        "label": "English",
+        "accent": "teal",
+        "shop": "Westside Auto Repair",
+        "turns": [
+            {
+                "from": "customer",
+                "text": "hi, how much for front brakes on a 2016 Corolla?",
+            },
+            {
+                "from": "chichi",
+                "text": "Hi! For front brake pads and rotors, our estimate is $320 to $480. That's a range, not a firm price, since the exact figure depends on the car and what the brakes need. If you'd like an exact quote, you can drop it by the shop at 2431 W Chicago Ave, or I can check a drop-off time for you. Would you like me to do that?",
+                "stamp": "3.2s",
+            },
+            {
+                "from": "customer",
+                "text": "ok can i bring it in tomorrow?",
+            },
+            {
+                "from": "chichi",
+                "text": "Yes, we have openings tomorrow, Friday. I can offer 8:30 AM, 9:00 AM, or 9:30 AM for a drop-off. Which one works for you?",
+                "stamp": "5.6s",
+            },
+            {
+                "from": "customer",
+                "text": "the earliest one works",
+            },
+            {
+                "from": "chichi",
+                "text": "You're booked for Friday 13 Nov at 8:30 AM to drop off your 2016 Corolla for front brakes. The shop is at 2431 W Chicago Ave, and there's free parking in the lot behind the building, entered from the alley. Could I get your name so the shop knows who to expect?",
+                "stamp": "8.9s",
+                "booked": True,
+            },
+        ],
     },
     {
-        "from": "customer",
-        "text": "Perfecto. Mi Civic 2014 también necesita frenos, puedo llevarlo mañana?",
-        "delay": 1400,
+        "code": "pl",
+        "label": "Polish",
+        "accent": "amber",
+        "shop": "Westside Auto Repair",
+        "turns": [
+            {
+                "from": "customer",
+                "text": "dzien dobry, ile kosztuje wymiana oleju?",
+            },
+            {
+                "from": "chichi",
+                "text": "Dzień dobry! Wymiana oleju syntetycznego kosztuje zwykle od $70 do $110. To tylko orientacyjne szacunki, a dokładną wycenę podamy po wizycie w warsztacie. Czy chce Pan/Pani, żebym sprawdził/a wolne terminy?",
+                "stamp": "3.4s",
+            },
+            {
+                "from": "customer",
+                "text": "a czy moge przyjechac jutro rano?",
+            },
+            {
+                "from": "chichi",
+                "text": "Tak, jutro (piątek) jesteśmy otwarci od 8:00 do 18:00. Wymiana oleju nie wymaga wcześniejszego umówienia, można przyjechać bez zapisu. Czy chce Pan/Pani, żebym sprawdził/a dla Pana/Pani konkretną godzinę na wizytę dla diagnostyki lub hamulców?",
+                "stamp": "3.1s",
+            },
+            {
+                "from": "customer",
+                "text": "pierwsza godzina pasuje",
+            },
+            {
+                "from": "chichi",
+                "text": "Świetnie! Jutro otwieramy o 8:00, więc pierwsza godzina to 8:00. Na wymianę oleju nie trzeba się umawiać, wystarczy przyjechać. Czy chodzi tylko o olej, czy także o diagnostykę lub hamulce? Wtedy sprawdzę dla Pana/Pani konkretny termin.",
+                "stamp": "4.2s",
+            },
+        ],
     },
     {
-        "from": "chichi",
-        "text": (
-            "Sí, tenemos lugar mañana viernes 13 de noviembre. Le puedo "
-            "ofrecer estos horarios: 8:00 am, 8:30 am o 9:00 am. Para frenos, "
-            "el precio de pastillas y discos delanteros suele estar entre "
-            "$320 y $480 (es un estimado; el precio exacto lo confirmamos al "
-            "revisar el carro). ¿Cuál horario le funciona mejor?"
-        ),
-        "typing": 1800,
-        "stamp": "4.2s",
-    },
-    {
-        "from": "customer",
-        "text": "La primera opción está bien",
-        "delay": 1200,
-    },
-    {
-        "from": "chichi",
-        "text": (
-            "Listo, quedó agendado su Civic 2014 para frenos el viernes 13 de "
-            "noviembre a las 8:00 am. El precio de pastillas y discos "
-            "delanteros es un estimado entre $320 y $480, y lo confirmamos al "
-            "revisar el carro. ¿Me podría dar su nombre para anotarlo en la "
-            "cita?"
-        ),
-        "typing": 2000,
-        "stamp": "6.6s",
-        "booked": True,
+        "code": "ar",
+        "label": "Arabic",
+        "accent": "rose",
+        "shop": "Westside Auto Repair",
+        "rtl": True,
+        "turns": [
+            {
+                "from": "customer",
+                "text": "مرحبا، كم سعر تغيير الزيت؟",
+            },
+            {
+                "from": "chichi",
+                "text": "مرحبا! تغيير الزيت الصناعي (سينثتيك) يتراوح سعره تقريبا بين 70 و110 دولار. هذه أسعار تقديرية فقط، وإذا أردت سعرا دقيقا يمكنك المرور بالمحل وسنحدد لك السعر بعد الفحص. هل تريد معرفة مواعيد العمل أو حجز موعد؟",
+                "stamp": "3.2s",
+            },
+            {
+                "from": "customer",
+                "text": "هل يمكنني إحضار السيارة غدا؟",
+            },
+            {
+                "from": "chichi",
+                "text": "نعم، يمكنك الحضور غدا الجمعة. المواعيد المتاحة لتغيير الزيت: الساعة 9:00 صباحا، أو 9:30 صباحا، أو 10:00 صباحا. أيها يناسبك؟ وإذا كنت تفضل الحضور بدون موعد فالمحل يستقبل تغيير الزيت بدون حجز أيضا.",
+                "stamp": "4.4s",
+            },
+            {
+                "from": "customer",
+                "text": "الموعد الأول مناسب",
+            },
+            {
+                "from": "chichi",
+                "text": "ممتاز، الجمعة 13 نوفمبر الساعة 9:00 صباحا متاح. قبل تأكيد الحجز، ما اسمك من فضلك؟",
+                "stamp": "5.6s",
+            },
+        ],
     },
 ]
 
@@ -87,11 +189,11 @@ DEMO_SCRIPT: list[dict[str, Any]] = [
 #: in the format `core/owner.py` actually sends.
 OWNER_ALERT = {
     "code": "2F2K",
-    "text": (
-        "New booking [2F2K]\n"
+    "title": "New booking [2F2K]",
+    "body": (
         "Civic 2014, front brakes\n"
         "Friday 13 Nov, 8:00 AM\n"
-        "Reply OK to confirm, or CHANGE if that will not work."
+        "Reply OK to confirm, or CHANGE if that won't work."
     ),
 }
 
