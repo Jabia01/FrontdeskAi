@@ -136,10 +136,17 @@ class TestTheLandingPageIsHonest:
     async def test_it_describes_features_that_exist(self, client, db):
         body = prose((await client.get("/")).text)
         for real in (
+            # Still named on the page even now that calls are answered, because
+            # it is a real feature and because a carrier reviewing this page
+            # for 10DLC is looking for exactly this kind of messaging use.
             "missed call",
             "reminder",
             "language",
             "shadow",
+            # Voice. The page may not promise a ringing phone gets answered
+            # unless it does, and it may not stay quiet about it now it does.
+            "phone calls",
+            "puts the caller through",
         ):
             assert real.lower() in body.lower(), real
 

@@ -386,6 +386,55 @@ class TestTheCharacter:
         assert "chichi.css" not in body
 
 
+class TestTheChannelsAreNamed:
+    """"AI front desk" does not tell an owner whether their actual phone gets
+    answered, and that is the first thing they want to know. So the three ways
+    in are named on the page, not left to be inferred."""
+
+    def test_the_phone_is_listed_first(self):
+        """It is the claim an owner is least likely to assume and most wants to
+        be true, and the one pill carrying the signature gradient."""
+        assert content.CHANNELS[0]["label"] == "Phone calls"
+
+    def test_every_channel_has_an_icon_that_exists(self):
+        """A name with no matching path renders as the fallback tick, which
+        looks deliberate and is therefore the kind of bug nobody reports."""
+        icons = (
+            pathlib.Path("app/web/templates/marketing/_icons.html")
+            .read_text(encoding="utf-8")
+        )
+        for channel in content.CHANNELS:
+            assert f'"{channel["icon"]}":' in icons, channel["icon"]
+
+    def test_every_feature_icon_exists_too(self):
+        icons = (
+            pathlib.Path("app/web/templates/marketing/_icons.html")
+            .read_text(encoding="utf-8")
+        )
+        for feature in content.FEATURES:
+            assert f'"{feature["icon"]}":' in icons, feature["icon"]
+
+    def test_no_icon_path_leaves_the_viewbox(self):
+        """A negative coordinate draws outside the 24x24 box and the icon comes
+        out clipped or invisible - which is exactly what happened when these
+        were first drawn by shifting an existing path."""
+        icons = (
+            pathlib.Path("app/web/templates/marketing/_icons.html")
+            .read_text(encoding="utf-8")
+        )
+        for match in re.finditer(r'"([a-z-]+)": "([^"]+)"', icons):
+            name, path = match.group(1), match.group(2)
+            # A minus directly after a command letter or a space is a negative
+            # absolute coordinate; inside a relative command it is normal.
+            assert not re.search(r"[MLHVCSQTA] ?-", path), f"{name}: {path}"
+
+    async def test_they_all_reach_the_page(self, client, db):
+        body = (await client.get("/")).text
+        for channel in content.CHANNELS:
+            assert channel["label"] in body, channel["label"]
+            assert channel["note"] in body, channel["note"]
+
+
 class TestTheRotatingHeadline:
     """The ending rotates while the stem holds still. Two things must stay
     true: the page below must never move, and a visitor without JavaScript or

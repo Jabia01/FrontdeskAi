@@ -209,12 +209,30 @@ OWNER_ALERT = {
 #: so nothing below ever shifts, but wildly uneven endings leave a visible gap.
 HEADLINE_STEM = "Never lose another customer to"
 HEADLINE_TAILS: list[str] = [
-    "a phone you couldn't reach.",
+    "a phone nobody answered.",
     "a text you read too late.",
     "a voicemail nobody checks.",
     "the shop that answered first.",
     "a language you don't speak.",
     "the Sunday you took off.",
+]
+
+# ------------------------------------------------------------------- channels
+
+#: The ways a customer can reach a business through Chichi. Named on the page
+#: because "AI front desk" does not tell anyone whether their actual phone gets
+#: answered, and that is the first thing an owner wants to know.
+#:
+#: Keep this honest about what is switched on. Voice is live in the product; a
+#: given shop still has to have a number pointed at it.
+CHANNELS: list[dict[str, str]] = [
+    {
+        "icon": "phone-answered",
+        "label": "Phone calls",
+        "note": "answered, not recorded",
+    },
+    {"icon": "whatsapp", "label": "WhatsApp", "note": "where owners live"},
+    {"icon": "message", "label": "Text / SMS", "note": "no app to install"},
 ]
 
 # ------------------------------------------------------------------- the numbers
@@ -346,19 +364,37 @@ def visible_reviews() -> list[dict[str, Any]]:
 
 FEATURES: list[dict[str, str]] = [
     {
+        "icon": "phone-answered",
+        "title": "Picks up the phone",
+        "body": (
+            "A real conversation, not a menu. It knows your prices and your "
+            "calendar, and it books the appointment while you're still on the "
+            "job."
+        ),
+    },
+    {
         "icon": "languages",
         "title": "Answers in their language",
         "body": (
-            "Spanish, Polish, English - whatever they wrote in, answered in "
-            "the same one on the first reply. No menus, no 'press 1'."
+            "Spanish, Polish, English - spoken or written, answered in the "
+            "same one the first time. No menus, no 'press 1 for Spanish'."
+        ),
+    },
+    {
+        "icon": "phone-forwarded",
+        "title": "Puts the caller through to you",
+        "body": (
+            "An accident, a complaint, anything it shouldn't touch - it says "
+            "it's putting them through and transfers the live call to your "
+            "phone."
         ),
     },
     {
         "icon": "phone-missed",
-        "title": "Texts back missed calls",
+        "title": "Texts back a missed call",
         "body": (
-            "A call rings out and the caller has a text within seconds - "
-            "before they try the next business on the list."
+            "The layer underneath. If a call still gets away, the caller has "
+            "a text within seconds - before they try the next business."
         ),
     },
     {
@@ -405,8 +441,8 @@ FEATURES: list[dict[str, str]] = [
         "icon": "hash",
         "title": "Runs on your own number",
         "body": (
-            "The number on your signs and your van. Your customers never need "
-            "to know anything changed."
+            "The number on your signs and your van, forwarded when nobody "
+            "picks up. Your customers never need to know anything changed."
         ),
     },
 ]
@@ -414,6 +450,24 @@ FEATURES: list[dict[str, str]] = [
 # -------------------------------------------------------------------------- faq
 
 FAQ: list[dict[str, str]] = [
+    {
+        "q": "Does it actually answer the phone, or just text people back?",
+        "a": (
+            "It answers the phone. A real conversation - it hears what they "
+            "ask, in their language, checks your calendar and books them in. "
+            "If it still misses a call, the caller gets a text within seconds "
+            "as the layer underneath."
+        ),
+    },
+    {
+        "q": "What happens on a call it can't handle?",
+        "a": (
+            "It says it's putting them through and transfers the live call to "
+            "your phone, with a message to you explaining why. If you can't "
+            "take it, it promises a callback and tells you that it did - so "
+            "the promise is never one nobody knows about."
+        ),
+    },
     {
         "q": "Does it pretend to be a person?",
         "a": (
@@ -455,7 +509,12 @@ FAQ: list[dict[str, str]] = [
     },
     {
         "q": "Do I have to change my phone number?",
-        "a": "No. It works on the number you already have.",
+        "a": (
+            "No. You keep the number on your signs and your van, and forward "
+            "it when nobody picks up - the same setting you'd use for "
+            "voicemail. Pick up yourself whenever you're free; Chichi only "
+            "takes the calls you don't."
+        ),
     },
     {
         "q": "How do I stop it?",

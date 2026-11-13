@@ -73,6 +73,7 @@ def _landing_context() -> dict:
         "demo_caption": content.DEMO_CAPTION,
         "owner_alert": content.OWNER_ALERT,
         "metrics": content.METRICS,
+        "channels": content.CHANNELS,
         "features": content.FEATURES,
         "languages": content.LANGUAGE_DEMO,
         "languages_json": json.dumps(content.LANGUAGE_DEMO, ensure_ascii=False),

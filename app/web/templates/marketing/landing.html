@@ -34,8 +34,8 @@
         </span>
       </h1>
       <p class="lede rise in d2">
-        They text your number. {{ brand.name }} answers in their language, in
-        seconds - your prices, your hours, your calendar - and books the job
+        They call or text your number. {{ brand.name }} picks up in their
+        language - your prices, your hours, your calendar - and books the job
         while you're still under the car.
       </p>
       <div class="hero-actions rise in d3">
@@ -44,6 +44,24 @@
         </a>
         <a class="btn btn-ghost btn-lg" href="#how">See how it works</a>
       </div>
+      {#
+        Named rather than implied: "AI front desk" does not tell an owner
+        whether their actual phone gets answered, and that is the first thing
+        they want to know.
+      #}
+      <ul class="channels rise in d3" aria-label="How customers reach you">
+        {% for channel in channels %}
+        <li class="channel">
+          <span class="ic">
+            {% with name=channel.icon %}{% include "marketing/_icons.html" %}{% endwith %}
+          </span>
+          <span class="channel-text">
+            <strong>{{ channel.label }}</strong>
+            <span>{{ channel.note }}</span>
+          </span>
+        </li>
+        {% endfor %}
+      </ul>
       <ul class="hero-points rise in d4">
         <li><strong>Answers in seconds</strong>, at 2am, in any language</li>
         <li><strong>Stops losing the jobs</strong> you already paid to win</li>
@@ -181,9 +199,9 @@
       <div class="step rise d2">
         <div class="num">3</div>
         <h3>It answers</h3>
-        <p>Text and WhatsApp, day and night. Anything it shouldn't touch - a
-           complaint, an emergency, an insurance question - stops and comes
-           straight to your phone.</p>
+        <p>The phone, WhatsApp and text, day and night. Anything it shouldn't
+           touch - a complaint, an emergency, an insurance question - stops,
+           and on a live call it puts them straight through to you.</p>
       </div>
     </div>
   </div>
