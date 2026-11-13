@@ -23,6 +23,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.channels.base import load_adapters, registered_channels
 from app.config import get_settings
 from app.db import dispose_engine, session_scope
+from app.gateway.retell import router as retell_router
 from app.gateway.routes import router as gateway_router
 from app.queue.client import close_pool, describe_pool
 from app.queue.embedded import EmbeddedWorker
@@ -85,6 +86,7 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
     app.include_router(gateway_router)
+    app.include_router(retell_router)
     # Order matters only for readability here - no two of these share a path.
     app.include_router(admin_router)
     app.include_router(owner_auth_router)
@@ -171,6 +173,19 @@ def create_app() -> FastAPI:
                 "signature_validation": (
                     "enforced"
                     if settings.twilio_validate_signature and settings.twilio_configured
+                    else "SKIPPED"
+                ),
+            },
+            # Which half of voice is missing is the question this answers, and
+            # it is the question asked at 2am when a number rings out. The
+            # secret itself is never reported - only whether there is one, and
+            # the agent id, which is not a credential.
+            "voice": {
+                "configured": settings.retell_configured,
+                "agent_id": settings.retell_agent_id or None,
+                "signature_validation": (
+                    "enforced"
+                    if settings.retell_validate_signature and settings.retell_api_key
                     else "SKIPPED"
                 ),
             },

@@ -106,6 +106,7 @@ and the engine's holding-reply path means the customer still gets an answer.
    | `PUBLIC_BASE_URL` | **leave as a placeholder for now** — see below |
    | `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` | blank until step 5; sends stay stubbed |
    | `GOOGLE_CREDENTIALS_JSON` | blank until step 6; the calendar stays an in-memory stub |
+   | `RETELL_API_KEY` / `RETELL_WS_SECRET` | blank until step 8; voice stays off and `/health` says so |
 
 4. Deploy. The web service runs `alembic upgrade head` as its pre-deploy step,
    so the schema is created on first boot. Watch the log for
@@ -226,6 +227,27 @@ no window.
 
 ---
 
+## 8. Voice
+
+See `docs/retell.md`. Retell answers the phone; Chichi stays the brain over a
+custom-LLM websocket, so the same prompt, tools and booking rules that answer a
+text answer a call, and the call lands in `conversations` and `messages` like
+any other channel.
+
+The short version: set `RETELL_API_KEY` and a generated `RETELL_WS_SECRET`, pick
+a voice that covers every language your shops serve, run
+`python -m seeds.retell_agent --create`, point a number at it, and add that
+number as a `voice` endpoint for the shop in the console. `--show` reads the
+agent back and shouts if its websocket URL no longer matches `PUBLIC_BASE_URL` -
+which is what happens after this service moves and nobody re-pushed.
+
+Voice needs the shop's status to be `live`. Shadow mode means the owner approves
+each reply, and there is no approving anything inside a caller's patience, so a
+shop that is not live has its calls declined and they fall back to the shop's own
+line.
+
+---
+
 ## When it breaks
 
 - **Logs:** Render → service → Logs. Both processes log to stdout with
@@ -256,7 +278,15 @@ no window.
 | Upstash Redis | free tier |
 | Supabase | free tier is enough for a pilot; ~$25 for Pro |
 | Twilio number | ~$1-2, plus per-message |
+| Retell number | $2, and only once voice is switched on |
 | Claude | measured at ~$0.0004 per Haiku turn |
+
+Voice is the one channel with a real per-minute cost: **$0.085/min** (Retell's
+voice infra $0.055 + TTS $0.015 + telephony $0.015) on top of a fraction of a
+cent of Claude. A three-minute call is therefore about 25c, against effectively
+nothing for a text conversation - worth knowing before pricing a business that
+takes a hundred calls a week. Retell gives $10 of trial credit, so the first
+calls cost nothing.
 
 So roughly **$8-10/month plus usage** to run the whole platform for the first
 few businesses. The landing page's placeholder price is $249/month per

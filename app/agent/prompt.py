@@ -34,7 +34,9 @@ DEFAULT_CHANNEL_STYLE: dict[str, dict[str, Any]] = {
         "max_chars": 240,
         "rules": (
             "Spoken sentences only. No lists, no URLs, no markdown. "
-            "One question at a time."
+            "One question at a time. The caller is on the phone right now: if "
+            "you hand off, say you are putting them through to someone, never "
+            "that somebody will reply or text them later."
         ),
     },
 }

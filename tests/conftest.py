@@ -45,6 +45,15 @@ os.environ["TWILIO_AUTH_TOKEN"] = ""
 os.environ["GOOGLE_CREDENTIALS_PATH"] = ""
 os.environ["GOOGLE_CREDENTIALS_JSON"] = ""
 
+# Retell, same reasoning, with one difference: the voice tests want signature
+# verification *on*, because that is the path a real call takes. So these are
+# fixed fake credentials rather than blanks - enough to sign and verify a
+# webhook with, and useless for reaching Retell's API, which no test does.
+os.environ["RETELL_API_KEY"] = "test-retell-api-key"
+os.environ["RETELL_WS_SECRET"] = "test-retell-ws-secret"
+os.environ["RETELL_AGENT_ID"] = "agent_test"
+os.environ["RETELL_VALIDATE_SIGNATURE"] = "true"
+
 from app.config import get_settings
 from app.db import dispose_engine, get_engine, session_scope
 from app.models import (
@@ -124,6 +133,9 @@ async def make_shop(
     sms_number: str | None = None,
     whatsapp_id: str | None = None,
     sim_id: str | None = None,
+    #: Opt-in: a shop only has a Retell number once someone points one at it,
+    #: and the missed-call tests depend on `voice` *not* resolving.
+    voice_number: str | None = None,
     handoff_keywords: list[str] | None = None,
     owner_phone: str = "+13125550999",
 ) -> uuid.UUID:
@@ -174,12 +186,15 @@ async def make_shop(
             (Channel.whatsapp, whatsapp_id or f"whatsapp:+1312555{suffix[:4]}"),
             (Channel.simulator, sim_id or f"sim-{suffix}"),
         ]
+        if voice_number:
+            endpoints.append((Channel.voice, voice_number))
+        providers = {Channel.simulator: "local", Channel.voice: "retell"}
         for channel, external_id in endpoints:
             session.add(
                 ChannelEndpoint(
                     client_id=client.id,
                     channel=channel,
-                    provider="twilio" if channel != Channel.simulator else "local",
+                    provider=providers.get(channel, "twilio"),
                     external_id=external_id,
                     number=external_id.replace("whatsapp:", "").replace(
                         f"sim-{suffix}", "+13125550100"

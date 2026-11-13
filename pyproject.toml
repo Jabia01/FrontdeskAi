@@ -17,6 +17,9 @@ dependencies = [
     "pydantic-settings>=2.6",
     "python-multipart>=0.0.12",
     "anthropic>=0.40",
+    # Used directly for the Retell REST calls (agent + number setup). Already in
+    # the tree as an anthropic dependency, but named here because we import it.
+    "httpx>=0.27",
     "arq>=0.26",
     "twilio>=9.3",
     "phonenumbers>=8.13",

@@ -76,3 +76,19 @@ services:
       # platform with no persistent disk.
       - key: GOOGLE_CREDENTIALS_JSON
         sync: false
+      # Retell (voice). Blank until a number is pointed at us; the rest of the
+      # app runs fine without it, and /health says which half is missing.
+      - key: RETELL_API_KEY
+        sync: false
+      # The secret in the custom-LLM websocket path. Generate once with
+      #   python -c "import secrets; print(secrets.token_urlsafe(32))"
+      # and keep it secret: it is half of what stops a stranger opening a
+      # bridge and talking to a shop's customers.
+      - key: RETELL_WS_SECRET
+        sync: false
+      - key: RETELL_AGENT_ID
+        sync: false
+      - key: RETELL_VOICE_ID
+        sync: false
+      - key: RETELL_VALIDATE_SIGNATURE
+        value: "true"

@@ -63,13 +63,27 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 STATUS_CHOICES = [status.value for status in ClientStatus]
-#: Every channel the data model knows, not only the ones with a text adapter.
-#: `voice` has no adapter until v2, but it already has endpoints (the call-status
-#: webhook that drives missed-call text-back) and its own prompt style block, so
-#: it has to be selectable here.
+#: Every channel the data model knows. `voice` now has a real adapter (Retell
+#: answers the call; see app/core/voice.py), and it is also still the channel the
+#: missed-call text-back webhook resolves against, so a shop may have a voice
+#: endpoint for either reason.
 CHANNEL_CHOICES = [channel.value for channel in Channel]
 #: Statuses whose owners may hold a dashboard session.
 DASHBOARD_STATUSES = {ClientStatus.shadow, ClientStatus.live, ClientStatus.paused}
+
+
+def _provider_for(channel: Channel) -> str:
+    """Who actually carries this channel.
+
+    Stored rather than inferred later because `delivery` hands it to the
+    adapter, and because an endpoint outlives whichever provider we were using
+    when it was created.
+    """
+    if channel is Channel.simulator:
+        return "local"
+    if channel is Channel.voice:
+        return "retell"
+    return "twilio"
 
 
 def _see(path: str) -> RedirectResponse:
@@ -321,7 +335,10 @@ async def create_shop(
         normalised = phone_util.normalise(voice_number)
         if normalised is None:
             return again("The voice number is not a valid phone number.")
-        wanted.append((Channel.voice, normalised, normalised, "twilio"))
+        # Retell, not Twilio: a voice endpoint is the number Retell answers
+        # on. A shop that forwards through Twilio still registers the Retell
+        # number here, because that is the `to_number` the webhook carries.
+        wanted.append((Channel.voice, normalised, normalised, "retell"))
 
     for channel, external_id, _number, _provider in wanted:
         clash = await repo.get_endpoint(session, channel, external_id)
@@ -793,7 +810,7 @@ async def add_endpoint(
         channel=target,
         external_id=raw,
         number=raw.removeprefix("whatsapp:") if target is not Channel.simulator else None,
-        provider="local" if target is Channel.simulator else "twilio",
+        provider=_provider_for(target),
     )
     await repo_admin.audit(
         session,

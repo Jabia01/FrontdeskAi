@@ -25,6 +25,34 @@ class Settings(BaseSettings):
     twilio_validate_signature: bool = True
     public_base_url: str = "http://localhost:8000"
 
+    # Retell (voice). Retell owns the telephony, speech-to-text and the voice;
+    # Chichi stays the brain over the custom-LLM websocket. See docs/retell.md.
+    retell_api_key: str = ""
+    #: The Retell agent every shop's number points at. One agent serves all
+    #: tenants: the shop is resolved per call, not per agent, so onboarding a
+    #: business is a row in `channel_endpoints`, not a new Retell agent.
+    retell_agent_id: str = ""
+    retell_validate_signature: bool = True
+    #: Shared secret sitting in the websocket path. Retell appends the call id
+    #: to whatever URL is registered, so we register
+    #: `wss://<host>/ws/retell/<secret>` and it connects to `.../<secret>/<id>`.
+    #: Belt and braces: the call id must also match a `calls` row that only a
+    #: signature-verified inbound webhook can create.
+    retell_ws_secret: str = ""
+    #: Blank on purpose: `python -m seeds.retell_agent --list-voices` prints the
+    #: account's real options rather than this file guessing at one.
+    retell_voice_id: str = ""
+    #: The TTS model behind that voice, and the thing that actually decides
+    #: whether a caller in Polish is spoken to in Polish. Retell's voice objects
+    #: carry no language field at all - only an accent - so coverage is a
+    #: property of the provider and model, not of the voice. Blank leaves
+    #: Retell's own default for the chosen voice, which is cheapest and is
+    #: usually English-first; `eleven_multilingual_v2` is the safe multilingual
+    #: choice and costs about 4.5c/min more in TTS.
+    retell_voice_model: str = ""
+    #: A front-desk call that has run this long is either a mistake or abuse.
+    retell_max_call_seconds: int = 600
+
     # Google Calendar (service account; blank = in-memory stub).
     #: A path on disk - fine locally.
     google_credentials_path: str = ""
@@ -51,6 +79,15 @@ class Settings(BaseSettings):
     @property
     def twilio_configured(self) -> bool:
         return bool(self.twilio_account_sid and self.twilio_auth_token)
+
+    @property
+    def retell_configured(self) -> bool:
+        """True once Retell can actually answer a call for us.
+
+        The websocket secret counts: without it the bridge refuses every
+        connection, so a key alone is not a working voice channel.
+        """
+        return bool(self.retell_api_key and self.retell_ws_secret)
 
     #: Set this when DATABASE_URL points at a *transaction mode* pooler
     #: (Supabase's port 6543, or PgBouncer). Such a pooler hands a different

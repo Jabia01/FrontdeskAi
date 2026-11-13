@@ -51,4 +51,9 @@ def registered_channels() -> list[Channel]:
 
 def load_adapters() -> None:
     """Import side-effect registration. Called once at app start."""
-    from app.channels import simulator, twilio_sms, twilio_whatsapp  # noqa: F401
+    from app.channels import (  # noqa: F401
+        retell_voice,
+        simulator,
+        twilio_sms,
+        twilio_whatsapp,
+    )

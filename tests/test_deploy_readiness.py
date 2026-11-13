@@ -201,6 +201,10 @@ class TestTheBlueprint:
             "TWILIO_AUTH_TOKEN",
             "GOOGLE_CREDENTIALS_JSON",
             "PUBLIC_BASE_URL",
+            "RETELL_API_KEY",
+            # Half of the voice bridge's authentication. A default value for
+            # this committed to the repo would be no authentication at all.
+            "RETELL_WS_SECRET",
         }
         provided = {e["key"] for e in web["envVars"]}
         assert secrets <= provided, secrets - provided

@@ -742,6 +742,40 @@ async def log_call(
     return call
 
 
+async def finish_call(
+    session: AsyncSession,
+    client_id: uuid.UUID,
+    provider_call_id: str,
+    *,
+    outcome: CallOutcome | None = None,
+    duration: int | None = None,
+    recording_url: str | None = None,
+    summary: str | None = None,
+) -> None:
+    """Fill in what only the end of a call knows.
+
+    Keyed on the provider's call id rather than ours because the caller is a
+    webhook that has never seen our primary key. Every field is optional: a
+    provider that omits the recording must not blank the duration.
+    """
+    values: dict = {}
+    if outcome is not None:
+        values["outcome"] = outcome
+    if duration is not None:
+        values["duration"] = duration
+    if recording_url is not None:
+        values["recording_url"] = recording_url
+    if summary is not None:
+        values["summary"] = summary[:2000]
+    if not values:
+        return
+    await session.execute(
+        update(Call)
+        .where(Call.client_id == client_id, Call.provider_call_id == provider_call_id)
+        .values(**values)
+    )
+
+
 async def mark_texted_back(
     session: AsyncSession, client_id: uuid.UUID, call_id: uuid.UUID
 ) -> None:
