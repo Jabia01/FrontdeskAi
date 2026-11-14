@@ -24,6 +24,12 @@ COPY pyproject.toml ./
 COPY app ./app
 COPY migrations ./migrations
 COPY seeds ./seeds
+# Operational commands, run from the platform's shell against the live
+# database - `seeds.admin_user` to create a console login, `scripts/reprompt`
+# to re-hash every shop's stored prompt version after a prompt change. They
+# are not developer conveniences: leaving them out means the one time you need
+# them is the one time they are not there.
+COPY scripts ./scripts
 COPY alembic.ini ./
 RUN pip install --no-cache-dir -e .
 

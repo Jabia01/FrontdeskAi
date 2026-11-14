@@ -142,8 +142,19 @@ class TestTheImageShipsEverythingItNeeds:
             "COPY app ./app",
             "COPY migrations ./migrations",
             "alembic.ini",
+            # Run from the platform's shell against the live database, so they
+            # have to be in the image. `reprompt` was not, and the first time
+            # anyone reached for it was in a shell that did not have it.
+            "COPY seeds ./seeds",
+            "COPY scripts ./scripts",
         ):
             assert needed in dockerfile, needed
+
+    def test_every_operational_script_is_importable_from_the_image(self):
+        """A script the image ships but cannot run is worse than one it omits:
+        you find out in the shell, mid-incident."""
+        for name in ("reprompt.py", "snapshot_prompts.py"):
+            assert (REPO / "scripts" / name).is_file(), name
 
     def test_the_template_and_static_directories_are_where_the_code_looks(self):
         from app.web.templating import STATIC_DIR, TEMPLATE_DIR
