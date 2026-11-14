@@ -37,6 +37,7 @@ from app.models import (
     Lead,
     Message,
     MessageStatus,
+    ScheduledMessage,
     UsageEvent,
 )
 
@@ -1036,3 +1037,115 @@ async def last_summary_on(
         )
     )
     return result.scalar_one_or_none()
+
+
+# ------------------------------------------------------- scheduled messages
+
+
+async def schedule_message(
+    session: AsyncSession,
+    client_id: uuid.UUID,
+    *,
+    customer_id: uuid.UUID,
+    conversation_id: uuid.UUID | None,
+    kind: str,
+    topic: str | None,
+    due_at: datetime,
+) -> ScheduledMessage:
+    row = ScheduledMessage(
+        client_id=client_id,
+        customer_id=customer_id,
+        conversation_id=conversation_id,
+        kind=kind,
+        topic=topic,
+        due_at=due_at,
+    )
+    session.add(row)
+    await session.flush()
+    return row
+
+
+async def scheduled_due(
+    session: AsyncSession,
+    client_id: uuid.UUID,
+    *,
+    now: datetime,
+    limit: int = 100,
+) -> list[ScheduledMessage]:
+    """Pending messages whose time has come, oldest first.
+
+    Nothing here filters on how late a message is. A worker that was down for a
+    day should send yesterday's recall slightly late rather than not at all -
+    the same self-healing property the reminder sweep has.
+    """
+    rows = await session.execute(
+        select(ScheduledMessage)
+        .where(
+            ScheduledMessage.client_id == client_id,
+            ScheduledMessage.sent_at.is_(None),
+            ScheduledMessage.cancelled_at.is_(None),
+            ScheduledMessage.due_at <= now,
+        )
+        .order_by(ScheduledMessage.due_at)
+        .limit(limit)
+    )
+    return list(rows.scalars().all())
+
+
+async def pending_scheduled_for_customer(
+    session: AsyncSession,
+    client_id: uuid.UUID,
+    customer_id: uuid.UUID,
+) -> list[ScheduledMessage]:
+    rows = await session.execute(
+        select(ScheduledMessage).where(
+            ScheduledMessage.client_id == client_id,
+            ScheduledMessage.customer_id == customer_id,
+            ScheduledMessage.sent_at.is_(None),
+            ScheduledMessage.cancelled_at.is_(None),
+        )
+    )
+    return list(rows.scalars().all())
+
+
+async def mark_scheduled_sent(
+    session: AsyncSession,
+    client_id: uuid.UUID,
+    message_id: uuid.UUID,
+    when: datetime,
+) -> None:
+    """Marks the attempt, not the delivery - see the column's own comment."""
+    await session.execute(
+        update(ScheduledMessage)
+        .where(
+            ScheduledMessage.id == message_id,
+            ScheduledMessage.client_id == client_id,
+        )
+        .values(sent_at=when)
+    )
+
+
+async def cancel_scheduled_for_customer(
+    session: AsyncSession,
+    client_id: uuid.UUID,
+    customer_id: uuid.UUID,
+    *,
+    reason: str,
+    when: datetime,
+    kind: str | None = None,
+) -> int:
+    """Call off what has not gone yet. Returns how many were cancelled."""
+    conditions = [
+        ScheduledMessage.client_id == client_id,
+        ScheduledMessage.customer_id == customer_id,
+        ScheduledMessage.sent_at.is_(None),
+        ScheduledMessage.cancelled_at.is_(None),
+    ]
+    if kind is not None:
+        conditions.append(ScheduledMessage.kind == kind)
+    result = await session.execute(
+        update(ScheduledMessage)
+        .where(*conditions)
+        .values(cancelled_at=when, cancelled_reason=reason[:100])
+    )
+    return result.rowcount or 0

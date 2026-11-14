@@ -19,6 +19,7 @@ from app.queue.tasks import (
     handle_missed_call,
     notify_owner,
     sweep_reminders,
+    sweep_scheduled,
     sweep_summaries,
 )
 
@@ -43,6 +44,7 @@ class WorkerSettings:
         handle_missed_call,
         notify_owner,
         sweep_reminders,
+        sweep_scheduled,
         sweep_summaries,
     ]
     #: Both sweeps are idempotent and read what is due from the database, so
@@ -50,6 +52,10 @@ class WorkerSettings:
     #: costs nothing because the next one catches up.
     cron_jobs: ClassVar[list] = [
         cron(sweep_reminders, minute={0, 15, 30, 45}, run_at_startup=False),
+        # Offset from the reminder sweep by five minutes. Both walk every
+        # live business; running them on the same tick doubles the peak
+        # for no benefit, because neither is time-critical to the minute.
+        cron(sweep_scheduled, minute={5, 20, 35, 50}, run_at_startup=False),
         # Hourly. Each business is sent its summary on the first run after its
         # own local `summary_hour`, so one job covers every timezone.
         cron(sweep_summaries, minute=2, run_at_startup=False),

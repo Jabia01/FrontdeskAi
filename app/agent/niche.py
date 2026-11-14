@@ -168,7 +168,12 @@ NICHES: dict[str, NicheSpec] = {
         currency="€",
         example="READY treatment",
         tools=CORE_TOOLS
-        + ("price_range", "send_deposit_link", "capture_travel_dates"),
+        + (
+            "price_range",
+            "send_deposit_link",
+            "capture_travel_dates",
+            "recall_reminder",
+        ),
         regulated=True,
         rules=(
             ("Never diagnose, never suggest what a symptom might be, and never "
@@ -238,7 +243,8 @@ NICHES: dict[str, NicheSpec] = {
         market_languages=("es", "en", "de", "nl", "fr", "sv", "no", "ru", "uk"),
         currency="€",
         example="READY enquiry",
-        tools=CORE_TOOLS + ("qualify_buyer", "send_matching_listings"),
+        tools=CORE_TOOLS
+        + ("qualify_buyer", "send_matching_listings", "follow_up_sequence"),
         regulated=True,
         rules=(
             ("Never confirm that a property is still available, never confirm or "

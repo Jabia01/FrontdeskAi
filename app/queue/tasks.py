@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 import uuid
 
-from app.core import reminders, summary
+from app.core import reminders, scheduled, summary
 from app.core.engine import handle_inbound_message
 from app.core.missed_call import text_back
 from app.core.owner import send_to_owner
@@ -97,4 +97,32 @@ async def sweep_summaries(ctx: dict) -> dict:
         totals["sent" if result["status"] == "sent" else "skipped"] += 1
     if totals["sent"]:
         log.info("daily summaries: %s", totals)
+    return totals
+
+
+async def sweep_scheduled(ctx: dict) -> dict:
+    """Cron: send the recalls and follow-ups that have come due.
+
+    Runs every fifteen minutes, alongside the reminder sweep and for the same
+    reason: everything due is derived from the database, so a worker that was
+    down sends slightly late on its next pass rather than not at all.
+    """
+    totals = {"businesses": 0, "sent": 0, "blocked": 0, "skipped": 0}
+    async with session_scope() as session:
+        client_ids = await live_client_ids(session)
+    for client_id in client_ids:
+        # A session per business, as above: one business's failure must not
+        # roll back another's.
+        try:
+            async with session_scope() as session:
+                result = await scheduled.sweep_client(session, client_id)
+        except Exception as exc:
+            log.error("scheduled sweep failed for %s: %s", client_id, exc)
+            continue
+        totals["businesses"] += 1
+        totals["sent"] += result["sent"]
+        totals["blocked"] += result["blocked"]
+        totals["skipped"] += result["skipped"]
+    if totals["sent"] or totals["blocked"]:
+        log.info("scheduled sweep: %s", totals)
     return totals

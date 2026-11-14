@@ -466,6 +466,74 @@ class Lead(Base):
     )
 
 
+class ScheduledMessage(Base):
+    """One outbound message that is due later.
+
+    The same argument as `app/core/reminders.py` makes, generalised. The
+    obvious implementation of "text them in six months" is a delayed job, and
+    it is the fragile one: the job lives in Redis, so a flush loses every
+    pending recall silently, and a customer who books in the meantime leaves an
+    orphan that still fires.
+
+    So this is a row, and a sweep decides what is due. Nothing is held in
+    memory, a worker outage self-heals on the next pass, and cancelling is an
+    UPDATE rather than a hunt through a queue.
+
+    `body` is not stored. The text is composed from a template at send time, in
+    the customer's language, exactly as a reminder is - a message written
+    months ahead and stored verbatim is a message that will eventually be sent
+    after the business changed its name, its prices or its mind.
+    """
+
+    __tablename__ = "scheduled_messages"
+    __table_args__ = (
+        # The sweep's index. Partial, because a message that has been sent or
+        # cancelled is never considered again, and those accumulate forever
+        # while the pending set stays small.
+        Index(
+            "ix_scheduled_due",
+            "client_id",
+            "due_at",
+            postgresql_where=text("sent_at IS NULL AND cancelled_at IS NULL"),
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    client_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("clients.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    customer_id: Mapped[uuid.UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("customers.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    conversation_id: Mapped[uuid.UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("conversations.id", ondelete="SET NULL")
+    )
+    #: Which template composes it: "recall" or "follow_up".
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    #: What it is about, in the customer's own words - "the villa in Marbella",
+    #: "your check-up". Echoed into the template, never used as the whole
+    #: message, so a stored string cannot become an unreviewed outbound text.
+    topic: Mapped[str | None] = mapped_column(String(200))
+    due_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    #: Marks the *attempt*, like `appointments.reminder_sent_at`. A message
+    #: that could not be delivered is still marked: the alternative is retrying
+    #: every quarter of an hour forever.
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    #: Set when the reason for the message goes away - they booked, they opted
+    #: out, the owner called it off.
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    cancelled_reason: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
 class Job(Base):
     """Powers "is it ready yet?". Status set by the owner over WhatsApp."""
 

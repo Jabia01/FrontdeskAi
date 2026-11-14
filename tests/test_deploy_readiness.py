@@ -231,7 +231,23 @@ class TestTheBlueprint:
         from app.queue.worker import WorkerSettings
 
         assert len(WorkerSettings.functions) >= 5
-        assert len(WorkerSettings.cron_jobs) == 2
+        assert len(WorkerSettings.cron_jobs) >= 2
+
+    def test_every_sweep_is_actually_scheduled(self):
+        """A sweep registered as a function but given no cron job never runs,
+        and nothing fails to say so - the symptom is a reminder that silently
+        stops arriving."""
+        from app.queue.worker import WorkerSettings
+
+        sweeps = {
+            fn.__name__
+            for fn in WorkerSettings.functions
+            if fn.__name__.startswith("sweep_")
+        }
+        # arq names a cron job "cron:<fn>", so compare the coroutine itself.
+        scheduled = {job.coroutine.__name__ for job in WorkerSettings.cron_jobs}
+        assert sweeps, "no sweeps registered at all"
+        assert sweeps <= scheduled, f"never run: {sorted(sweeps - scheduled)}"
 
 
 class TestTheEmbeddedWorker:

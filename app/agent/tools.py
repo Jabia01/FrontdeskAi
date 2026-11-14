@@ -22,7 +22,7 @@ import logging
 import uuid
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -32,7 +32,12 @@ from app.agent.niche import NICHES
 from app.core.router import ShopContext
 from app.integrations import listings
 from app.repo import create_lead as repo_create_lead
-from app.repo import hand_off, latest_job_for_item
+from app.repo import (
+    hand_off,
+    latest_job_for_item,
+    pending_scheduled_for_customer,
+    schedule_message,
+)
 
 log = logging.getLogger(__name__)
 
@@ -573,6 +578,94 @@ async def _document_checklist(ctx: ToolContext, case_type: str) -> str:
     )
 
 
+#: How far ahead a recall may be set. Six weeks to two years covers a dental
+#: hygiene recall and a property buyer who said "next spring"; anything outside
+#: it is a misread date, not an intention.
+_RECALL_MIN_DAYS = 42
+_RECALL_MAX_DAYS = 730
+
+#: A follow-up sequence, in days from now. Three touches over a month, not
+#: thirty - the point is to stay in mind, and the fastest way to be blocked is
+#: to arrive every day.
+_FOLLOW_UP_DAYS = (3, 10, 30)
+
+#: Per customer, per shop. A customer who talks to the bot five times must not
+#: end up with five sequences running at once.
+_MAX_PENDING = 6
+
+
+async def _schedule(
+    ctx: ToolContext, kind: str, topic: str, offsets_days: tuple[int, ...]
+) -> int:
+    """Write the rows. Returns how many were written."""
+    now = ctx.now or datetime.now(UTC)
+    pending = await pending_scheduled_for_customer(
+        ctx.session, ctx.shop.client_id, ctx.customer_id
+    )
+    room = _MAX_PENDING - len(pending)
+    if room <= 0:
+        return 0
+
+    written = 0
+    for days in offsets_days[:room]:
+        await schedule_message(
+            ctx.session,
+            ctx.shop.client_id,
+            customer_id=ctx.customer_id,
+            conversation_id=ctx.conversation_id,
+            kind=kind,
+            topic=" ".join((topic or "").split())[:200] or None,
+            due_at=now + timedelta(days=days),
+        )
+        written += 1
+    return written
+
+
+async def _recall_reminder(ctx: ToolContext, months: str, topic: str) -> str:
+    """Ask us to get back in touch in a few months.
+
+    The message itself is not written now and not written by the model: the
+    sweep composes it from a template at send time, in the customer's language.
+    A message drafted today and stored verbatim is one that goes out next year
+    after the business changed its name or its prices.
+    """
+    try:
+        count = int(str(months).strip() or 0)
+    except ValueError:
+        count = 0
+    days = count * 30
+    if not _RECALL_MIN_DAYS <= days <= _RECALL_MAX_DAYS:
+        return (
+            "That is not a sensible interval for a recall. Ask how many months "
+            "they would like, between 2 and 24, and do not schedule anything yet."
+        )
+
+    written = await _schedule(ctx, "recall", topic, (days,))
+    if not written:
+        return (
+            "This customer already has several messages scheduled. Do not add "
+            "another - say someone will be in touch."
+        )
+    return (
+        f"Recall set for about {count} months' time. Tell them you will be in "
+        f"touch then, and that they can reply STOP at any point."
+    )
+
+
+async def _follow_up_sequence(ctx: ToolContext, topic: str) -> str:
+    """Three touches over a month, for a buyer who is still deciding."""
+    written = await _schedule(ctx, "follow_up", topic, _FOLLOW_UP_DAYS)
+    if not written:
+        return (
+            "This customer already has several messages scheduled. Do not add "
+            "another - say an agent will be in touch."
+        )
+    return (
+        f"Follow-up set: {written} message(s) over the next month. Tell them you "
+        f"will check back, and that they can reply STOP at any point."
+    )
+
+
 async def _not_enabled(ctx: ToolContext, **kwargs: Any) -> str:
     return "This capability is not available yet. Hand off to a human instead."
 
@@ -963,6 +1056,58 @@ _SPECS: tuple[ToolSpec, ...] = (
             "additionalProperties": False,
         },
         handler=_document_checklist,
+    ),
+    # ------------------------------------------------- scheduled outbound
+    ToolSpec(
+        name="recall_reminder",
+        description=(
+            "Ask the business to get back in touch in a few months - a routine "
+            "check-up, or a customer who said 'not yet, try me in the spring'. "
+            "Only call this when the customer has agreed to be contacted."
+        ),
+        input_schema={
+            "type": "object",
+            "properties": {
+                "months": {
+                    "type": "string",
+                    "description": "How many months from now, as a number, 2 to 24.",
+                },
+                "topic": {
+                    "type": "string",
+                    "description": (
+                        "What it is about, in the customer's own words - "
+                        "'your check-up', 'the villa in Marbella'. Kept short; "
+                        "it is quoted back to them."
+                    ),
+                },
+            },
+            "required": ["months", "topic"],
+            "additionalProperties": False,
+        },
+        handler=_recall_reminder,
+    ),
+    ToolSpec(
+        name="follow_up_sequence",
+        description=(
+            "Check back with a buyer who is still deciding, a few times over "
+            "the next month. Only call this when they have agreed to be "
+            "contacted - never to chase someone who said no."
+        ),
+        input_schema={
+            "type": "object",
+            "properties": {
+                "topic": {
+                    "type": "string",
+                    "description": (
+                        "What they are looking for, in their own words. Quoted "
+                        "back to them, so keep it short."
+                    ),
+                }
+            },
+            "required": ["topic"],
+            "additionalProperties": False,
+        },
+        handler=_follow_up_sequence,
     ),
 )
 
