@@ -18,7 +18,7 @@ import uuid
 import pytest
 from anthropic.types import Message
 
-from app.agent import runner
+from app.agent import runner, tools
 from app.agent.tools import ToolContext
 from app.core.router import load_shop
 from app.db import session_scope
@@ -570,3 +570,72 @@ class TestHistory:
         assert runner.history_to_messages(rows) == [
             {"role": "user", "content": "hi"}
         ]
+
+
+class TestTheNicheDecidesTheToolBlock:
+    """A dental clinic must not be handed the trades "is it ready?" tool. The
+    prompt already says so; this is the half that enforces it."""
+
+    @staticmethod
+    def _as_niche(ctx, vertical: str):
+        ctx["shop"].config["vertical"] = vertical
+        ctx["shop"]._prompts.clear()  # the prompt is memoised per channel
+        return ctx
+
+    async def test_a_dental_shop_is_not_sent_get_job_status(self, ctx, fake_claude):
+        client = fake_claude([msg(reply_json("Hello."))])
+        await run(self._as_niche(ctx, "dental"))
+        sent = [t["name"] for t in client.messages.requests[0]["tools"]]
+        assert "get_job_status" not in sent
+        assert sent == tools.tool_names("dental")
+
+    async def test_an_auto_shop_still_gets_everything(self, ctx, fake_claude):
+        client = fake_claude([msg(reply_json("Hello."))])
+        await run(self._as_niche(ctx, "auto"))
+        sent = [t["name"] for t in client.messages.requests[0]["tools"]]
+        assert sent == tools.tool_names()
+
+    async def test_the_turn_hint_names_only_the_tools_it_has(self, ctx, fake_claude):
+        client = fake_claude([msg(reply_json("Hello."))])
+        await run(self._as_niche(ctx, "dental"))
+        hint = next(
+            m["content"]
+            for m in client.messages.requests[0]["messages"]
+            if m["role"] == "system"
+        )
+        assert "get_job_status" not in hint
+        assert "book_appointment" in hint
+
+    async def test_the_escalation_retry_sends_the_same_tool_block(
+        self, ctx, fake_claude
+    ):
+        """Two passes, one tool block. A different block on the retry would pay
+        a second cold prefix for the same turn."""
+        client = fake_claude(
+            [
+                # Unparseable, which is what actually forces the retry.
+                msg([{"type": "text", "text": "not json at all"}]),
+                msg(reply_json("Hello."), model="claude-sonnet-5-5"),
+            ]
+        )
+        out = await run(self._as_niche(ctx, "dental"))
+        assert out.escalated is True
+        assert len(client.messages.requests) == 2
+        first, second = (r["tools"] for r in client.messages.requests)
+        assert first == second
+
+
+class TestDispatchRefusesAnOutOfNicheTool:
+    async def test_a_dental_shop_cannot_reach_get_job_status(self, ctx):
+        ctx["shop"].config["vertical"] = "dental"
+        with pytest.raises(KeyError):
+            await tools.dispatch(ctx["tool_ctx"], "get_job_status", {"item": "x"})
+
+    async def test_an_auto_shop_still_can(self, ctx):
+        ctx["shop"].config["vertical"] = "auto"
+        out = await tools.dispatch(ctx["tool_ctx"], "get_job_status", {"item": "x"})
+        assert isinstance(out, str)
+
+    async def test_an_unknown_tool_is_still_a_key_error(self, ctx):
+        with pytest.raises(KeyError):
+            await tools.dispatch(ctx["tool_ctx"], "no_such_tool", {})

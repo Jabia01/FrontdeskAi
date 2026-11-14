@@ -144,6 +144,12 @@ def history_to_messages(history: list[Message]) -> list[dict[str, Any]]:
     return messages
 
 
+def _niche(shop: ShopContext) -> str:
+    """The shop's niche key, or "" for anything unrecognised - which resolves
+    to every enabled tool, exactly as before niches existed."""
+    return (shop.config.get("vertical") or "") if shop else ""
+
+
 def build_turn_hint(
     shop: ShopContext,
     decision: lang.LanguageDecision,
@@ -192,7 +198,9 @@ def build_turn_hint(
             "factual questions (hours, address, services) in it anyway, but call "
             "handoff_to_human for anything more involved."
         )
-    parts.append(f"Tools available: {', '.join(tool_names())}.")
+    # Only the tools this shop was handed. Naming one it does not have
+    # invites a call that `dispatch` refuses.
+    parts.append(f"Tools available: {', '.join(tool_names(_niche(shop)))}.")
     return " ".join(parts)
 
 
@@ -229,6 +237,7 @@ async def _one_pass(
     tool_ctx: ToolContext,
     usage: Usage,
     tool_calls: list[str],
+    tools: list[dict[str, Any]],
 ) -> tuple[AgentReply | None, str | None, bool]:
     """Run the tool loop on one model.
 
@@ -250,7 +259,7 @@ async def _one_pass(
                 }
             ],
             messages=messages,
-            tools=tool_definitions(),
+            tools=tools,
             output_config={"effort": effort, "format": AGENT_REPLY_SCHEMA},
         )
         usage.add(model, response.usage)
@@ -366,6 +375,9 @@ async def run_agent(
 
     usage = Usage()
     tool_calls: list[str] = []
+    # Resolved once per turn, not per pass: the escalation retry must send the
+    # identical tool block or it pays a second cold prefix.
+    tools = tool_definitions(_niche(shop))
 
     escalate, why = _should_escalate_upfront(customer_text, shop)
     model = settings.model_escalation if escalate else settings.model_default
@@ -382,6 +394,7 @@ async def run_agent(
             tool_ctx=tool_ctx,
             usage=usage,
             tool_calls=tool_calls,
+            tools=tools,
         )
     except Exception as exc:
         # Deliberately broad: a missing credential raises TypeError, a bad
@@ -410,6 +423,7 @@ async def run_agent(
                 tool_ctx=tool_ctx,
                 usage=usage,
                 tool_calls=tool_calls,
+                tools=tools,
             )
         except Exception as exc:
             log.error("escalated Claude call failed: %s", exc)

@@ -28,6 +28,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agent.niche import NICHES
 from app.core.router import ShopContext
 from app.repo import create_lead as repo_create_lead
 from app.repo import hand_off, latest_job_for_item
@@ -479,18 +480,54 @@ ENABLED_TOOLS: tuple[ToolSpec, ...] = tuple(s for s in _SPECS if s.enabled)
 
 BY_NAME: dict[str, ToolSpec] = {s.name: s for s in _SPECS}
 
+#: The tool list for each niche, resolved once at import.
+#:
+#: This does not break the cache rule above. What the prefix needs is
+#: *stability*, not uniformity: the list a given shop sees must be the same
+#: bytes on every request. It is, because the niche is a property of the shop
+#: and the order comes from `_SPECS` rather than from a set or a sort. Two
+#: shops in different niches get two cache entries, which they would anyway -
+#: the system prompt already differs per shop.
+#:
+#: Built by filtering `ENABLED_TOOLS` rather than by listing names in order, so
+#: a niche cannot accidentally reorder the prefix.
+NICHE_TOOLS: dict[str, tuple[ToolSpec, ...]] = {
+    key: tuple(spec for spec in ENABLED_TOOLS if spec.name in niche.tools)
+    for key, niche in NICHES.items()
+}
 
-def tool_definitions() -> list[dict[str, Any]]:
-    return [spec.definition() for spec in ENABLED_TOOLS]
+
+def tools_for(niche: str = "") -> tuple[ToolSpec, ...]:
+    """The specs for one niche. No argument, or an unknown one, is every
+    enabled tool - which is what every caller got before niches existed."""
+    if not niche:
+        return ENABLED_TOOLS
+    return NICHE_TOOLS.get(niche, ENABLED_TOOLS)
 
 
-def tool_names() -> list[str]:
-    return [spec.name for spec in ENABLED_TOOLS]
+def tool_definitions(niche: str = "") -> list[dict[str, Any]]:
+    return [spec.definition() for spec in tools_for(niche)]
+
+
+def tool_names(niche: str = "") -> list[str]:
+    return [spec.name for spec in tools_for(niche)]
 
 
 async def dispatch(ctx: ToolContext, name: str, arguments: dict[str, Any]) -> str:
-    """Run one tool call. Raises KeyError for an unknown tool."""
+    """Run one tool call. Raises KeyError for an unknown or out-of-niche tool.
+
+    The niche check is not belt-and-braces. The model sees a cached prefix, and
+    a shop that changed niche - or a stale turn replayed from history - can ask
+    for a tool this shop must not have. A dental clinic answering "is my case
+    ready?" out of the trades mechanism is exactly the failure the boundary
+    exists to prevent, so it is refused here as well as discouraged in the
+    prompt.
+    """
     spec = BY_NAME.get(name)
     if spec is None or not spec.enabled:
+        raise KeyError(name)
+    niche = (ctx.shop.config.get("vertical") or "") if ctx.shop else ""
+    if niche and spec not in tools_for(niche):
+        log.warning("refused out-of-niche tool %s for a %s shop", name, niche)
         raise KeyError(name)
     return await spec.handler(ctx, **arguments)
