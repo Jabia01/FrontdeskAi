@@ -52,6 +52,18 @@
         it is the difference between "Which vehicle?" and "Which job?".</span>
       <input type="text" name="job_noun" maxlength="32" value="{{ form.job_noun }}">
     </label>
+    <label>Currency
+      <span class="hint">Rendered next to every price range in the system
+        prompt, so the agent quotes in the right money. A clinic in Spain
+        should be on euros before it quotes anything.</span>
+      <select name="currency">
+        {% for symbol in currencies %}
+        <option value="{{ symbol }}"
+          {% if symbol == form.currency %}selected{% endif %}>
+          {{ symbol }}</option>
+        {% endfor %}
+      </select>
+    </label>
   </div>
 
   <div class="card">

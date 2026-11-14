@@ -244,6 +244,7 @@ async def new_shop_form(
         section="shops",
         timezones=defaults.TIMEZONES,
         verticals=defaults.VERTICALS,
+        currencies=defaults.CURRENCIES,
         signup=signup,
         **await _chrome(session),
     )
@@ -253,7 +254,7 @@ async def new_shop_form(
 async def create_shop(
     request: Request,
     name: str = Form(""),
-    timezone: str = Form("America/Chicago"),
+    timezone: str = Form(defaults.DEFAULT_TIMEZONE),
     owner_phone: str = Form(""),
     vertical: str = Form("other"),
     enabled_languages: str = Form("en"),
@@ -280,6 +281,7 @@ async def create_shop(
             section="shops",
             timezones=defaults.TIMEZONES,
             verticals=defaults.VERTICALS,
+            currencies=defaults.CURRENCIES,
             error=error,
             form={
                 "name": name,
@@ -351,7 +353,7 @@ async def create_shop(
     client = await repo_admin.create_client_with_config(
         session,
         name=name.strip()[:200],
-        timezone=timezone.strip() or "America/Chicago",
+        timezone=timezone.strip() or defaults.DEFAULT_TIMEZONE,
         owner_phone=owner,
         languages=languages,
         config=defaults.new_shop_config(
@@ -524,6 +526,7 @@ def _config_form(client, config) -> dict:
         "owner_channel": (config.owner_channel if config else "auto") or "auto",
         "vertical": (config.vertical if config else "other") or "other",
         "job_noun": (config.job_noun if config else "job") or "job",
+        "currency": (config.currency if config else "$") or "$",
         "reminder_hours_before": (
             config.reminder_hours_before if config else 24
         ),
@@ -552,6 +555,7 @@ async def config_form(
         weekdays=defaults.WEEKDAYS,
         timezones=defaults.TIMEZONES,
         verticals=defaults.VERTICALS,
+        currencies=defaults.CURRENCIES,
         ok=(
             "Shop created. Fill in the services, hours and prices before you "
             "take it out of shadow mode."
@@ -598,6 +602,7 @@ async def save_config(
             weekdays=defaults.WEEKDAYS,
             timezones=defaults.TIMEZONES,
             verticals=defaults.VERTICALS,
+            currencies=defaults.CURRENCIES,
             error=error,
             status_code=400,
         )
@@ -651,6 +656,14 @@ async def save_config(
                 else "other"
             ),
             "job_noun": value("job_noun").strip().lower()[:32] or "job",
+            # Validated against a short list rather than free text: this is
+            # rendered next to every price in the system prompt, and a typo
+            # there is wrong on every reply rather than on one page.
+            "currency": (
+                value("currency").strip()
+                if value("currency").strip() in defaults.CURRENCIES
+                else "$"
+            ),
             # 0 is meaningful here: it turns reminders off.
             "reminder_hours_before": forms.bounded_int(
                 value("reminder_hours_before"),
