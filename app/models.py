@@ -183,6 +183,13 @@ class ClientConfig(Base):
     job_noun: Mapped[str] = mapped_column(
         String(32), default="job", server_default=text("'job'"), nullable=False
     )
+    #: The symbol prices are written in. A column rather than a key inside
+    #: `business_info`, because it is rendered into the system prompt next to
+    #: every price range - a shop quoting euros in dollars is wrong on every
+    #: reply, not just on the pricing page.
+    currency: Mapped[str] = mapped_column(
+        String(8), default="$", server_default=text("'$'"), nullable=False
+    )
 
     # ---- v1.5: reminders and the daily summary -----------------------------
     #: Hours before the appointment to send a reminder. 0 turns it off.
@@ -281,6 +288,15 @@ class Conversation(Base):
     __table_args__ = (
         Index("ix_conv_client_customer", "client_id", "customer_id"),
         UniqueConstraint("client_id", "short_code", name="uq_conv_client_short_code"),
+        # Partial: only a handed-off conversation has a code, and those are a
+        # small fraction of the table. Counting escalations by reason is the
+        # one query a regulated niche runs often.
+        Index(
+            "ix_conv_handoff_code",
+            "client_id",
+            "handoff_code",
+            postgresql_where=text("handoff_code IS NOT NULL"),
+        ),
     )
 
     id: Mapped[uuid.UUID] = _uuid_pk()
@@ -308,7 +324,19 @@ class Conversation(Base):
     misunderstand_count: Mapped[int] = mapped_column(Integer, default=0)
     ai_failure_count: Mapped[int] = mapped_column(Integer, default=0)
 
+    #: What the model said, in its own words. Free text on purpose - it quotes
+    #: the customer and is the thing an owner actually reads.
     handoff_reason: Mapped[str | None] = mapped_column(String(200))
+    #: The same escalation, categorised. Free text cannot be counted, and a
+    #: regulated niche has to be able to answer "how often did it hand off a
+    #: clinical question this month". Values come from `app.core.handoff`;
+    #: a plain String rather than a Postgres enum, so a new code is a code
+    #: change and not an `ALTER TYPE` on a live table.
+    handoff_code: Mapped[str | None] = mapped_column(String(32))
+    #: The handover note written for the owner. Composed today and sent in the
+    #: alert, then thrown away - so the console could show that a conversation
+    #: is with a human but never why.
+    handoff_summary: Mapped[str | None] = mapped_column(Text)
     handed_off_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     created_at: Mapped[datetime] = mapped_column(

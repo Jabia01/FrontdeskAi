@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.agent.niche import NICHES
+from app.agent.niche import NICHES, niche_for
 
 WEEKDAYS = (
     "monday",
@@ -108,6 +108,10 @@ HOURS: dict[str, str] = {
     "sunday": "closed",
 }
 
+#: Offered in the console's currency picker. A short list on purpose - the
+#: symbol is rendered into the system prompt next to every price range.
+CURRENCIES = ("€", "$", "£")
+
 #: The zone a new shop gets when nobody picks one.
 DEFAULT_TIMEZONE = "Europe/Madrid"
 
@@ -142,6 +146,7 @@ def new_shop_config(
     fills in a starting point for services and handoff keywords, and the word
     this business uses for a job.
     """
+    spec = niche_for(vertical)
     preset = VERTICALS.get(vertical) or VERTICALS["other"]
     keywords = list(HANDOFF_RULES["keywords"])
     for keyword in preset["handoff_keywords"]:
@@ -150,6 +155,9 @@ def new_shop_config(
     return {
         "vertical": vertical if vertical in VERTICALS else "other",
         "job_noun": preset["job_noun"],
+        # Seeded from the niche, editable afterwards: a Spanish clinic should
+        # not have to remember to change this before its first quote.
+        "currency": spec.currency,
         "business_info": {},
         "services": list(preset["services"]),
         "hours": dict(HOURS),

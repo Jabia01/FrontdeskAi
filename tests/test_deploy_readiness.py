@@ -9,6 +9,7 @@ here rather than discovered on a deploy.
 from __future__ import annotations
 
 import pathlib
+import re
 
 import pytest
 
@@ -422,3 +423,58 @@ class TestTheSuiteCannotCallAProvider:
         assert result.ok is True
         assert result.provider_msg_id.startswith("stub-")
         assert len(STUB_SENDS) == before + 1
+
+
+class TestTheMigrationChain:
+    """`preDeployCommand` runs `alembic upgrade head` before any new instance
+    takes traffic. A branched or broken chain therefore does not fail a test -
+    it fails a deploy, after the image has already been built."""
+
+    @staticmethod
+    def _revisions() -> dict[str, str | None]:
+        chain: dict[str, str | None] = {}
+        for path in (REPO / "migrations" / "versions").glob("*.py"):
+            text = path.read_text(encoding="utf-8")
+            # Quote style varies: the initial migration kept alembic's single
+            # quotes, later ones were hand-edited to double.
+            revision = re.search(
+                r"""^revision: str = ['"]([^'"]+)['"]""", text, re.MULTILINE
+            )
+            down = re.search(
+                r"""^down_revision: str \| None = (?:['"]([^'"]+)['"]|None)""",
+                text,
+                re.MULTILINE,
+            )
+            assert revision, f"{path.name} has no revision id"
+            assert down, f"{path.name} has no down_revision"
+            chain[revision.group(1)] = down.group(1)
+        return chain
+
+    def test_there_is_exactly_one_head(self):
+        chain = self._revisions()
+        parents = {down for down in chain.values() if down is not None}
+        heads = sorted(set(chain) - parents)
+        assert len(heads) == 1, f"expected one head, found {heads}"
+
+    def test_there_is_exactly_one_base(self):
+        chain = self._revisions()
+        bases = sorted(rev for rev, down in chain.items() if down is None)
+        assert len(bases) == 1, f"expected one base, found {bases}"
+
+    def test_every_parent_exists(self):
+        chain = self._revisions()
+        for revision, down in chain.items():
+            if down is not None:
+                assert down in chain, f"{revision} points at a missing {down}"
+
+    def test_the_chain_reaches_every_migration(self):
+        """No orphan: walking back from the head must visit all of them."""
+        chain = self._revisions()
+        parents = {down for down in chain.values() if down is not None}
+        head = next(iter(set(chain) - parents))
+        seen, cursor = set(), head
+        while cursor is not None:
+            assert cursor not in seen, f"cycle at {cursor}"
+            seen.add(cursor)
+            cursor = chain[cursor]
+        assert seen == set(chain)

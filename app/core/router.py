@@ -61,6 +61,17 @@ class ShopContext:
         styles = self.config.get("channel_style") or {}
         return styles.get(channel) or {}
 
+    @property
+    def niche(self):
+        """The behavioural spec for this shop's vertical. Never raises."""
+        from app.agent.niche import niche_for
+
+        return niche_for(self.config.get("vertical"))
+
+    @property
+    def currency(self) -> str:
+        return self.config.get("currency") or "$"
+
 
 _CACHE: dict[uuid.UUID, tuple[float, ShopContext]] = {}
 
@@ -87,6 +98,7 @@ def _config_to_dict(config) -> dict[str, Any]:
         # job, and the scheduled-message settings.
         "vertical": config.vertical or "other",
         "job_noun": config.job_noun or "job",
+        "currency": config.currency or "$",
         "reminder_hours_before": (
             config.reminder_hours_before
             if config.reminder_hours_before is not None
