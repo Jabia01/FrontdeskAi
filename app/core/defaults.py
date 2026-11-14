@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.agent.niche import NICHES
+
 WEEKDAYS = (
     "monday",
     "tuesday",
@@ -64,59 +66,36 @@ HANDOFF_RULES: dict[str, Any] = {
     "notes": "",
 }
 
-#: What a kind of business starts with. Config only - there is no per-vertical
-#: code path anywhere, which is the whole point: one codebase, many businesses.
+#: What a kind of business starts with. Seed values only: an owner edits all of
+#: it afterwards in the console.
 #:
 #: `job_noun` is the word for what a job is about, and it is load-bearing: it is
 #: rendered into the system prompt and into what the owner is texted, so the
-#: same code reads naturally to a garage and to a dog groomer.
+#: same code reads naturally to a garage and to a dental clinic.
 #:
-#: Regulated trades - medical, dental, legal, financial - are deliberately
-#: absent. They need advice boundaries and record-keeping rules reviewed before
-#: anyone onboards one, not a preset that makes it look routine.
+#: Derived from `app/agent/niche.py` so the seed layer and the behavioural layer
+#: cannot drift. That module is also where a niche's tools, extra hard rules and
+#: advice boundary live.
+#:
+#: Regulated niches: dental, real estate and immigration are supported, and each
+#: one carries controls that the unregulated presets do not - a mandatory advice
+#: boundary in the system prompt, a mandatory AI disclosure on first contact, a
+#: reduced tool set, dedicated handoff reason codes, and a scenario suite run
+#: against the live model before release. See `docs/niches.md`.
+#:
+#: Still deliberately absent, and not to be added without the same treatment:
+#: anything that would have the agent diagnose, prescribe, or give financial,
+#: investment or tax advice. The controls below are what make a niche sellable;
+#: they are not a licence to add the next one by copying a dict entry.
 VERTICALS: dict[str, dict[str, Any]] = {
-    "auto": {
-        "label": "Auto repair, tyres, bodywork",
-        "job_noun": "vehicle",
-        "services": ["Brakes", "Oil change", "Tyres", "Diagnostics"],
-        "handoff_keywords": ["tow", "accident", "insurance", "lawyer"],
-        "example": "READY 2014 Civic",
-    },
-    "salon": {
-        "label": "Salon, barber, nails, beauty",
-        "job_noun": "appointment",
-        "services": ["Cut", "Colour", "Blow dry"],
-        "handoff_keywords": ["complaint", "refund", "allergic", "reaction"],
-        "example": "READY Maria",
-    },
-    "pet": {
-        "label": "Pet grooming, boarding, daycare",
-        "job_noun": "pet",
-        "services": ["Full groom", "Bath and tidy", "Nail trim"],
-        "handoff_keywords": ["bite", "aggressive", "injury", "sick", "vet"],
-        "example": "READY Bella",
-    },
-    "trades": {
-        "label": "Plumbing, electrical, HVAC, handyman",
-        "job_noun": "job",
-        "services": ["Call-out", "Repair", "Installation"],
-        "handoff_keywords": ["leak", "flood", "gas", "emergency", "no power"],
-        "example": "READY job 1482",
-    },
-    "repair": {
-        "label": "Phone, computer and appliance repair",
-        "job_noun": "device",
-        "services": ["Screen replacement", "Battery replacement", "Diagnostics"],
-        "handoff_keywords": ["data loss", "warranty", "insurance", "refund"],
-        "example": "READY iPhone 13",
-    },
-    "other": {
-        "label": "Something else",
-        "job_noun": "job",
-        "services": [],
-        "handoff_keywords": [],
-        "example": "READY job 1482",
-    },
+    key: {
+        "label": spec.label,
+        "job_noun": spec.job_noun,
+        "services": list(spec.services),
+        "handoff_keywords": list(spec.handoff_keywords),
+        "example": spec.example,
+    }
+    for key, spec in NICHES.items()
 }
 
 HOURS: dict[str, str] = {
@@ -129,9 +108,15 @@ HOURS: dict[str, str] = {
     "sunday": "closed",
 }
 
+#: The zone a new shop gets when nobody picks one.
+DEFAULT_TIMEZONE = "Europe/Madrid"
+
 #: Offered in the console's timezone picker. Not a limit - any zoneinfo name
-#: works - just the ones a US pilot actually needs.
+#: works - just the ones the Spanish and Portuguese market and the US pilots
+#: actually need.
 TIMEZONES = (
+    "Europe/Madrid",
+    "Europe/Lisbon",
     "America/Chicago",
     "America/New_York",
     "America/Denver",

@@ -268,9 +268,29 @@ salon, a groomer, a plumber and a repair shop is config:
   whatever that is. It was called `vehicle` until v1.5; the migration renames it
   rather than dropping and re-adding, so no data is lost.
 
-Regulated trades - medical, dental, legal, financial - are deliberately absent
-from the presets. They need advice boundaries and record-keeping rules reviewed
-before anyone onboards one, not a preset that makes it look routine.
+### Regulated niches
+
+Three regulated niches are supported - `dental`, `real_estate` and
+`immigration` - and they are not ordinary presets. Each one carries controls the
+unregulated verticals do not:
+
+- a **mandatory advice boundary** rendered into the system prompt, derived from
+  the niche rather than stored in `client_config`, so a console edit cannot
+  delete it;
+- a **mandatory AI disclosure** on first contact;
+- a **reduced tool set** - a dental shop is not given `get_job_status` at all;
+- **dedicated handoff reason codes**, so an escalation is categorised rather
+  than described in free text;
+- a **scenario suite run against the live model** before release.
+
+The behavioural layer lives in `app/agent/niche.py`; `VERTICALS` is derived from
+it, so the two cannot drift. `docs/niches.md` is the per-niche reference: what
+each one does, what it refuses, and why.
+
+Still deliberately absent, and not to be added by copying a dict entry: anything
+that would have the agent diagnose, prescribe, or give financial, investment or
+tax advice. The controls above are what make a niche sellable - a boundary and
+a disclosure, reviewed by someone qualified, not a label.
 
 ## Testing
 
