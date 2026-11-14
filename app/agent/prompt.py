@@ -16,11 +16,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import textwrap
 from collections.abc import Collection, Iterable
 from typing import Any
 
 from app.agent.language import LANGUAGE_NAMES
-from app.agent.niche import ALL_TOOLS
+from app.agent.niche import niche_for
 
 # Channel style lives in the system prompt, so each (shop, channel) pair gets its
 # own cache entry. That is still stable per channel, which is what matters.
@@ -65,7 +66,10 @@ def _hours_lines(hours: dict[str, str]) -> str:
     return "\n".join(known + extra) or "  (not configured)"
 
 
-def _price_lines(price_ranges: list[dict[str, Any]]) -> str:
+def _price_lines(price_ranges: list[dict[str, Any]], currency: str = "$") -> str:
+    """Ranges in the shop's own money. The symbol comes from config rather than
+    being hardcoded: a clinic in Spain quoting dollars is wrong on every reply,
+    not just on a pricing page."""
     if not price_ranges:
         return "  (no price ranges configured - never quote a number)"
     lines = []
@@ -73,9 +77,9 @@ def _price_lines(price_ranges: list[dict[str, Any]]) -> str:
         service = item.get("service", "?")
         low, high = item.get("low"), item.get("high")
         if low is not None and high is not None and low != high:
-            lines.append(f"  {service}: ${low}-${high}")
+            lines.append(f"  {service}: {currency}{low}-{currency}{high}")
         elif low is not None:
-            lines.append(f"  {service}: ${low}")
+            lines.append(f"  {service}: {currency}{low}")
         else:
             lines.append(f"  {service}: (no range set)")
     return "\n".join(lines)
@@ -187,7 +191,26 @@ def _numbered(rules: Iterable[str]) -> str:
     job-status rule must not leave a hole where 5 used to be, and one that adds
     two rules of its own must not restart the count.
     """
-    return "\n".join(f"{i}. {rule}" for i, rule in enumerate(rules, start=1))
+    out = []
+    for i, rule in enumerate(rules, start=1):
+        prefix = f"{i}. "
+        if "\n" in rule:
+            # Hand-wrapped in this module, with its own three-space
+            # continuation indent. Left exactly as written.
+            out.append(prefix + rule)
+        else:
+            # Prose from a niche spec. Wrapped here, with the continuation
+            # indent matched to the number so "10." lines up like "9." does.
+            out.append(
+                textwrap.fill(
+                    prefix + " ".join(rule.split()),
+                    width=_WIDTH,
+                    subsequent_indent=" " * len(prefix),
+                    break_long_words=False,
+                    break_on_hyphens=False,
+                )
+            )
+    return "\n".join(out)
 
 
 def _rule_blocks(tools: Collection[str]) -> tuple[str, ...]:
@@ -202,12 +225,53 @@ def _rule_blocks(tools: Collection[str]) -> tuple[str, ...]:
     return tuple(rules)
 
 
+#: The core rules are hand-wrapped in this module and must stay byte-for-byte
+#: as they are. Niche rules are written as prose in `app/agent/niche.py`, so
+#: they are wrapped here instead - same width, same continuation indent, so the
+#: rendered block reads as one list rather than seven tidy rules and three long
+#: ones. An operator reads this prompt to understand an answer.
+_WIDTH = 79
+
+
+def _wrap_paragraphs(text: str) -> str:
+    return "\n".join(
+        textwrap.fill(
+            " ".join(line.split()),
+            width=_WIDTH,
+            break_long_words=False,
+            break_on_hyphens=False,
+        )
+        for line in text.splitlines()
+        if line.strip()
+    )
+
+
+def _boundary_block(spec) -> str:
+    """The advice boundary for a regulated niche, as its own section.
+
+    Deliberately not folded into the numbered rules. A numbered rule is one
+    instruction among many; a section headed "What you must not do" is the
+    thing the model is most likely to still be weighing at the end of a long
+    conversation - which is exactly when a clinical or legal question arrives.
+
+    Empty for an unregulated vertical, which renders as nothing at all rather
+    than as an empty heading.
+    """
+    if not spec.boundary:
+        return ""
+    notices = "".join(
+        f"\n\n{_wrap_paragraphs(notice)}" for notice in spec.first_contact_notices
+    )
+    body = _wrap_paragraphs(spec.boundary)
+    return f"\n\n## What you must not do\n\n{body}{notices}"
+
+
 BASE_RULES = """\
 {identity}
 
 ## Hard rules
 
-{hard_rules}
+{hard_rules}{boundary}
 
 {language}
 
@@ -236,7 +300,9 @@ def build_base_prompt(shop: dict[str, Any]) -> str:
         + _hours_lines(config.get("hours") or {}),
         "",
         "## Price ranges (estimates only)\n"
-        + _price_lines(config.get("price_ranges") or []),
+        + _price_lines(
+            config.get("price_ranges") or [], config.get("currency") or "$"
+        ),
         "",
         "## Frequently asked\n" + _faq_lines(config.get("faqs") or []),
     ]
@@ -261,12 +327,14 @@ def build_system_prompt(shop: dict[str, Any], channel: str) -> str:
     style = styles.get(channel) or DEFAULT_CHANNEL_STYLE.get(channel) or {}
 
     owner_language = config.get("owner_language") or "en"
-    # Phase 2.1 is structure only: every shop still gets every rule, so the
-    # rendered prompt is byte-identical to the single template this replaced.
-    # Phase 2.2 passes the niche's own tool set here instead.
+    # The niche decides which rules this shop is held to and which tools it was
+    # handed. `niche_for` never raises: an unknown vertical falls back to
+    # `other`, which is the full, unconstrained set it has always been.
+    spec = niche_for(config.get("vertical"))
     composed = BASE_RULES.format(
         identity=IDENTITY,
-        hard_rules=_numbered(_rule_blocks(ALL_TOOLS)),
+        hard_rules=_numbered(_rule_blocks(spec.tools) + spec.rules),
+        boundary=_boundary_block(spec),
         language=LANGUAGE_BLOCK,
         style=STYLE_BLOCK,
         tone_block=TONE_BLOCK,
