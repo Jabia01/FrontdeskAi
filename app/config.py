@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -9,6 +10,20 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def _strip(cls, value: object) -> object:
+        """Trim whitespace off every string setting.
+
+        A secret pasted into a dashboard field very often arrives with a
+        trailing newline. That newline is an illegal HTTP header value, so the
+        Anthropic SDK raises `APIConnectionError("Connection error.")` - which
+        reads like a network fault and sends you looking in the wrong place.
+        The same paste breaks Twilio signatures and Redis URLs just as quietly.
+        Stripping here fixes every one of them at the point they are loaded.
+        """
+        return value.strip() if isinstance(value, str) else value
 
     # Claude
     anthropic_api_key: str = ""
