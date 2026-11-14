@@ -66,9 +66,16 @@ class TestDeterminism:
         assert "T00:" not in text
 
     def test_tool_definitions_are_stable_and_ordered(self):
-        """Tools render before `system`, so their order is part of the prefix."""
+        """Tools render before `system`, so their order is part of the prefix.
+
+        This is the *global* registry, which grows as niches add tools. What
+        must not change is the order of the ones already here: a tool inserted
+        in the middle would move the prefix for every existing shop. New tools
+        are appended, and per-niche lists are filtered from this order - see
+        `tests/test_niche_tools.py`.
+        """
         assert tool_definitions() == tool_definitions()
-        assert tool_names() == [
+        assert tool_names()[:6] == [
             "get_business_info",
             "create_lead",
             "handoff_to_human",

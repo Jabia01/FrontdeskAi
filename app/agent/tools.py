@@ -30,6 +30,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.niche import NICHES
 from app.core.router import ShopContext
+from app.integrations import listings
 from app.repo import create_lead as repo_create_lead
 from app.repo import hand_off, latest_job_for_item
 
@@ -280,6 +281,298 @@ async def _get_job_status(ctx: ToolContext, item: str) -> str:
     )
 
 
+async def _price_range(ctx: ToolContext, service: str) -> str:
+    """A "from" figure for one service, or an honest refusal.
+
+    `get_business_info("prices")` hands the model the whole table and lets it
+    work out which row applies. For a regulated niche that is one inference too
+    many: a clinic's veneer price depends on the consultation, and a model
+    holding five rows is a model that might average two of them. This answers
+    one service and refuses everything else.
+
+    It never computes. No arithmetic, no combining, no scaling - the only
+    numbers it can emit are ones the business typed in.
+    """
+    wanted = " ".join((service or "").split()).lower()
+    ranges = ctx.shop.config.get("price_ranges") or []
+    currency = ctx.shop.config.get("currency") or "$"
+
+    if not ranges:
+        return (
+            "This business has not listed any prices. Say you will have someone "
+            "confirm the price - do not estimate one."
+        )
+
+    match = None
+    for item in ranges:
+        name = " ".join(str(item.get("service", "")).split()).lower()
+        if name and (name == wanted or wanted in name or name in wanted):
+            match = item
+            break
+
+    if match is None:
+        listed = ", ".join(str(i.get("service", "?")) for i in ranges)
+        return (
+            f"No price is listed for '{service}'. Say the business will confirm "
+            f"that one, and do not estimate it. Prices exist for: {listed}."
+        )
+
+    low, high = match.get("low"), match.get("high")
+    if low is None:
+        return (
+            f"'{match.get('service')}' has no figure set. Say the business will "
+            f"confirm it, and do not estimate."
+        )
+
+    payload: dict[str, Any] = {
+        "service": match.get("service"),
+        "from": f"{currency}{low}",
+        "instruction": (
+            "Quote this as a 'from' figure only. Say the exact price depends on "
+            "seeing them. Never add, scale or combine listed prices."
+        ),
+    }
+    if high is not None and high != low:
+        payload["listed_upper"] = f"{currency}{high}"
+    return json.dumps(payload, sort_keys=True, ensure_ascii=False)
+
+
+async def _send_deposit_link(ctx: ToolContext, reason: str) -> str:
+    """Hand over a link the business configured. It never mints one.
+
+    The URL lives in `business_info.deposit_url`, a JSONB blob that already
+    takes arbitrary keys - so this needs no column and no migration. An unset
+    link is a refusal rather than an improvisation: a payment URL invented by a
+    language model is the worst thing on this list to get wrong.
+    """
+    url = (ctx.shop.config.get("business_info") or {}).get("deposit_url")
+    if not url:
+        return (
+            "No deposit link is configured for this business. Do not invent a "
+            "link or a payment method. Say someone will send it, and hand off."
+        )
+    return json.dumps(
+        {
+            "url": url,
+            "reason": (reason or "").strip()[:200],
+            "instruction": (
+                "Send this link exactly as written. Do not shorten it, change "
+                "it, or quote an amount that is not already in it."
+            ),
+        },
+        sort_keys=True,
+        ensure_ascii=False,
+    )
+
+
+async def _capture_travel_dates(
+    ctx: ToolContext, arriving: str, leaving: str, treatment: str
+) -> str:
+    """When a patient flying in is actually in the country.
+
+    Stored as a lead rather than on the customer: it is true of one trip, not
+    of the person. `treatment` is the only clinical-adjacent field, and it is
+    the one the patient already volunteered by asking about it - nothing here
+    invites a medical history.
+    """
+    arriving = (arriving or "").strip()[:40]
+    leaving = (leaving or "").strip()[:40]
+    if not arriving and not leaving:
+        return "No dates given. Ask when they arrive before calling this again."
+
+    note = f"Travelling: arrives {arriving or '?'}, leaves {leaving or '?'}."
+    await repo_create_lead(
+        ctx.session,
+        ctx.shop.client_id,
+        customer_id=ctx.customer_id,
+        conversation_id=ctx.conversation_id,
+        item=(treatment or "").strip()[:200] or None,
+        issue=note,
+        contact=None,
+    )
+    return (
+        "Travel dates saved. Offer times inside that window only, and do not "
+        "promise that a treatment can be finished within it - the clinic "
+        "decides that."
+    )
+
+
+async def _qualify_buyer(
+    ctx: ToolContext,
+    budget: str,
+    area: str,
+    timeline: str,
+    funding: str,
+    nie_status: str,
+) -> str:
+    """The five facts an agent needs before a viewing is worth arranging.
+
+    Written to a lead, not to the customer record: a budget is true of one
+    search, not of a person, and the next enquiry from the same number may be
+    for something else entirely.
+
+    `nie_status` is asked as a fact, never advised on. Whether they need one,
+    how to get one and what it means for tax are all legal questions this
+    niche's boundary forbids.
+    """
+    fields = {
+        "budget": budget,
+        "area": area,
+        "timeline": timeline,
+        "funding": funding,
+        "nie": nie_status,
+    }
+    given = {k: " ".join(str(v).split())[:120] for k, v in fields.items() if v}
+    if not given:
+        return (
+            "Nothing to save yet. Ask for the budget and the area first, one "
+            "question at a time."
+        )
+
+    note = "; ".join(f"{key}: {value}" for key, value in sorted(given.items()))
+    await repo_create_lead(
+        ctx.session,
+        ctx.shop.client_id,
+        customer_id=ctx.customer_id,
+        conversation_id=ctx.conversation_id,
+        item=given.get("area") or None,
+        issue=note,
+        contact=None,
+    )
+    missing = sorted(set(fields) - set(given))
+    return json.dumps(
+        {
+            "saved": sorted(given),
+            "still_missing": missing,
+            "instruction": (
+                "An agent has this now. Ask for at most one missing item, then "
+                "offer to arrange a viewing. Do not advise on NIE, mortgages, "
+                "tax or residency."
+            ),
+        },
+        sort_keys=True,
+        ensure_ascii=False,
+    )
+
+
+async def _send_matching_listings(
+    ctx: ToolContext, area: str, max_price: str, bedrooms: str
+) -> str:
+    """What the agency has, in the agency's own words.
+
+    The search goes through `app.integrations.listings.SOURCE`, so wiring a
+    real feed later does not touch this handler. Whatever comes back is passed
+    through verbatim - no summarising, no translating the description, no
+    filling in a detail the agency did not write.
+    """
+    found = await listings.SOURCE.search(
+        ctx.shop.config,
+        area=" ".join((area or "").split()),
+        max_price=(max_price or "").strip(),
+        bedrooms=(bedrooms or "").strip(),
+    )
+    if not found:
+        return (
+            "No listing matches, or none is configured. Say you will have an "
+            "agent send what is available - do not describe a property, invent "
+            "a reference, or promise something is on the books."
+        )
+    return json.dumps(
+        {
+            "listings": [item.as_dict() for item in found],
+            "instruction": (
+                "Send these in the agency's own words. Do not add a size, a "
+                "build year, a licence status or any detail that is not here. "
+                "Do not confirm availability - offer a viewing instead."
+            ),
+        },
+        sort_keys=True,
+        ensure_ascii=False,
+    )
+
+
+#: The case types a firm is asked to sort an enquiry into. A fixed list, so the
+#: schema stays shop-independent and the cache prefix holds.
+CASE_TYPES = (
+    "arraigo",
+    "nationality",
+    "tie_renewal",
+    "digital_nomad_visa",
+    "family_reunification",
+    "other",
+)
+
+
+async def _intake_case_type(ctx: ToolContext, case_type: str, summary: str) -> str:
+    """Sort the enquiry, take the facts, book the consultation.
+
+    This is the only shape the immigration niche is allowed: it records what
+    the client says the matter is. It does not decide whether that is the right
+    route, which is the legal question the boundary forbids.
+    """
+    kind = (case_type or "").strip().lower()
+    if kind not in CASE_TYPES:
+        kind = "other"
+
+    await repo_create_lead(
+        ctx.session,
+        ctx.shop.client_id,
+        customer_id=ctx.customer_id,
+        conversation_id=ctx.conversation_id,
+        item=kind,
+        issue=" ".join((summary or "").split())[:2000] or None,
+        contact=None,
+    )
+    return json.dumps(
+        {
+            "case_type": kind,
+            "instruction": (
+                "Recorded. Offer a consultation next. Do not say whether they "
+                "qualify, which route is better, how long it takes, or what "
+                "will happen - a lawyer decides all of that."
+            ),
+        },
+        sort_keys=True,
+        ensure_ascii=False,
+    )
+
+
+async def _document_checklist(ctx: ToolContext, case_type: str) -> str:
+    """Only a list the firm wrote down.
+
+    A plausible-looking document list is the most dangerous thing this niche
+    could produce: a client who turns up at a cita missing one paper loses the
+    appointment and sometimes the application. So there is no fallback, no
+    general knowledge and no partial list - either the firm has published one
+    for this case type or the answer is "I will have someone confirm".
+    """
+    kind = (case_type or "").strip().lower()
+    published = (ctx.shop.config.get("business_info") or {}).get(
+        "document_checklists"
+    ) or {}
+    items = published.get(kind) if isinstance(published, dict) else None
+
+    if not items:
+        return (
+            f"The firm has not published a document list for '{case_type}'. Say "
+            f"someone will confirm exactly what is needed. Do not list "
+            f"documents from your own knowledge, and do not give a partial list."
+        )
+    return json.dumps(
+        {
+            "case_type": kind,
+            "documents": list(items),
+            "instruction": (
+                "Send this list exactly as written. Do not add to it, do not "
+                "explain what any document is for, and say the firm will "
+                "confirm anything specific to their case."
+            ),
+        },
+        sort_keys=True,
+        ensure_ascii=False,
+    )
+
+
 async def _not_enabled(ctx: ToolContext, **kwargs: Any) -> str:
     return "This capability is not available yet. Hand off to a human instead."
 
@@ -471,6 +764,205 @@ _SPECS: tuple[ToolSpec, ...] = (
             "additionalProperties": False,
         },
         handler=_get_job_status,
+    ),
+    # ----------------------------------------------------------------- dental
+    # Appended rather than slotted in beside the tools they resemble: the order
+    # of this tuple is the order of the cache prefix, so inserting in the
+    # middle would move every existing shop's prefix for no behavioural gain.
+    ToolSpec(
+        name="price_range",
+        description=(
+            "Look up the 'from' price for one named service. Use this instead "
+            "of reading the price table yourself whenever the customer asks "
+            "what something costs. It returns only figures the business has "
+            "listed, and refuses when there is none - it never estimates."
+        ),
+        input_schema={
+            "type": "object",
+            "properties": {
+                "service": {
+                    "type": "string",
+                    "description": (
+                        "The service the customer asked about, in their own "
+                        "words - e.g. 'veneers', 'implant', 'check-up'."
+                    ),
+                }
+            },
+            "required": ["service"],
+            "additionalProperties": False,
+        },
+        handler=_price_range,
+    ),
+    ToolSpec(
+        name="send_deposit_link",
+        description=(
+            "Fetch the business's own deposit or payment link so you can send "
+            "it. Call this when the customer agrees to pay a deposit. Never "
+            "write a payment link yourself - if none is configured this "
+            "refuses, and you must hand off."
+        ),
+        input_schema={
+            "type": "object",
+            "properties": {
+                "reason": {
+                    "type": "string",
+                    "description": (
+                        "What the deposit is for, in a few words, for the "
+                        "business's own record."
+                    ),
+                }
+            },
+            "required": ["reason"],
+            "additionalProperties": False,
+        },
+        handler=_send_deposit_link,
+    ),
+    ToolSpec(
+        name="capture_travel_dates",
+        description=(
+            "Save when a customer travelling from abroad will be in the "
+            "country. Call this once they mention travel dates, before "
+            "offering appointment times, so only times inside their stay are "
+            "offered."
+        ),
+        input_schema={
+            "type": "object",
+            "properties": {
+                "arriving": {
+                    "type": "string",
+                    "description": "Arrival date as the customer gave it, or ''.",
+                },
+                "leaving": {
+                    "type": "string",
+                    "description": "Departure date as the customer gave it, or ''.",
+                },
+                "treatment": {
+                    "type": "string",
+                    "description": (
+                        "The treatment or service they are coming for, as they "
+                        "described it. Do not add clinical detail of your own."
+                    ),
+                },
+            },
+            "required": ["arriving", "leaving", "treatment"],
+            "additionalProperties": False,
+        },
+        handler=_capture_travel_dates,
+    ),
+    # ------------------------------------------------------------ real estate
+    ToolSpec(
+        name="qualify_buyer",
+        description=(
+            "Save what a buyer is looking for: budget, area, timeline, whether "
+            "they are buying with cash or a mortgage, and whether they already "
+            "have an NIE. Call this as the facts emerge. Ask about NIE as a "
+            "fact only - never advise on how to get one or what it means."
+        ),
+        input_schema={
+            "type": "object",
+            "properties": {
+                "budget": {"type": "string", "description": "Their budget, or ''."},
+                "area": {"type": "string", "description": "Where they want to buy."},
+                "timeline": {
+                    "type": "string",
+                    "description": "When they want to buy, in their words.",
+                },
+                "funding": {
+                    "type": "string",
+                    "description": "'cash', 'mortgage', or '' if not said.",
+                },
+                "nie_status": {
+                    "type": "string",
+                    "description": "Whether they have an NIE, as stated, or ''.",
+                },
+            },
+            "required": [
+                "budget",
+                "area",
+                "timeline",
+                "funding",
+                "nie_status",
+            ],
+            "additionalProperties": False,
+        },
+        handler=_qualify_buyer,
+    ),
+    ToolSpec(
+        name="send_matching_listings",
+        description=(
+            "Find properties the agency has that match what the buyer wants. "
+            "Returns the agency's own listing text. Never describe a property "
+            "that did not come from this tool, and never confirm that one is "
+            "still available."
+        ),
+        input_schema={
+            "type": "object",
+            "properties": {
+                "area": {"type": "string", "description": "Area or town, or ''."},
+                "max_price": {
+                    "type": "string",
+                    "description": "Upper budget as given, e.g. '900000', or ''.",
+                },
+                "bedrooms": {
+                    "type": "string",
+                    "description": "Minimum bedrooms as a number, or ''.",
+                },
+            },
+            "required": ["area", "max_price", "bedrooms"],
+            "additionalProperties": False,
+        },
+        handler=_send_matching_listings,
+    ),
+    # ------------------------------------------------------------- immigration
+    ToolSpec(
+        name="intake_case_type",
+        description=(
+            "Record what kind of matter the client has, and the facts they "
+            "gave. Call this once it is clear what they are asking about, "
+            "before offering a consultation. Recording a case type is not "
+            "advising that it is the right route."
+        ),
+        input_schema={
+            "type": "object",
+            "properties": {
+                "case_type": {
+                    "type": "string",
+                    "enum": list(CASE_TYPES),
+                    "description": "The matter, as the client describes it.",
+                },
+                "summary": {
+                    "type": "string",
+                    "description": (
+                        "The facts in the client's own words. Do not include "
+                        "passport, NIE or case file numbers."
+                    ),
+                },
+            },
+            "required": ["case_type", "summary"],
+            "additionalProperties": False,
+        },
+        handler=_intake_case_type,
+    ),
+    ToolSpec(
+        name="document_checklist",
+        description=(
+            "Fetch the firm's own published list of documents for a case type. "
+            "Only ever send a list this returns. If it has none, say someone "
+            "will confirm - never list documents from your own knowledge."
+        ),
+        input_schema={
+            "type": "object",
+            "properties": {
+                "case_type": {
+                    "type": "string",
+                    "enum": list(CASE_TYPES),
+                    "description": "Which case type the list is for.",
+                }
+            },
+            "required": ["case_type"],
+            "additionalProperties": False,
+        },
+        handler=_document_checklist,
     ),
 )
 

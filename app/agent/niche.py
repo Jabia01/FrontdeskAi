@@ -167,7 +167,8 @@ NICHES: dict[str, NicheSpec] = {
         market_languages=("es", "en", "de", "nl", "fr", "sv", "no", "ru", "uk"),
         currency="€",
         example="READY treatment",
-        tools=CORE_TOOLS,
+        tools=CORE_TOOLS
+        + ("price_range", "send_deposit_link", "capture_travel_dates"),
         regulated=True,
         rules=(
             ("Never diagnose, never suggest what a symptom might be, and never "
@@ -237,7 +238,7 @@ NICHES: dict[str, NicheSpec] = {
         market_languages=("es", "en", "de", "nl", "fr", "sv", "no", "ru", "uk"),
         currency="€",
         example="READY enquiry",
-        tools=CORE_TOOLS,
+        tools=CORE_TOOLS + ("qualify_buyer", "send_matching_listings"),
         regulated=True,
         rules=(
             ("Never confirm that a property is still available, never confirm or "
@@ -311,7 +312,8 @@ NICHES: dict[str, NicheSpec] = {
         # `get_job_status` is kept and re-used as case-status updates. This is
         # the one place the trades mechanism transfers cleanly: the firm sets a
         # status, the client asks, and the bot reports only what was set.
-        tools=CORE_TOOLS + ("get_job_status",),
+        tools=CORE_TOOLS
+        + ("get_job_status", "intake_case_type", "document_checklist"),
         regulated=True,
         rules=(
             ("Never say what will happen to an application, how likely it is to "

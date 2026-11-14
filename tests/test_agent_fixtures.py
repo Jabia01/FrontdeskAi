@@ -589,11 +589,23 @@ class TestTheNicheDecidesTheToolBlock:
         assert "get_job_status" not in sent
         assert sent == tools.tool_names("dental")
 
-    async def test_an_auto_shop_still_gets_everything(self, ctx, fake_claude):
+    async def test_an_auto_shop_keeps_exactly_what_it_always_had(
+        self, ctx, fake_claude
+    ):
+        """Not the whole registry - the six it had before niches existed. A
+        tool added for a clinic must not quietly appear at a garage."""
         client = fake_claude([msg(reply_json("Hello."))])
         await run(self._as_niche(ctx, "auto"))
         sent = [t["name"] for t in client.messages.requests[0]["tools"]]
-        assert sent == tools.tool_names()
+        assert sent == tools.tool_names("auto")
+        assert sent == [
+            "get_business_info",
+            "create_lead",
+            "handoff_to_human",
+            "check_availability",
+            "book_appointment",
+            "get_job_status",
+        ]
 
     async def test_the_turn_hint_names_only_the_tools_it_has(self, ctx, fake_claude):
         client = fake_claude([msg(reply_json("Hello."))])
