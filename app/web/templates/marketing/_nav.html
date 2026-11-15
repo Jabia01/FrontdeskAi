@@ -1,6 +1,7 @@
 <header class="nav">
   <div class="nav-inner">
-    <a class="wordmark chichi-hover" href="/" aria-label="{{ brand.name }} home">
+    <a class="wordmark chichi-hover" href="/"
+       aria-label="{{ brand.name }} {{ copy.nav.home_label }}">
       {% with avatar=True, size=36, uid="nav" %}
         {% include "marketing/_mascot.html" %}
       {% endwith %}
@@ -8,15 +9,15 @@
     </a>
 
     <nav class="nav-links" aria-label="Main">
-      <a href="/#how">How it works</a>
-      <a href="/#features">What it does</a>
-      <a href="/#languages">Languages</a>
-      <a href="/#pricing">Pricing</a>
-      <a href="/#faq">Questions</a>
+      <a href="/#how">{{ copy.nav.how }}</a>
+      <a href="/#features">{{ copy.nav.features }}</a>
+      <a href="/#languages">{{ copy.nav.languages }}</a>
+      <a href="/#pricing">{{ copy.nav.pricing }}</a>
+      <a href="/#faq">{{ copy.nav.faq }}</a>
     </nav>
 
     <div class="nav-cta">
-      <a class="btn btn-primary btn-sm" href="/#signup">Get started</a>
+      <a class="btn btn-primary btn-sm" href="/#signup">{{ copy.nav.cta }}</a>
     </div>
   </div>
 </header>

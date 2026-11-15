@@ -199,8 +199,8 @@ OWNER_ALERT = {
     "code": "2F2K",
     "title": "New booking [2F2K]",
     "body": (
-        "Civic 2014, front brakes\n"
-        "Friday 13 Nov, 8:00 AM\n"
+        "Veneers consultation - Ms Jansen, from Rotterdam\n"
+        "Thursday 4 June, 10:30\n"
         "Reply OK to confirm, or CHANGE if that won't work."
     ),
 }
@@ -220,7 +220,7 @@ HEADLINE_TAILS: list[str] = [
     "a phone nobody answered.",
     "a text you read too late.",
     "a voicemail nobody checks.",
-    "the shop that answered first.",
+    "the business that answered first.",
     "a language you don't speak.",
     "the Sunday you took off.",
 ]
@@ -291,41 +291,43 @@ REVIEWS: list[dict[str, Any]] = [
     {
         "quote": (
             "I used to lose the whole morning to the phone. Now I look up at "
-            "lunch and there are three jobs booked that I never touched."
+            "lunch and there are three consultations booked that I never "
+            "touched."
         ),
         "name": "Sample Name",
-        "role": "Owner, sample auto shop",
-        "trade": "Auto repair",
+        "role": "Owner, sample dental clinic",
+        "trade": "Dental",
         "sample": True,
     },
     {
         "quote": (
-            "Half my customers write in Spanish. It answers them properly, "
-            "first time, and I don't have to be the translator any more."
+            "Most of our patients write in German or Dutch. It answers them "
+            "properly, first time, and nobody here has to be the translator "
+            "any more."
         ),
         "name": "Sample Name",
-        "role": "Owner, sample tyre shop",
-        "trade": "Tyres",
+        "role": "Practice manager, sample clinic",
+        "trade": "Dental",
         "sample": True,
     },
     {
         "quote": (
             "The two weeks where it just shows you what it would have said - "
-            "that's what sold me. I corrected it maybe four times."
+            "that is what sold me. I corrected it maybe four times."
         ),
         "name": "Sample Name",
-        "role": "Owner, sample grooming salon",
-        "trade": "Pet grooming",
+        "role": "Owner, sample estate agency",
+        "trade": "Real estate",
         "sample": True,
     },
     {
         "quote": (
-            "Missed calls were costing me more than I wanted to admit. Now "
-            "they get a text before they've put the phone down."
+            "Enquiries from abroad arrive at midnight and go cold by morning. "
+            "Now they get an answer before they have closed the tab."
         ),
         "name": "Sample Name",
-        "role": "Owner, sample plumbing company",
-        "trade": "Plumbing",
+        "role": "Owner, sample estate agency",
+        "trade": "Real estate",
         "sample": True,
     },
     {
@@ -334,18 +336,19 @@ REVIEWS: list[dict[str, Any]] = [
             "out. That alone paid for it."
         ),
         "name": "Sample Name",
-        "role": "Owner, sample barbershop",
-        "trade": "Barber",
+        "role": "Owner, sample aesthetic clinic",
+        "trade": "Aesthetics",
         "sample": True,
     },
     {
         "quote": (
             "It knows when to stop, which is the bit I was worried about. "
-            "Anything awkward comes straight to my phone."
+            "Anything that turns on a client's own facts comes straight to my "
+            "phone."
         ),
         "name": "Sample Name",
-        "role": "Owner, sample repair shop",
-        "trade": "Device repair",
+        "role": "Partner, sample immigration firm",
+        "trade": "Immigration law",
         "sample": True,
     },
 ]
@@ -370,25 +373,26 @@ FEATURES: list[dict[str, str]] = [
         "title": "Picks up the phone",
         "body": (
             "A real conversation, not a menu. It knows your prices and your "
-            "calendar, and it books the appointment while you're still on the "
-            "job."
+            "diary, and it books the appointment while you are still with the "
+            "person in front of you."
         ),
     },
     {
         "icon": "languages",
         "title": "Answers in their language",
         "body": (
-            "Spanish, Polish, English - spoken or written, answered in the "
-            "same one the first time. No menus, no 'press 1 for Spanish'."
+            "Spanish, German, Dutch, Swedish, Arabic - spoken or written, "
+            "answered in the same one the first time. No menus, and no "
+            "'press 1 for English'."
         ),
     },
     {
         "icon": "phone-forwarded",
         "title": "Puts the caller through to you",
         "body": (
-            "An accident, a complaint, anything it shouldn't touch - it says "
-            "it's putting them through and transfers the live call to your "
-            "phone."
+            "A clinical question, a complaint, anything it should not touch "
+            "- it says it is putting them through, and transfers the live "
+            "call to your phone."
         ),
     },
     {
@@ -417,10 +421,12 @@ FEATURES: list[dict[str, str]] = [
     },
     {
         "icon": "check",
-        "title": "Answers 'is it ready yet?'",
+        "title": "Answers 'where are we up to?'",
         "body": (
-            "You text READY once - a car, a dog, a laptop, a suit. They are "
-            "told the moment they ask."
+            "You text READY once, and whoever is waiting is told the moment "
+            "they ask. For the businesses that track work this way - a "
+            "firm's case, a workshop's repair - and off for the ones that "
+            "do not."
         ),
     },
     {
@@ -443,8 +449,9 @@ FEATURES: list[dict[str, str]] = [
         "icon": "hash",
         "title": "Runs on your own number",
         "body": (
-            "The number on your signs and your van, forwarded when nobody "
-            "picks up. Your customers never need to know anything changed."
+            "The number on your door and in your listings, forwarded when "
+            "nobody picks up. Your customers never need to know anything "
+            "changed."
         ),
     },
 ]
@@ -512,8 +519,8 @@ FAQ: list[dict[str, str]] = [
     {
         "q": "Do I have to change my phone number?",
         "a": (
-            "No. You keep the number on your signs and your van, and forward "
-            "it when nobody picks up - the same setting you'd use for "
+            "No. You keep the number on your door and in your listings, and "
+            "forward it when nobody picks up - the same setting you'd use for "
             "voicemail. Pick up yourself whenever you're free; Chichi only "
             "takes the calls you don't."
         ),
@@ -582,6 +589,170 @@ COPY: dict[str, Any] = {
     "see_pricing": "See pricing",
     "niche_does": "What it does",
     "niche_refuses": "What it will not do",
+    # ---- the rest of the landing page ----------------------------------
+    # Everything that used to be typed into landing.html and _nav.html. It is
+    # here for the same reason the form's labels are: a second language has to
+    # be a file, not a second copy of the page. The move also flushed out the
+    # last of the US trades copy - a lede that booked "the job while you're
+    # still under the car" is not addressed to a clinic in Marbella.
+    "nav": {
+        "how": "How it works",
+        "features": "What it does",
+        "languages": "Languages",
+        "pricing": "Pricing",
+        "faq": "Questions",
+        "cta": "Get started",
+        "home_label": "home",
+    },
+    "hero": {
+        "lede": (
+            "They call or write to your number, in whatever language they "
+            "speak. {brand} answers in it - your prices, your hours, your "
+            "diary - and books the appointment before they try the next "
+            "place on the list."
+        ),
+        "cta": "Start free for {days} days",
+        "secondary": "See how it works",
+        "channels_label": "How customers reach you",
+        "points": [
+            {"lead": "Answers in seconds", "rest": ", at 2am, in any language"},
+            {
+                "lead": "Never loses an enquiry",
+                "rest": " you already paid to win",
+            },
+        ],
+        "price_point": ", cancel any time, nothing to install",
+        "note": "Nothing reaches a customer until you have approved it.",
+        "answering_in": "answering in",
+        "owner_phone": "Your phone",
+        "owner_reply": "OK",
+    },
+    "problem": {
+        "eyebrow": "The maths nobody runs",
+        "heading": "The customer you lost",
+        "heading_accent": "this morning.",
+        "beats": [
+            {
+                "time": "23:40",
+                "text": (
+                    "Someone writes from abroad asking what a treatment "
+                    "costs. You are asleep, or with a patient, or in a "
+                    "hearing. You will reply in the morning."
+                ),
+            },
+            {
+                "time": "23:42",
+                "text": (
+                    "They write to the next business on the list. That one "
+                    "answers."
+                ),
+            },
+            {
+                "time": "09:15",
+                "text": (
+                    "You reply. They booked somewhere else nine hours ago."
+                ),
+            },
+        ],
+        # The only string on the page carrying markup, and the emphasis is
+        # the sentence rather than decoration. A locale module is source
+        # code, not user input, so the template renders it unescaped - which
+        # is only true of this file and of the ones beside it.
+        "close": (
+            "It is not that you are slow. It is that you were "
+            "<em>working</em>, or asleep, and they were not. {brand} answers "
+            "in the ninety seconds you do not have."
+        ),
+    },
+    "how": {
+        "eyebrow": "How it works",
+        "heading": "Three steps. The middle one",
+        "heading_accent": "is why owners say yes.",
+        "steps": [
+            {
+                "tag": "",
+                "title": "We learn your business",
+                "body": (
+                    "Your hours, your services, your price ranges and the way "
+                    "you talk. Nothing is invented: if a price is not on your "
+                    "list it says so and offers a consultation rather than "
+                    "guessing at a number."
+                ),
+            },
+            {
+                "tag": "no one else does this",
+                "title": "Two weeks of shadowing",
+                "body": (
+                    "It writes the reply, you approve it on WhatsApp. You see "
+                    "exactly what it would have said to a real customer "
+                    "before anyone hears from it. Rewrite it and yours goes "
+                    "instead."
+                ),
+            },
+            {
+                "title": "It answers",
+                "tag": "",
+                "body": (
+                    "The phone, WhatsApp and text, day and night, in their "
+                    "language. Anything it should not touch - a clinical "
+                    "question, a case that turns on someone's own facts, a "
+                    "complaint - stops, and on a live call it puts them "
+                    "straight through to you."
+                ),
+            },
+        ],
+    },
+    "features_head": {
+        "eyebrow": "What it does",
+        "heading": "A front desk that",
+        "heading_accent": "never clocks off.",
+    },
+    "meet": {
+        "eyebrow": "Meet {brand}",
+        "heading": "It's already",
+        "heading_accent": "at the desk.",
+        "lede": (
+            "{brand} does not take lunch, does not put anyone on hold and "
+            "does not lose the note somebody wrote on the back of an "
+            "envelope. It answers, it books, and when something needs a "
+            "human it stops and taps you on the shoulder."
+        ),
+        "note": (
+            "It knows your prices because you told it. It knows your hours "
+            "because you told it. Everything else, it hands to you."
+        ),
+    },
+    "languages_head": {
+        "eyebrow": "Languages",
+        "heading": "Your customers do not",
+        "heading_accent": "all speak Spanish.",
+        "lede": (
+            "Most systems make someone choose a language before they can ask "
+            "a question. {brand} reads what they wrote and answers in it - "
+            "first reply, every time."
+        ),
+        "note": (
+            "Switch mid-conversation and it follows. A first message always "
+            "includes English, and always tells them they can write however "
+            "they like. You write your hours and prices once, in your own "
+            "language."
+        ),
+    },
+    "who": {
+        "eyebrow": "Who it's for",
+        "heading": "If your next customer",
+        "heading_accent": "is not from here.",
+    },
+    "reviews_head": {
+        "heading": "What owners say.",
+        "sample_flag": "Sample copy - not real customer quotes",
+    },
+    "pricing_eyebrow": "Pricing",
+    "faq_head": {
+        "eyebrow": "Questions",
+        "heading": "The ones owners",
+        "heading_accent": "actually ask.",
+    },
     # The page after the form. Short, and it promises a WhatsApp message
     # rather than an email on purpose: that is what the form asked for, and
     # replying by email to someone who gave us a WhatsApp number would be an

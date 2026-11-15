@@ -19,6 +19,7 @@ from app.agent.language import LANGUAGE_NAMES
 from app.web import phone as phone_util
 from app.web.auth import Principal
 from app.web.brand import BRAND
+from app.web.locales.en import COPY as DEFAULT_COPY
 
 TEMPLATE_DIR = Path(__file__).parent / "templates"
 STATIC_DIR = Path(__file__).parent / "static"
@@ -132,6 +133,14 @@ def render(
         context={
             # Available to every template, so the brand lives in one file.
             "brand": BRAND,
+            # The default locale's copy, as a fallback rather than a choice.
+            # `_nav.html` and `_footer.html` are included by every page that
+            # extends marketing/base.html, including the legal pages, which
+            # have no locale of their own - without this, adding a translated
+            # string to the nav would blank it on /privacy. A route that
+            # resolves a locale passes its own `copy` in `context`, and the
+            # spread below means that one wins.
+            "copy": DEFAULT_COPY,
             "principal": principal,
             "csrf_token": principal.csrf_token if principal else "",
             "now": datetime.now(UTC),
