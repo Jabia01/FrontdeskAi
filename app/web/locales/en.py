@@ -523,24 +523,27 @@ FAQ: list[dict[str, str]] = [
     },
 ]
 
+#: `href` points at the signup anchor until the three niche pages exist.
+#: Three 404s on a live landing page is a worse first impression than a
+#: short link, and a test asserts every href resolves.
 SECTORS: list[dict[str, str]] = [
     {
         "key": "dental",
-        "href": "/dental",
+        "href": "#signup",
         "name": "Dental and aesthetic clinics",
         "line": "The patient who writes at 11pm, from another country, "
         "in another language.",
     },
     {
         "key": "real_estate",
-        "href": "/inmobiliarias",
+        "href": "#signup",
         "name": "Estate agencies",
         "line": "The buyer browsing from Stockholm at midnight, asking what is "
         "still available.",
     },
     {
         "key": "immigration",
-        "href": "/extranjeria",
+        "href": "#signup",
         "name": "Immigration law firms",
         "line": "The client who needs an appointment, in Arabic, before a "
         "deadline they are frightened of.",

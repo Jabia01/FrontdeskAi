@@ -492,3 +492,24 @@ class TestTheRotatingHeadline:
         css = (STATIC / "site.css").read_text(encoding="utf-8")
         tail = css[css.index("prefers-reduced-motion"):]
         assert ".headline-swap > span:first-child" in tail
+
+
+class TestTheSectorCardsGoSomewhere:
+    """Three dead links on the landing page is a worse first impression than
+    no links at all, and it is the kind of thing nobody notices until a
+    visitor does."""
+
+    async def test_every_sector_href_resolves(self, client, db):
+        for sector in content.SECTORS:
+            href = sector["href"]
+            if href.startswith("#"):
+                # An in-page anchor: the target has to be on the page.
+                body = (await client.get("/")).text
+                assert f'id="{href[1:]}"' in body, href
+            else:
+                assert (await client.get(href)).status_code == 200, href
+
+    async def test_every_sector_appears_on_the_page(self, client, db):
+        body = (await client.get("/")).text
+        for sector in content.SECTORS:
+            assert sector["name"] in body
