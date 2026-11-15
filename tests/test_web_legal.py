@@ -150,9 +150,18 @@ class TestTheLandingPageIsHonest:
         ):
             assert real.lower() in body.lower(), real
 
-    async def test_the_price_comes_from_one_place(self, client, db):
+    async def test_the_prices_come_from_one_place(self, client, db):
+        """Every plan on the page is one defined in BRAND, and the page shows
+        all of them - a plan added to config and forgotten in the template is
+        the way a pricing page starts lying."""
         body = (await client.get("/")).text
-        assert f"{BRAND['currency']}{BRAND['price_monthly']}" in body
+        assert BRAND["plans"], "no plans configured"
+        for plan in BRAND["plans"]:
+            assert plan["price"] in body, plan["key"]
+            assert plan["name"] in body, plan["key"]
+
+    async def test_the_setup_fee_is_stated(self, client, db):
+        assert BRAND["setup_fee"] in (await client.get("/")).text
 
 
 class TestBrandPlaceholders:
@@ -167,7 +176,7 @@ class TestBrandPlaceholders:
     def test_the_identity_values_are_set(self):
         """Name, tagline and price are ours to choose, so they must never be
         placeholders - unlike the legal entity details, which are the user's."""
-        for key in ("name", "tagline", "description", "city", "price_monthly"):
+        for key in ("name", "tagline", "description", "city", "setup_fee"):
             assert BRAND[key] != TODO
             assert BRAND[key]
 

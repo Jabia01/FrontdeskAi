@@ -44,6 +44,8 @@ REQUIRED_KEYS: tuple[str, ...] = (
     "REVIEWS",
     "FEATURES",
     "FAQ",
+    "SECTORS",
+    "COPY",
 )
 
 

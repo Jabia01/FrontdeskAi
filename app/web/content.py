@@ -43,7 +43,8 @@ SHOW_REVIEWS = en.SHOW_REVIEWS
 REVIEWS = en.REVIEWS
 FEATURES = en.FEATURES
 FAQ = en.FAQ
-TRADES = en.TRADES
+SECTORS = en.SECTORS
+COPY = en.COPY
 
 
 def reviews_are_samples() -> bool:

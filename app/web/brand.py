@@ -36,12 +36,37 @@ BRAND: dict[str, Any] = {
     "address": TODO,              # a real postal address; 10DLC vetting wants one
     "jurisdiction": TODO,         # e.g. "the State of Illinois, United States"
     # ---- where we operate -----------------------------------------------
-    "city": "Chicago",
-    "market": "small businesses in Chicago",
+    "city": "Madrid",
+    "market": "clinics, agencies and law firms in Spain",
     # ---- commercial terms ------------------------------------------------
-    "price_monthly": 249,
-    "currency": "$",
+    #: Plans come from config, not from a template. `price` is the rendered
+    #: string rather than a symbol glued to a number: Spanish writes "490 €",
+    #: with the symbol after the amount and a space in between, and a template
+    #: doing `currency ~ price` cannot express that.
+    "currency": "€",
+    "plans": [
+        {
+            "key": "starter",
+            "name": "Starter",
+            "price_monthly": 490,
+            "price": "490 €",
+            "blurb": "One location, one number, every language.",
+        },
+        {
+            "key": "growth",
+            "name": "Growth",
+            "price_monthly": 790,
+            "price": "790 €",
+            "blurb": "More volume, more numbers, priority support.",
+        },
+    ],
+    #: A range, because it depends on how much of the clinic's own material
+    #: has to be loaded before it can answer anything.
+    "setup_fee": "300-500 €",
     "trial_days": 14,
+    #: The IVA position has to be stated somewhere a buyer sees it, and a
+    #: terms page that gets it wrong is a contract problem rather than a typo.
+    "vat_note": TODO,  # e.g. "Prices exclude 21% IVA."
     # ---- dates on the legal pages ---------------------------------------
     "legal_updated": "12 November 2026",
 }

@@ -1049,3 +1049,43 @@ html:not(.js) .headline-swap > span:first-child { opacity: 1; transform: none; }
 .phone-av { background: none; padding: 0; width: 34px; height: 34px; }
 .phone-av .chichi { width: 34px; height: 34px; }
 .phone-sub { display: flex; align-items: center; gap: 6px; }
+
+/* Sector cards. They replaced a scrolling marquee of trade names: three
+   links a visitor can actually use, instead of a strip that moved and said
+   nothing. One per niche, and the hrefs are the niche pages. */
+.sector-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  margin-top: 28px;
+}
+.sector-card {
+  display: block;
+  padding: 22px 24px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg-1);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+.sector-card:hover,
+.sector-card:focus-visible {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+.sector-card h3 {
+  margin: 0 0 8px;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+.sector-card p {
+  margin: 0;
+  color: var(--fg-3);
+  font-size: 15px;
+  line-height: 1.5;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sector-card { transition: none; }
+  .sector-card:hover, .sector-card:focus-visible { transform: none; }
+}

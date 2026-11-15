@@ -257,12 +257,6 @@ METRICS: list[dict[str, str]] = [
         "note": "no rota, no voicemail",
     },
     {
-        "value": "$0.0004",
-        "unit": "",
-        "label": "what a reply costs us",
-        "note": "which is why it is flat-rate for you",
-    },
-    {
         "value": "any",
         "unit": "",
         "label": "language they write in",
@@ -529,21 +523,53 @@ FAQ: list[dict[str, str]] = [
     },
 ]
 
-TRADES: list[str] = [
-    "Auto repair",
-    "Tyres & brakes",
-    "Salons",
-    "Barbers",
-    "Pet grooming",
-    "Plumbers",
-    "Electricians",
-    "HVAC",
-    "Phone repair",
-    "Appliance repair",
-    "Tailors",
-    "Dry cleaners",
-    "Body shops",
-    "Nail studios",
-    "Garden services",
-    "Locksmiths",
+SECTORS: list[dict[str, str]] = [
+    {
+        "key": "dental",
+        "href": "/dental",
+        "name": "Dental and aesthetic clinics",
+        "line": "The patient who writes at 11pm, from another country, "
+        "in another language.",
+    },
+    {
+        "key": "real_estate",
+        "href": "/inmobiliarias",
+        "name": "Estate agencies",
+        "line": "The buyer browsing from Stockholm at midnight, asking what is "
+        "still available.",
+    },
+    {
+        "key": "immigration",
+        "href": "/extranjeria",
+        "name": "Immigration law firms",
+        "line": "The client who needs an appointment, in Arabic, before a "
+        "deadline they are frightened of.",
+    },
 ]
+
+
+# ------------------------------------------------------------ page furniture
+
+#: Prose that used to be written straight into the templates. Here so a second
+#: locale is a file rather than a second set of templates.
+COPY: dict[str, Any] = {
+    "per_month": "month",
+    "cta_primary": "Start free",
+    "pricing_heading": "Two plans. Everything in both.",
+    "plan_includes": [
+        "Every text and WhatsApp answered, day and night",
+        "Every language your customers write in",
+        "Missed-call text-back within seconds",
+        "Appointment booking, confirmations and reminders",
+        "Your morning summary, and an alert the moment something needs you",
+    ],
+    "shadow_line": (
+        "14 days of shadow mode first - you approve every reply before it sends"
+    ),
+    "setup_fee_line": "One-off setup 300-500 €, depending on what we load in.",
+    "billing_line": (
+        "Billing starts when you switch it on, not when you sign up. "
+        "Cancel any time."
+    ),
+    "hero_price": "From 490 € a month",
+}

@@ -22,7 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import repo_admin
 from app.db import get_session
-from app.web import content
+from app.web import content, locales
 from app.web import phone as phone_util
 from app.web.templating import render
 
@@ -55,14 +55,22 @@ def reset_signup_throttle() -> None:
     _BY_ADDRESS.clear()
 
 
-def _landing_context() -> dict:
-    """Everything the landing page renders, from app/web/content.py.
+def _landing_context(locale: str | None = None) -> dict:
+    """Everything the landing page renders, for one locale.
+
+    `locale` is the single seam the whole translation effort hangs off: every
+    string below comes from the locale module rather than from a template, so
+    a second language is a file and not a second set of templates.
 
     The two `*_json` values are embedded in the page for site.js to read -
     `tojson` rather than string building, so a quote in a Spanish sentence
     cannot break the script tag.
     """
+    text = locales.get(locale)
     return {
+        "locale": (locale or locales.DEFAULT_LOCALE),
+        "html_lang": (locale or locales.DEFAULT_LOCALE),
+        "copy": text.COPY,
         "conversations": content.DEMO_CONVERSATIONS,
         "conversations_json": json.dumps(
             content.DEMO_CONVERSATIONS, ensure_ascii=False
@@ -77,7 +85,7 @@ def _landing_context() -> dict:
         "features": content.FEATURES,
         "languages": content.LANGUAGE_DEMO,
         "languages_json": json.dumps(content.LANGUAGE_DEMO, ensure_ascii=False),
-        "trades": content.TRADES,
+        "sectors": content.SECTORS,
         "faq": content.FAQ,
         # Empty while the quotes are invented - see content.visible_reviews.
         "reviews": content.visible_reviews(),

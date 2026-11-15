@@ -65,7 +65,7 @@
       <ul class="hero-points rise in d4">
         <li><strong>Answers in seconds</strong>, at 2am, in any language</li>
         <li><strong>Stops losing the jobs</strong> you already paid to win</li>
-        <li><strong>{{ brand.currency }}{{ brand.price_monthly }} a month</strong>,
+        <li><strong>{{ copy.hero_price }}</strong>,
             cancel any time, nothing to install</li>
       </ul>
       <p class="hero-note rise in d4">
@@ -299,10 +299,14 @@
     </div>
   </div>
 
-  <div class="marquee rise">
-    <div class="marquee-row">
-      {% for trade in trades %}<span class="trade">{{ trade }}</span>{% endfor %}
-      {% for trade in trades %}<span class="trade">{{ trade }}</span>{% endfor %}
+  <div class="shell">
+    <div class="sector-grid rise">
+      {% for sector in sectors %}
+      <a class="sector-card" href="{{ sector.href }}">
+        <h3>{{ sector.name }}</h3>
+        <p>{{ sector.line }}</p>
+      </a>
+      {% endfor %}
     </div>
   </div>
 </section>
@@ -334,33 +338,38 @@
   <div class="shell">
     <div class="section-head centred rise">
       <span class="eyebrow" style="justify-content:center">Pricing</span>
-      <h2 class="h2">One price. Everything in it.</h2>
+      <h2 class="h2">{{ copy.pricing_heading }}</h2>
     </div>
 
+    {% for plan in brand.plans %}
     <div class="price-card rise">
       <div class="price-amount">
-        {{ brand.currency }}{{ brand.price_monthly }}<span class="per">/month</span>
+        {{ plan.price }}<span class="per">/{{ copy.per_month }}</span>
       </div>
       <p style="color:var(--fg-3);margin:10px 0 0;font-size:15.5px">
-        One business, one number, unlimited conversations.
+        <strong>{{ plan.name }}</strong> &middot; {{ plan.blurb }}
       </p>
 
       <ul class="price-list">
-        <li>Every text and WhatsApp answered, day and night</li>
-        <li>Every language your customers write in</li>
-        <li>Missed-call text-back within seconds</li>
-        <li>Appointment booking, confirmations and reminders</li>
-        <li>Your morning summary, and an alert the moment something needs you</li>
-        <li>{{ brand.trial_days }} days of shadow mode first - you approve every reply</li>
+        {% for item in copy.plan_includes %}
+        <li>{{ item }}</li>
+        {% endfor %}
+        <li>{{ copy.shadow_line }}</li>
       </ul>
 
       <a class="btn btn-primary btn-lg" href="#signup" style="margin-top:30px">
-        Start free
+        {{ copy.cta_primary }}
       </a>
-      <p style="color:var(--fg-3);font-size:13.5px;margin:16px 0 0">
-        You only start paying when you switch it on. Cancel any time.
-      </p>
     </div>
+    {% endfor %}
+
+    <p class="rise" style="color:var(--fg-3);font-size:13.5px;margin:16px 0 0;
+       text-align:center">
+      {{ copy.setup_fee_line }} {{ copy.billing_line }}
+      {% if brand.vat_note and not brand.vat_note.startswith('[') %}
+      {{ brand.vat_note }}
+      {% endif %}
+    </p>
   </div>
 </section>
 

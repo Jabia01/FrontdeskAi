@@ -295,7 +295,7 @@ class TestItWorksWithoutJavaScript:
         # raw bytes would make this fail on punctuation rather than on content.
         body = html_mod.unescape((await client.get("/")).text)
         assert "Two weeks of shadowing" in body
-        assert BRAND["currency"] + str(BRAND["price_monthly"]) in body
+        assert BRAND["plans"][0]["price"] in body
         for item in content.FAQ[:3]:
             assert item["q"] in body
 
