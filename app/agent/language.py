@@ -268,7 +268,9 @@ def is_enabled(code: str, enabled: tuple[str, ...] | list[str]) -> bool:
     }
 
 
-def missed_call_instruction(decision: LanguageDecision, shop_name: str) -> str:
+def missed_call_instruction(
+    decision: LanguageDecision, shop_name: str, *, disclose: bool = False
+) -> str:
     """Opener for a call nobody answered.
 
     Same language rules as a first greeting, but it has to acknowledge the missed
@@ -276,6 +278,7 @@ def missed_call_instruction(decision: LanguageDecision, shop_name: str) -> str:
     """
     names = _greeting_names(decision)
     joined = " and ".join(names) if len(names) <= 2 else ", ".join(names)
+    disclosure = DISCLOSURE if disclose else ""
     stored = decision.source in {Source.DETECTED, Source.STORED}
     if stored:
         return (
@@ -284,7 +287,7 @@ def missed_call_instruction(decision: LanguageDecision, shop_name: str) -> str:
             f"{language_name(decision.primary)}: say you are sorry you missed "
             f"their call, that this is {shop_name}, and ask what they need - "
             f"you can help right here by text. Two sentences at most. No menu, "
-            f"no numbered options."
+            f"no numbered options. {disclosure}"
         )
     return (
         f"This is a new number that just called {shop_name} and nobody picked "
@@ -294,8 +297,23 @@ def missed_call_instruction(decision: LanguageDecision, shop_name: str) -> str:
         f"ask what they need. Then add one final short line telling them they "
         f"can reply in any language. That final line is required: include it "
         f"even though it makes the message longer than the usual style limit. "
-        f"No menu, no numbered options."
+        f"No menu, no numbered options. {disclosure}"
     )
+
+
+#: Article 50 of the EU AI Act: a person has to be told they are interacting
+#: with an AI system, unless it is obvious to a reasonably observant person. A
+#: text arriving from a business's own number is not obvious, so we say it.
+#:
+#: Phrased as an instruction rather than a fixed sentence because it has to
+#: arrive in the customer's language, and a canned English line bolted onto a
+#: German greeting is worse than no line - it reads as a bot that cannot cope.
+#: Once, in the first message, and never raised again unless asked.
+DISCLOSURE = (
+    "In that same first message, say in one short clause - in the language you "
+    "are writing - that they are messaging an AI assistant. Do not apologise "
+    "for it, do not explain it, and do not mention it again after this message."
+)
 
 
 def _greeting_names(decision: LanguageDecision) -> list[str]:
@@ -305,7 +323,9 @@ def _greeting_names(decision: LanguageDecision) -> list[str]:
     return names
 
 
-def greeting_instruction(decision: LanguageDecision, shop_name: str) -> str:
+def greeting_instruction(
+    decision: LanguageDecision, shop_name: str, *, disclose: bool = False
+) -> str:
     """Instruction for an opener where the customer has not written yet.
 
     Always includes English, always ends with the any-language line, and never
@@ -313,10 +333,11 @@ def greeting_instruction(decision: LanguageDecision, shop_name: str) -> str:
     """
     names = _greeting_names(decision)
     joined = " and ".join(names) if len(names) <= 2 else ", ".join(names)
+    disclosure = DISCLOSURE if disclose else ""
     return (
         f"This is the first contact and the customer has not written anything yet. "
         f"Greet them on behalf of {shop_name} in {joined} - one short line per "
-        f"language, nothing more. Ask how you can help. End with a single short "
-        f"line telling them they can reply in any language. Do not offer a menu, "
-        f"numbered options, or ask them to choose a language."
+        f"language, nothing more. {disclosure} Ask how you can help. End with a "
+        f"single short line telling them they can reply in any language. Do not "
+        f"offer a menu, numbered options, or ask them to choose a language."
     )

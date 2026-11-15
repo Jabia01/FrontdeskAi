@@ -144,6 +144,13 @@ def history_to_messages(history: list[Message]) -> list[dict[str, Any]]:
     return messages
 
 
+def _spec(shop: ShopContext):
+    """The shop's niche spec. Never raises; unknown falls back to `other`."""
+    from app.agent.niche import niche_for
+
+    return niche_for(_niche(shop))
+
+
 def _niche(shop: ShopContext) -> str:
     """The shop's niche key, or "" for anything unrecognised - which resolves
     to every enabled tool, exactly as before niches existed."""
@@ -157,6 +164,7 @@ def build_turn_hint(
     misunderstand_count: int,
     detected_not_enabled: bool,
     now: datetime | None = None,
+    first_reply: bool = False,
 ) -> str:
     """Per-turn operator context.
 
@@ -198,6 +206,13 @@ def build_turn_hint(
             "factual questions (hours, address, services) in it anyway, but call "
             "handoff_to_human for anything more involved."
         )
+    if first_reply and _spec(shop).discloses:
+        # Lives in the turn hint, not the system prompt. The prefix is cached
+        # and identical on every turn, so it cannot know which turn this is -
+        # and a standing "disclose that you are an AI" would have the bot
+        # announcing itself over and over. This is also where the current date
+        # lives, for the same reason.
+        parts.append(lang.DISCLOSURE)
     # Only the tools this shop was handed. Naming one it does not have
     # invites a call that `dispatch` refuses.
     parts.append(f"Tools available: {', '.join(tool_names(_niche(shop)))}.")
@@ -350,7 +365,7 @@ async def run_agent(
         # An outbound-first message: a missed-call text-back supplies its own
         # instruction, otherwise this is a plain first greeting.
         instruction = opener_instruction or lang.greeting_instruction(
-            decision, shop.name
+            decision, shop.name, disclose=_spec(shop).discloses
         )
         messages: list[dict[str, Any]] = [
             {"role": "user", "content": "(no customer message yet)"},
@@ -369,6 +384,9 @@ async def run_agent(
                     misunderstand_count=misunderstand_count,
                     detected_not_enabled=False,
                     now=now,
+                    # Nothing said yet in this conversation, so this reply is
+                    # the business's first word to them.
+                    first_reply=not history,
                 ),
             }
         )

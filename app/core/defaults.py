@@ -93,6 +93,7 @@ VERTICALS: dict[str, dict[str, Any]] = {
         "job_noun": spec.job_noun,
         "services": list(spec.services),
         "handoff_keywords": list(spec.handoff_keywords),
+        "market_languages": list(spec.market_languages),
         "example": spec.example,
     }
     for key, spec in NICHES.items()
@@ -172,7 +173,10 @@ def new_shop_config(
         "channel_style": {k: dict(v) for k, v in CHANNEL_STYLE.items()},
         "owner_language": owner_language,
         "default_customer_language": default_customer_language,
-        "enabled_languages": enabled_languages or ["en"],
+        # A clinic in Marbella that nobody set languages for should still
+        # answer the German patient who writes at 11pm. The niche knows which
+        # languages its market arrives in; "en" only was a US default.
+        "enabled_languages": enabled_languages or list(spec.market_languages),
         "country_language_overrides": {},
         "calendar_id": None,
         "booking": dict(BOOKING),

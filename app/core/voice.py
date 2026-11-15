@@ -98,21 +98,45 @@ class CallNotRegistered(Exception):
 # that happens on text, and is why these stay a short list rather than a
 # half-maintained atlas.
 
+#: Article 50 of the EU AI Act, on the phone. A voice answering a business's
+#: own number is exactly the case the article has in mind, and the caller has
+#: no screen to read a disclosure off.
+#:
+#: Translated by hand per language rather than generated: this is the first
+#: second of the call, and `greeting` exists precisely so there is no model
+#: call in the way. A table lookup costs nothing.
+AI_WORDS: dict[str, str] = {
+    "en": "You are speaking to an AI assistant.",
+    "es": "Esta hablando con un asistente de IA.",
+    "pl": "Rozmawiasz z asystentem AI.",
+    "ar": "أنت تتحدث إلى مساعد ذكاء اصطناعي.",
+    "fr": "Vous parlez a un assistant IA.",
+    "de": "Sie sprechen mit einem KI-Assistenten.",
+    "pt": "Esta a falar com um assistente de IA.",
+    "it": "Sta parlando con un assistente IA.",
+    "ru": "Вы говорите с ИИ-ассистентом.",
+    "uk": "Ви говорите з ШІ-асистентом.",
+    "vi": "Ban dang noi chuyen voi tro ly AI.",
+    "zh": "您正在与人工智能助手通话。",
+    "ko": "AI 어시스턴트와 통화하고 계십니다.",
+    "hi": "आप एक AI सहायक से बात कर रहे हैं।",
+}
+
 GREETINGS: dict[str, str] = {
-    "en": "Thanks for calling {shop}. How can I help?",
-    "es": "Gracias por llamar a {shop}. En que puedo ayudarle?",
-    "pl": "Dziekujemy za telefon do {shop}. Jak moge pomoc?",
-    "ar": "شكرا لاتصالك بـ {shop}. كيف يمكنني مساعدتك؟",
-    "fr": "Merci d'appeler {shop}. Comment puis-je vous aider?",
-    "de": "Danke fur Ihren Anruf bei {shop}. Wie kann ich helfen?",
-    "pt": "Obrigado por ligar para {shop}. Como posso ajudar?",
-    "it": "Grazie per aver chiamato {shop}. Come posso aiutarla?",
-    "ru": "Спасибо, что позвонили в {shop}. Чем могу помочь?",
-    "uk": "Дякуємо за дзвінок до {shop}. Чим можу допомогти?",
-    "vi": "Cam on ban da goi {shop}. Toi co the giup gi?",
-    "zh": "感谢致电{shop}。请问需要什么帮助？",
-    "ko": "{shop}에 전화해 주셔서 감사합니다. 무엇을 도와드릴까요?",
-    "hi": "{shop} को कॉल करने के लिए धन्यवाद। मैं कैसे मदद कर सकता हूं?",
+    "en": "Thanks for calling {shop}. {ai} How can I help?",
+    "es": "Gracias por llamar a {shop}. {ai} En que puedo ayudarle?",
+    "pl": "Dziekujemy za telefon do {shop}. {ai} Jak moge pomoc?",
+    "ar": "شكرا لاتصالك بـ {shop}. {ai} كيف يمكنني مساعدتك؟",
+    "fr": "Merci d'appeler {shop}. {ai} Comment puis-je vous aider?",
+    "de": "Danke fur Ihren Anruf bei {shop}. {ai} Wie kann ich helfen?",
+    "pt": "Obrigado por ligar para {shop}. {ai} Como posso ajudar?",
+    "it": "Grazie per aver chiamato {shop}. {ai} Come posso aiutarla?",
+    "ru": "Спасибо, что позвонили в {shop}. {ai} Чем могу помочь?",
+    "uk": "Дякуємо за дзвінок до {shop}. {ai} Чим можу допомогти?",
+    "vi": "Cam on ban da goi {shop}. {ai} Toi co the giup gi?",
+    "zh": "感谢致电{shop}。{ai}请问需要什么帮助？",
+    "ko": "{shop}에 전화해 주셔서 감사합니다. {ai} 무엇을 도와드릴까요?",
+    "hi": "{shop} को कॉल करने के लिए धन्यवाद। {ai} मैं कैसे मदद कर सकता हूं?",
 }
 
 NUDGES: dict[str, str] = {
@@ -187,7 +211,13 @@ def greeting(shop: ShopContext) -> str:
     the single worst place to spend it, because the caller does not yet know
     anyone is there.
     """
-    return _say(GREETINGS, shop.default_customer_language, shop=shop.name)
+    code = lang.normalise(shop.default_customer_language) or "en"
+    return _say(
+        GREETINGS,
+        shop.default_customer_language,
+        shop=shop.name,
+        ai=AI_WORDS.get(code) or AI_WORDS["en"],
+    )
 
 
 def nudge(language: str | None) -> str:

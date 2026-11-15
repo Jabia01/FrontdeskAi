@@ -487,7 +487,13 @@ class TestOpeningACall:
 
         async with session_scope() as session:
             shop = await load_shop(session, client_id)
-        assert voice.greeting(shop) == "Thanks for calling Thai Kitchen. How can I help?"
+        # Thai has no canned greeting, so it falls back to English - and
+        # the fallback must still disclose, not drop the disclosure with
+        # the translation.
+        assert voice.greeting(shop) == (
+            "Thanks for calling Thai Kitchen. "
+            "You are speaking to an AI assistant. How can I help?"
+        )
 
 
 # ------------------------------------------------------------------------ a turn
@@ -1039,7 +1045,10 @@ class TestTheBridge:
         assert ws.sent[1] == {
             "response_type": "response",
             "response_id": 0,
-            "content": "Thanks for calling Voice Shop. How can I help?",
+            "content": (
+                "Thanks for calling Voice Shop. "
+                "You are speaking to an AI assistant. How can I help?"
+            ),
             "content_complete": True,
         }
 

@@ -70,6 +70,15 @@ class NicheSpec:
     rules: tuple[str, ...] = ()
     boundary: str = ""
     regulated: bool = False
+    #: Whether the first message says, unprompted, that this is an AI.
+    #:
+    #: Article 50 of the EU AI Act asks for it, and the three Spanish niches
+    #: do it. The US verticals do not, and that is deliberate: they predate
+    #: this, their customers are not in scope, and quietly changing what a
+    #: garage says to its customers is not ours to do. What *did* change for
+    #: everyone is that no shop may now deny being an AI when asked - that was
+    #: never defensible anywhere.
+    discloses: bool = False
     first_contact_notices: tuple[str, ...] = ()
     escalate_keywords: tuple[str, ...] = ()
     escalate_codes: tuple[str, ...] = ()
@@ -175,6 +184,7 @@ NICHES: dict[str, NicheSpec] = {
             "recall_reminder",
         ),
         regulated=True,
+        discloses=True,
         rules=(
             ("Never diagnose, never suggest what a symptom might be, and never "
             "comment on whether a treatment is suitable for this patient. Those "
@@ -246,6 +256,7 @@ NICHES: dict[str, NicheSpec] = {
         tools=CORE_TOOLS
         + ("qualify_buyer", "send_matching_listings", "follow_up_sequence"),
         regulated=True,
+        discloses=True,
         rules=(
             ("Never confirm that a property is still available, never confirm or "
             "negotiate a price, and never say where an offer stands. Take the "
@@ -321,6 +332,7 @@ NICHES: dict[str, NicheSpec] = {
         tools=CORE_TOOLS
         + ("get_job_status", "intake_case_type", "document_checklist"),
         regulated=True,
+        discloses=True,
         rules=(
             ("Never say what will happen to an application, how likely it is to "
             "succeed, how long it will take, or what a deadline is. Describe "

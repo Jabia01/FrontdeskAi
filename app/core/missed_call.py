@@ -15,6 +15,7 @@ import logging
 import uuid
 
 from app.agent import language as lang
+from app.agent.niche import niche_for
 from app.agent.runner import run_agent
 from app.agent.tools import ToolContext
 from app.core import owner as owner_mod
@@ -150,7 +151,11 @@ async def text_back(client_id: uuid.UUID, call_id: uuid.UUID) -> dict:
             misunderstand_count=0,
             tool_ctx=tool_ctx,
             first_contact_greeting=True,
-            opener_instruction=lang.missed_call_instruction(decision, shop.name),
+            opener_instruction=lang.missed_call_instruction(
+                decision, shop.name, disclose=niche_for(
+                    shop.config.get("vertical")
+                ).discloses
+            ),
         )
 
         await record_usage(
