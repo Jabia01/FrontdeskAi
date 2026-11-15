@@ -11,16 +11,17 @@
         {% include "marketing/_mascot.html" %}
       {% endwith %}
     </div>
-    <span class="eyebrow rise in" style="justify-content:center">Got it</span>
+    <span class="eyebrow rise in" style="justify-content:center">
+      {{ copy.thanks.eyebrow }}</span>
     <h1 class="display rise in d1" style="font-size:clamp(38px,6vw,68px)">
-      We'll text you<br><span class="grad">within a day.</span>
+      {{ copy.thanks.heading }}<br>
+      <span class="grad">{{ copy.thanks.heading_accent }}</span>
     </h1>
     <p class="lede rise in d2" style="margin:24px auto 36px;max-width:460px">
-      That's the whole point of the product, so it would be strange to email
-      you instead. If it's urgent, reply to the text when it arrives.
+      {{ copy.thanks.lede }}
     </p>
     <div class="hero-actions rise in d3" style="justify-content:center">
-      <a class="btn btn-ghost btn-lg" href="/">Back to the start</a>
+      <a class="btn btn-ghost btn-lg" href="/">{{ copy.thanks.back }}</a>
     </div>
   </div>
 </section>

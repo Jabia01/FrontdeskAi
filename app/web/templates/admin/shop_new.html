@@ -13,6 +13,17 @@
   From signup <strong>{{ signup.business_name }}</strong>
   ({{ signup.phone | phone }}{% if signup.city %}, {{ signup.city }}{% endif %}).
   Marking it converted when you save.
+  {% if signup.niche or signup.languages or signup.crm_tool or signup.website_url %}
+  <br>They told us:
+  {% if signup.niche %}<strong>{{ signup.niche }}</strong>{% endif %}
+  {%- if signup.languages %}, customers write in
+  <strong>{{ signup.languages | join(", ") }}</strong>{% endif %}
+  {%- if signup.crm_tool %}, books with <strong>{{ signup.crm_tool }}</strong>{% endif %}
+  {%- if signup.website_url %},
+  <a href="{{ signup.website_url }}" rel="noreferrer nofollow noopener"
+     target="_blank">{{ signup.website_url }}</a>{% endif %}.
+  The niche, timezone and languages below are already set from that.
+  {% endif %}
 </div>
 {% endif %}
 
@@ -41,7 +52,7 @@
       <select name="vertical">
         {% for key, preset in verticals.items() %}
         <option value="{{ key }}"
-          {{ "selected" if (form.vertical if form else "other") == key }}>
+          {{ "selected" if (form.vertical if form else default_vertical) == key }}>
           {{ preset.label }}</option>
         {% endfor %}
       </select>
@@ -51,7 +62,7 @@
       <select name="timezone">
         {% for zone in timezones %}
         <option value="{{ zone }}"
-          {{ "selected" if (form.timezone if form else "America/Chicago") == zone }}>
+          {{ "selected" if (form.timezone if form else default_timezone) == zone }}>
           {{ zone }}</option>
         {% endfor %}
       </select>
@@ -61,7 +72,7 @@
       <span class="hint">In priority order, comma separated. English is added
         automatically if you leave it out - a first greeting always includes it.</span>
       <input type="text" name="enabled_languages"
-             value="{{ form.enabled_languages if form else 'en, es' }}">
+             value="{{ form.enabled_languages if form else default_languages }}">
     </label>
 
     <label>Owner's own language

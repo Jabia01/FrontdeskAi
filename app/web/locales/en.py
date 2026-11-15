@@ -582,6 +582,81 @@ COPY: dict[str, Any] = {
     "see_pricing": "See pricing",
     "niche_does": "What it does",
     "niche_refuses": "What it will not do",
+    # The page after the form. Short, and it promises a WhatsApp message
+    # rather than an email on purpose: that is what the form asked for, and
+    # replying by email to someone who gave us a WhatsApp number would be an
+    # odd first impression for a product that answers WhatsApp.
+    "thanks": {
+        "eyebrow": "Got it",
+        "heading": "We'll message you",
+        "heading_accent": "within a day.",
+        "lede": (
+            "On WhatsApp, at the number you gave us - which is the whole "
+            "point of the product, so it would be strange to email you "
+            "instead. If it is urgent, just reply when it arrives."
+        ),
+        "back": "Back to the start",
+    },
+    # The signup form. Every label, hint and error lives here rather than in
+    # the template, so a second language is this file again and not a second
+    # copy of the form.
+    "signup": {
+        "heading": "Put it on your number, and watch it work.",
+        "lede": (
+            "We onboard by hand, a few at a time, so that the assistant knows "
+            "your prices and your rules before it answers anybody."
+        ),
+        "business_name": "Business name",
+        "niche": "What kind of business is it?",
+        "niche_hint": (
+            "This decides what the assistant is allowed to say. You can change "
+            "it later; it is not a label on an invoice."
+        ),
+        "niche_placeholder": "Choose one",
+        "trade": "In your own words",
+        "trade_hint": "Only if you picked 'Something else' above.",
+        "country": "Country",
+        "country_placeholder": "Choose one",
+        "country_hint": "Not listed? Leave it, and give the number below in full.",
+        "city": "City",
+        "contact_name": "Your name",
+        "phone": "WhatsApp number",
+        "phone_hint": (
+            "With the country code. This is where we reply, and where the "
+            "assistant sends you its morning summary."
+        ),
+        "email": "Email",
+        "email_hint": "Optional.",
+        "languages": "What languages do your customers write in?",
+        "languages_hint": (
+            "Tick everything you hear from. The assistant answers in whichever "
+            "one they used, and you can add more later."
+        ),
+        "crm_tool": "What do you book with today?",
+        "crm_tool_hint": "Diary, software, a paper book - whatever it really is.",
+        "site_url": "Website",
+        "site_url_hint": "Optional. It is the fastest way for us to read up on you.",
+        "message": "Anything we should know?",
+        "submit": "Send",
+        # Not decoration and not boilerplate. GDPR Art. 6(1)(a) is the only
+        # lawful basis we have for contacting someone who filled in this form,
+        # and Art. 7(1) says we have to be able to show they agreed - so the
+        # box is unticked, it is required, and the moment it is ticked is
+        # stored on the row.
+        "consent": (
+            "I agree that {brand} may contact me on WhatsApp or by email about "
+            "setting up this assistant."
+        ),
+        # {privacy} is substituted with a link. The placeholder is inside the
+        # sentence rather than appended to it because Spanish will not put the
+        # link where English does.
+        "consent_detail": (
+            "We keep what you typed above and nothing else. No payment "
+            "details, no contract. You can ask us to delete it at any time - "
+            "our {privacy} says how."
+        ),
+        "privacy_link": "privacy policy",
+    },
     "niche_limits_note": (
         "These are not settings you have to remember to turn on. They are "
         "built into what the assistant is allowed to say, and they are covered "

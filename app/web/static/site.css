@@ -927,6 +927,60 @@ html:not(.js) .headline-swap > span:first-child { opacity: 1; transform: none; }
   background: rgba(255, 255, 255, 0.06);
 }
 .field input::placeholder { color: var(--fg-3); }
+
+/* Selects, to match the inputs rather than inheriting the OS widget. The
+   background on the option list is set too: on a dark form a browser default
+   draws white-on-white and the list reads as empty. */
+.field select {
+  width: 100%;
+  padding: 13px 15px;
+  border-radius: 12px;
+  border: 1px solid var(--line-bright);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--fg);
+  font: inherit;
+  font-size: 15.5px;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--fg-3) 50%),
+                    linear-gradient(135deg, var(--fg-3) 50%, transparent 50%);
+  background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+.field select:focus { outline: none; border-color: var(--g2); }
+.field select option { background: var(--ink-2); color: var(--fg); }
+
+/* Country and city side by side; one column under 560px, which is where the
+   form card stops being 560px wide anyway. */
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 560px) { .field-row { grid-template-columns: 1fr; } }
+
+/* The language checkboxes. A wrapping flex row rather than a grid, because
+   "English" and "Ukrainian" are not the same width and a grid of thirteen
+   fixed cells leaves a ragged last line either way. */
+.checks { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14.5px;
+  cursor: pointer;
+}
+.check input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  accent-color: var(--g2);
+  cursor: pointer;
+}
+.check-consent {
+  align-items: flex-start;
+  margin: 22px 0 4px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--fg-2);
+}
+.check-consent input[type="checkbox"] { margin-top: 2px; }
 .consent {
   margin: 18px 0 0;
   padding-top: 16px;

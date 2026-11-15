@@ -11,6 +11,7 @@ who wants a callback; a `signups` row is a prospective shop, and has no
 
 from __future__ import annotations
 
+import html
 import json
 import logging
 import time
@@ -21,8 +22,9 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import repo_admin
+from app.config import get_settings
 from app.db import get_session
-from app.web import content, locales
+from app.web import content, locales, signup_form
 from app.web import phone as phone_util
 from app.web.locales import en
 from app.web.templating import render
@@ -56,6 +58,21 @@ def reset_signup_throttle() -> None:
     _BY_ADDRESS.clear()
 
 
+def _consent_detail(copy: dict) -> str:
+    """The small print under the consent box, with its link in place.
+
+    Built here rather than with chained `replace` filters in the template
+    because the sentence is a translated string with the link *inside* it -
+    Spanish will not put it where English does - and because the result is
+    marked safe, which is only defensible when the only HTML in it was put
+    there by this function.
+    """
+    return html.escape(copy["consent_detail"]).replace(
+        "{privacy}",
+        f'<a href="/privacy">{html.escape(copy["privacy_link"])}</a>',
+    )
+
+
 def _landing_context(locale: str | None = None) -> dict:
     """Everything the landing page renders, for one locale.
 
@@ -70,6 +87,7 @@ def _landing_context(locale: str | None = None) -> dict:
     text = locales.get(locale)
     return {
         "locale": (locale or locales.DEFAULT_LOCALE),
+        "consent_detail": _consent_detail(text.COPY["signup"]),
         "html_lang": (locale or locales.DEFAULT_LOCALE),
         "copy": text.COPY,
         "conversations": content.DEMO_CONVERSATIONS,
@@ -87,6 +105,12 @@ def _landing_context(locale: str | None = None) -> dict:
         "languages": content.LANGUAGE_DEMO,
         "languages_json": json.dumps(content.LANGUAGE_DEMO, ensure_ascii=False),
         "sectors": content.SECTORS,
+        # The signup form's dropdowns. Derived from the niche specs rather
+        # than written into the template - see app/web/signup_form.py.
+        "niche_choices": signup_form.NICHE_CHOICES,
+        "country_choices": signup_form.COUNTRY_CHOICES,
+        "language_choices": signup_form.LANGUAGE_CHOICES,
+        "crm_choices": signup_form.CRM_CHOICES,
         "faq": content.FAQ,
         # Empty while the quotes are invented - see content.visible_reviews.
         "reviews": content.visible_reviews(),
@@ -142,8 +166,15 @@ _register_niche_pages()
 
 
 @router.get("/thanks", include_in_schema=False)
-async def thanks(request: Request):
-    return render(request, "marketing/thanks.html")
+async def thanks(request: Request, locale: str | None = None):
+    text = locales.get(locale)
+    return render(
+        request,
+        "marketing/thanks.html",
+        copy=text.COPY,
+        locale=(locale or locales.DEFAULT_LOCALE),
+        html_lang=(locale or locales.DEFAULT_LOCALE),
+    )
 
 
 # The legal pages. These are not optional furniture: A2P 10DLC campaign
@@ -177,17 +208,31 @@ async def signup(
     phone: str = Form(""),
     email: str = Form(""),
     city: str = Form(""),
+    country: str = Form(""),
+    niche: str = Form(""),
     trade: str = Form(""),
+    crm_tool: str = Form(""),
+    site_url: str = Form(""),
     message: str = Form(""),
-    # Honeypot: a real browser leaves it empty because it is hidden.
+    consent: str = Form(""),
+    languages: list[str] = Form([]),
+    locale: str = Form(""),
+    # Honeypot: a real browser leaves it empty because it is hidden. Note the
+    # name - `site_url` above is the field a human fills in. The attractive
+    # name stays on the trap, because that is the one a bot picks by name.
     website: str = Form(""),
     session: AsyncSession = Depends(get_session),
 ):
+    page_locale = locale if locales.is_known(locale) else locales.DEFAULT_LOCALE
+    picked_niche = signup_form.clean_niche(niche)
+    picked_country = signup_form.clean_country(country)
+    picked_languages = signup_form.clean_languages(languages)
+
     def again(error: str):
         return render(
             request,
             "marketing/landing.html",
-            **_landing_context(),
+            **_landing_context(page_locale),
             error=error,
             form={
                 "business_name": business_name,
@@ -195,8 +240,14 @@ async def signup(
                 "phone": phone,
                 "email": email,
                 "city": city,
+                "country": picked_country or "",
+                "niche": picked_niche or "",
                 "trade": trade,
+                "crm_tool": signup_form.clean_crm(crm_tool) or "",
+                "site_url": site_url,
                 "message": message,
+                "languages": picked_languages,
+                "consent": bool(consent.strip()),
             },
             status_code=400,
         )
@@ -207,13 +258,28 @@ async def signup(
         return RedirectResponse("/thanks", status_code=303)
 
     if not business_name.strip():
-        return again("Please tell us the name of your shop.")
+        return again("Please tell us the name of your business.")
 
-    normalised = phone_util.normalise(phone)
+    # Before the phone, because the country decides how the phone is read.
+    # A Spanish mobile typed as "600 111 222" is only valid if we know to
+    # parse it as Spanish, and telling someone their correct number is wrong
+    # is the single most effective way to lose them.
+    region = signup_form.region_for(
+        picked_country, get_settings().default_phone_region
+    )
+    normalised = phone_util.normalise(phone, region=region)
     if normalised is None:
         return again(
-            "That phone number does not look right. "
-            "A mobile number we can text works best."
+            "That number does not look right. "
+            "A WhatsApp number, with the country code, works best."
+        )
+
+    # GDPR Art. 6(1)(a): there is no other lawful basis for texting a
+    # stranger who filled in a form, so this is not a formality we can treat
+    # as pre-ticked. Validated here and *recorded* below.
+    if not consent.strip():
+        return again(
+            "Please tick the box so we know we may contact you about this."
         )
 
     address = request.client.host if request.client else "unknown"
@@ -237,16 +303,26 @@ async def signup(
         city=city.strip()[:120] or None,
         trade=trade.strip()[:120] or None,
         message=message.strip()[:2000] or None,
-        source="landing",
+        niche=picked_niche,
+        country=picked_country,
+        languages=picked_languages or None,
+        crm_tool=signup_form.clean_crm(crm_tool),
+        website_url=signup_form.clean_website(site_url),
+        consent_at=repo_admin.utcnow(),
+        # The locale rides in `source`, so which language they were reading
+        # when they signed up survives without a column.
+        source="landing" if page_locale == locales.DEFAULT_LOCALE
+        else f"landing/{page_locale}",
     )
     _record_address(address)
     # Loud on purpose: until there is an alerting channel, the log and the
     # console's Signups tab are how a new shop gets noticed.
     log.warning(
-        "NEW SIGNUP %s (%s) from %s - signup id %s",
+        "NEW SIGNUP %s (%s) %s/%s - signup id %s",
         business_name.strip()[:80],
         normalised,
-        city.strip()[:40] or "unknown",
+        picked_niche or "no niche",
+        picked_country or "no country",
         row.id,
     )
     return RedirectResponse("/thanks", status_code=303)

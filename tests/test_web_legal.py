@@ -91,11 +91,24 @@ class TestTenDlcCompliance:
         assert "HELP" in body
 
     async def test_the_signup_form_carries_a_consent_line(self, client, db):
-        """The form is the opt-in record a reviewer asks to see."""
+        """The form is the opt-in record a reviewer asks to see.
+
+        Two different disclosures live on this page and they are not
+        interchangeable. The *form* asks a prospective business whether we may
+        contact them, which under GDPR Art. 6(1)(a) is consent and nothing
+        else - so its line is about that, and the moment the box is ticked is
+        stored on the row. The *footer* carries the US carrier disclosure,
+        which is about the SMS programme the shops themselves run and is what
+        10DLC vetting reads. Replacing the second with the first would have
+        quietly broken an A2P registration that is still live.
+        """
         raw = (await client.get("/")).text
         body = prose(raw)
+        assert "may contact me on WhatsApp or by email" in body
+        assert "No payment details, no contract" in body
+        assert 'href="/privacy"' in raw
+        # And the carrier disclosure is still on the page, in the footer.
         assert "Message and data rates may apply" in body
-        assert "Reply STOP to unsubscribe" in body
         assert 'href="/messaging"' in raw
 
     async def test_every_page_footer_carries_the_messaging_disclosure(

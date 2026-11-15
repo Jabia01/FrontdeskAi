@@ -753,8 +753,28 @@ class Signup(Base):
     email: Mapped[str | None] = mapped_column(String(200))
     city: Mapped[str | None] = mapped_column(String(120))
     #: What they say they do, in their own words - "brakes and tyres", "dog
-    #: grooming". It is how we pick the vertical preset when onboarding them.
+    #: grooming". Free text, and still useful: it is what a prospect says when
+    #: none of the niches below fits them.
     trade: Mapped[str | None] = mapped_column(String(120))
+    #: A key in `app.agent.niche.NICHES`, chosen from the form's list. This is
+    #: the one that decides which prompt, tool set and boundary block the shop
+    #: gets on conversion, so it is a separate column from `trade` rather than
+    #: something a human reads out of prose.
+    niche: Mapped[str | None] = mapped_column(String(32))
+    #: ISO-3166 alpha-2, upper case. Picks the timezone and the region a phone
+    #: number typed without a country code is parsed in.
+    country: Mapped[str | None] = mapped_column(String(2))
+    #: The languages their customers write in - seeds `enabled_languages`.
+    languages: Mapped[list[str] | None] = mapped_column(ARRAY(String))
+    #: Doctoralia, Gesden, Inmovilla... what we would have to talk to.
+    crm_tool: Mapped[str | None] = mapped_column(String(64))
+    #: Their real website. Not to be confused with the form's `website` field,
+    #: which is a honeypot and is never stored.
+    website_url: Mapped[str | None] = mapped_column(String(300))
+    #: When they ticked the consent box. GDPR Art. 7(1) makes demonstrating
+    #: consent the controller's problem, and a validated-then-discarded
+    #: checkbox demonstrates nothing.
+    consent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     message: Mapped[str | None] = mapped_column(Text)
     source: Mapped[str] = mapped_column(
         String(64), default="landing", server_default=text("'landing'"), nullable=False

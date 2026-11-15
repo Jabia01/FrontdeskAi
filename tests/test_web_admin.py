@@ -612,7 +612,13 @@ class TestSignupsPage:
     async def test_a_signup_can_be_marked_contacted(self, admin_client, client, db):
         await client.post(
             "/signup",
-            data={"business_name": "Cicero Tire", "phone": "+13125550155"},
+            # `consent` is required on the public form now: GDPR Art. 6(1)(a)
+            # is the only lawful basis we have for replying to a stranger.
+            data={
+                "business_name": "Cicero Tire",
+                "phone": "+13125550155",
+                "consent": "yes",
+            },
         )
         page = await admin_client.get("/admin/signups")
         assert "Cicero Tire" in page.text
@@ -629,12 +635,72 @@ class TestSignupsPage:
         assert updated.status.value == "contacted"
         assert updated.contacted_at is not None
 
+    async def test_the_new_shop_form_is_prefilled_from_what_they_answered(
+        self, admin_client, client, db
+    ):
+        """The point of `signups.niche` being a column. The niche decides the
+        prompt, the boundary block and the tool set, so a human re-typing it
+        out of a free-text message is how a clinic goes live on the wrong
+        template - and that is a compliance problem, not a typo."""
+        await client.post(
+            "/signup",
+            data={
+                "business_name": "Clinica Dental Marbella",
+                "phone": "600 111 222",
+                "niche": "dental",
+                "country": "ES",
+                "languages": ["es", "de", "nl"],
+                "crm_tool": "doctoralia",
+                "consent": "yes",
+            },
+        )
+        async with session_scope() as session:
+            signup = (await repo_admin.list_signups(session))[0]
+
+        page = await admin_client.get(f"/admin/shops/new?signup={signup.id}")
+        # Whitespace squashed: the template wraps the `selected` attribute onto
+        # its own line, and the test is about which option is chosen rather
+        # than about where Jinja put the newline.
+        markup = " ".join(page.text.split())
+        assert '<option value="dental" selected>' in markup
+        assert '<option value="Europe/Madrid" selected>' in markup
+        # English appended, because a first greeting always offers it.
+        assert 'value="es, de, nl, en"' in page.text
+        # And the answers we cannot prefill are at least shown.
+        assert "doctoralia" in page.text
+
+    async def test_a_signup_with_no_niche_prefills_nothing_clever(
+        self, admin_client, client, db
+    ):
+        """An unrecognised or missing answer should look unanswered, not like
+        a guess somebody made."""
+        await client.post(
+            "/signup",
+            data={
+                "business_name": "Cicero Tire",
+                "phone": "+13125550155",
+                "consent": "yes",
+            },
+        )
+        async with session_scope() as session:
+            signup = (await repo_admin.list_signups(session))[0]
+        page = await admin_client.get(f"/admin/shops/new?signup={signup.id}")
+        markup = " ".join(page.text.split())
+        assert '<option value="other" selected>' in markup
+        assert "They told us" not in page.text
+
     async def test_converting_a_signup_links_it_to_the_new_shop(
         self, admin_client, client, db
     ):
         await client.post(
             "/signup",
-            data={"business_name": "Cicero Tire", "phone": "+13125550155"},
+            # `consent` is required on the public form now: GDPR Art. 6(1)(a)
+            # is the only lawful basis we have for replying to a stranger.
+            data={
+                "business_name": "Cicero Tire",
+                "phone": "+13125550155",
+                "consent": "yes",
+            },
         )
         async with session_scope() as session:
             signup = (await repo_admin.list_signups(session))[0]

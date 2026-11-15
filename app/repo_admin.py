@@ -286,6 +286,12 @@ async def create_signup(
     trade: str | None = None,
     message: str | None = None,
     source: str = "landing",
+    niche: str | None = None,
+    country: str | None = None,
+    languages: list[str] | None = None,
+    crm_tool: str | None = None,
+    website_url: str | None = None,
+    consent_at: datetime | None = None,
 ) -> Signup:
     row = Signup(
         business_name=business_name,
@@ -296,6 +302,12 @@ async def create_signup(
         trade=trade,
         message=message,
         source=source,
+        niche=niche,
+        country=country,
+        languages=languages,
+        crm_tool=crm_tool,
+        website_url=website_url,
+        consent_at=consent_at,
     )
     session.add(row)
     await session.flush()

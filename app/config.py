@@ -76,6 +76,14 @@ class Settings(BaseSettings):
     #: path when both are set.
     google_credentials_json: str = ""
 
+    #: The region a phone number typed with no country code is parsed in, on
+    #: the public signup form. Spain, because that is the market the form now
+    #: addresses. Deliberately *not* `app.web.phone.DEFAULT_REGION`, which stays
+    #: US: that one is the fallback for the owner login, where a US tenant
+    #: typing their local number has to keep resolving to the same E.164 string
+    #: their `clients.owner_phone` already holds.
+    default_phone_region: str = "ES"
+
     # Behaviour
     ai_enabled: bool = True
     log_level: str = "INFO"

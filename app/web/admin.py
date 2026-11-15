@@ -37,9 +37,10 @@ from app.models import (
     ClientStatus,
     ConversationStatus,
     SessionKind,
+    Signup,
     SignupStatus,
 )
-from app.web import forms
+from app.web import forms, signup_form
 from app.web import phone as phone_util
 from app.web.auth import (
     ADMIN_COOKIE,
@@ -224,6 +225,35 @@ async def shops(
 # --------------------------------------------------------------- new shop wizard
 
 
+def _signup_prefill(signup: Signup | None) -> dict:
+    """Defaults for the new-shop form, taken from a signup when there is one.
+
+    Every value is still editable on the form; this only decides what is
+    selected when the page opens. `niche` falls through to "other" rather than
+    to a guess, because an unrecognised answer should look unanswered.
+    """
+    if signup is None:
+        return {
+            "default_vertical": "other",
+            "default_timezone": defaults.DEFAULT_TIMEZONE,
+            "default_languages": "en, es",
+        }
+    languages = list(signup.languages or [])
+    if "en" not in languages:
+        # The first greeting always offers English (app/agent/language.py), so
+        # leaving it out of the list only makes the two disagree.
+        languages.append("en")
+    return {
+        "default_vertical": (
+            signup.niche if signup.niche in defaults.VERTICALS else "other"
+        ),
+        "default_timezone": signup_form.timezone_for(
+            signup.country, defaults.DEFAULT_TIMEZONE
+        ),
+        "default_languages": ", ".join(languages) or "en, es",
+    }
+
+
 @router.get("/shops/new", include_in_schema=False)
 async def new_shop_form(
     request: Request,
@@ -246,6 +276,12 @@ async def new_shop_form(
         verticals=defaults.VERTICALS,
         currencies=defaults.CURRENCIES,
         signup=signup,
+        # What the signup already answered, so nobody re-types it. This is the
+        # whole reason `signups.niche`, `.country` and `.languages` are columns
+        # and not prose in `message`: the niche picks the prompt, the boundary
+        # block and the tool set, and a clinic going live with the wrong one is
+        # a compliance problem, not a typo.
+        **_signup_prefill(signup),
         **await _chrome(session),
     )
 

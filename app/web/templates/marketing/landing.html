@@ -397,78 +397,156 @@
   <div class="shell">
     <div class="cta-band rise">
       <div class="shell-narrow" style="padding:0">
-        <h2 class="h2" style="margin-bottom:14px">
-          Put it on your number<br>and watch it work.
-        </h2>
+        <h2 class="h2" style="margin-bottom:14px">{{ copy.signup.heading }}</h2>
         <p class="lede" style="margin:0 auto 34px;max-width:520px">
-          We're onboarding {{ brand.market }} by hand, a few at a time. Tell us
-          where to reach you and we'll text you back.
+          {{ copy.signup.lede }}
         </p>
 
         {% if error %}<div class="note bad">{{ error }}</div>{% endif %}
 
         <div class="form-card" style="text-align:left">
           <form method="post" action="/signup">
+            <input type="hidden" name="locale" value="{{ locale }}">
+
             <label class="field">
-              <span class="lab">Business name</span>
+              <span class="lab">{{ copy.signup.business_name }}</span>
               <input type="text" name="business_name" required maxlength="200"
                      value="{{ (form.business_name if form else '') }}">
             </label>
+
             <label class="field">
-              <span class="lab">What do you do?
-                <span class="hint">A few words - "brakes and tyres", "dog grooming".</span>
+              <span class="lab">{{ copy.signup.niche }}
+                <span class="hint">{{ copy.signup.niche_hint }}</span>
+              </span>
+              <select name="niche" required>
+                <option value="">{{ copy.signup.niche_placeholder }}</option>
+                {% for key, label in niche_choices %}
+                <option value="{{ key }}"
+                        {{ 'selected' if form and form.niche == key }}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="lab">{{ copy.signup.trade }}
+                <span class="hint">{{ copy.signup.trade_hint }}</span>
               </span>
               <input type="text" name="trade" maxlength="120"
                      value="{{ (form.trade if form else '') }}">
             </label>
+
+            <div class="field-row">
+              <label class="field">
+                <span class="lab">{{ copy.signup.country }}
+                  <span class="hint">{{ copy.signup.country_hint }}</span>
+                </span>
+                <select name="country">
+                  <option value="">{{ copy.signup.country_placeholder }}</option>
+                  {% for code, label in country_choices %}
+                  <option value="{{ code }}"
+                          {{ 'selected' if form and form.country == code }}>
+                    {{ label }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label class="field">
+                <span class="lab">{{ copy.signup.city }}</span>
+                <input type="text" name="city" maxlength="120"
+                       value="{{ (form.city if form else '') }}">
+              </label>
+            </div>
+
             <label class="field">
-              <span class="lab">Your name</span>
+              <span class="lab">{{ copy.signup.contact_name }}</span>
               <input type="text" name="contact_name" maxlength="200"
                      value="{{ (form.contact_name if form else '') }}">
             </label>
+
             <label class="field">
-              <span class="lab">Mobile number
-                <span class="hint">We'll text you here - it's how the product works.</span>
+              <span class="lab">{{ copy.signup.phone }}
+                <span class="hint">{{ copy.signup.phone_hint }}</span>
               </span>
               <input type="tel" name="phone" required maxlength="32"
                      value="{{ (form.phone if form else '') }}">
             </label>
+
             <label class="field">
-              <span class="lab">Email <span class="hint">Optional.</span></span>
+              <span class="lab">{{ copy.signup.email }}
+                <span class="hint">{{ copy.signup.email_hint }}</span>
+              </span>
               <input type="email" name="email" maxlength="200"
                      value="{{ (form.email if form else '') }}">
             </label>
+
+            <div class="field">
+              <span class="lab">{{ copy.signup.languages }}
+                <span class="hint">{{ copy.signup.languages_hint }}</span>
+              </span>
+              <div class="checks">
+                {% for code, label in language_choices %}
+                <label class="check">
+                  <input type="checkbox" name="languages" value="{{ code }}"
+                         {{ 'checked' if form and code in form.languages }}>
+                  <span>{{ label }}</span>
+                </label>
+                {% endfor %}
+              </div>
+            </div>
+
             <label class="field">
-              <span class="lab">City</span>
-              <input type="text" name="city" maxlength="120"
-                     value="{{ (form.city if form else brand.city) }}">
+              <span class="lab">{{ copy.signup.crm_tool }}
+                <span class="hint">{{ copy.signup.crm_tool_hint }}</span>
+              </span>
+              <select name="crm_tool">
+                {% for key, label in crm_choices %}
+                <option value="{{ key }}"
+                        {{ 'selected' if form and form.crm_tool == key }}>{{ label }}</option>
+                {% endfor %}
+              </select>
             </label>
+
             <label class="field">
-              <span class="lab">Anything we should know?</span>
+              <span class="lab">{{ copy.signup.site_url }}
+                <span class="hint">{{ copy.signup.site_url_hint }}</span>
+              </span>
+              <input type="url" name="site_url" maxlength="300"
+                     value="{{ (form.site_url if form else '') }}">
+            </label>
+
+            <label class="field">
+              <span class="lab">{{ copy.signup.message }}</span>
               <textarea name="message" maxlength="2000">{{ (form.message if form else '') }}</textarea>
             </label>
 
+            {#
+              The honeypot. Named `website` on purpose: the real website field
+              above is `site_url`, because a bot that fills fields by name picks
+              the obvious one, and we would rather it picked this.
+            #}
             <div style="position:absolute;left:-9999px" aria-hidden="true">
               <label>Website<input type="text" name="website" tabindex="-1"
                                    autocomplete="off"></label>
             </div>
 
+            {#
+              Unticked, required, and timestamped on the row when it is sent.
+              GDPR Art. 6(1)(a) is the only lawful basis we have for texting
+              someone who filled in this form, and Art. 7(1) puts the burden of
+              showing they agreed on us. A pre-ticked box would fail both.
+            #}
+            <label class="check check-consent">
+              <input type="checkbox" name="consent" value="yes" required
+                     {{ 'checked' if form and form.consent }}>
+              <span>{{ copy.signup.consent | replace('{brand}', brand.name) }}</span>
+            </label>
+
             <button class="btn btn-primary btn-lg" type="submit"
                     style="width:100%;margin-top:8px">
-              Send
+              {{ copy.signup.submit }}
             </button>
 
-            {#
-              Not decoration: A2P 10DLC approval turns on being able to show how
-              a person opted in, and this form is that record.
-            #}
             <p class="consent">
-              By sending this you agree that {{ brand.name }} may text you about
-              setting up your account. Message and data rates may apply. Message
-              frequency varies. Reply STOP to unsubscribe or HELP for help. See
-              our <a href="/messaging">messaging terms</a> and
-              <a href="/privacy">privacy policy</a>. No payment details, no
-              contract.
+              {{ consent_detail | safe }}
             </p>
           </form>
         </div>
