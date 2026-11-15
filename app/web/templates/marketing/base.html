@@ -8,7 +8,7 @@
   stylesheet anywhere. The site stays fast, private, and working offline in
   development. tests/test_web_site.py enforces it.
 #}
-<html lang="en">
+<html lang="{{ html_lang | default("en") }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -22,6 +22,19 @@
   <meta property="og:description" content="{{ self.description() }}">
   <meta property="og:site_name" content="{{ brand.name }}">
   <meta name="twitter:card" content="summary_large_image">
+
+  {#
+    hreflang alternates, and only for locales `locales.is_publishable()` lets
+    through - advertising a half-translated language to a search engine is
+    worse than not having it. `x-default` points at English, which is what a
+    crawler with no language preference should be given.
+  #}
+  {% for alt in alternates | default([]) %}
+  <link rel="alternate" hreflang="{{ alt.code }}" href="{{ alt.href }}">
+  {% endfor %}
+  {% if alternates %}
+  <link rel="alternate" hreflang="x-default" href="/">
+  {% endif %}
 
   <link rel="icon" href="/web-static/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/web-static/site.css">

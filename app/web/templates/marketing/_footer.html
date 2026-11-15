@@ -7,7 +7,7 @@
   <div class="shell">
     <div class="foot-grid">
       <div class="foot-brand">
-        <a class="wordmark chichi-hover" href="/">
+        <a class="wordmark chichi-hover" href="{{ home }}">
           {% with avatar=True, size=34, uid="footmark" %}
             {% include "marketing/_mascot.html" %}
           {% endwith %}
@@ -21,34 +21,45 @@
       </div>
 
       <div class="foot-links">
-        <h4>Product</h4>
-        <a href="/#how">How it works</a>
-        <a href="/#features">What it does</a>
-        <a href="/#who">Who it's for</a>
-        <a href="/#pricing">Pricing</a>
-        <a href="/#faq">Questions</a>
+        <h4>{{ copy.foot.product }}</h4>
+        <a href="{{ home }}#how">{{ copy.nav.how }}</a>
+        <a href="{{ home }}#features">{{ copy.nav.features }}</a>
+        <a href="{{ home }}#who">{{ copy.foot.who }}</a>
+        <a href="{{ home }}#pricing">{{ copy.nav.pricing }}</a>
+        <a href="{{ home }}#faq">{{ copy.nav.faq }}</a>
+      </div>
+
+      {#
+        The legal pages themselves are English only. Deliberately: a
+        machine-translated privacy policy or processor agreement is worse than
+        an English one a reader can take to their own lawyer, and these have
+        not been through ours yet either. The labels are translated, the
+        documents are not, and `copy.foot.legal_note` says so on a non-English
+        page rather than leaving someone to discover it by clicking.
+      #}
+      <div class="foot-links">
+        <h4>{{ copy.foot.legal }}</h4>
+        <a href="/privacy">{{ copy.foot.privacy }}</a>
+        <a href="/gdpr">{{ copy.foot.gdpr }}</a>
+        <a href="/dpa">{{ copy.foot.dpa }}</a>
+        <a href="/terms">{{ copy.foot.terms }}</a>
+        <a href="/messaging">{{ copy.foot.messaging }}</a>
+        {% if copy.foot.legal_note %}
+        <p class="foot-meta">{{ copy.foot.legal_note }}</p>
+        {% endif %}
       </div>
 
       <div class="foot-links">
-        <h4>Legal</h4>
-        <a href="/privacy">Privacy policy</a>
-        <a href="/gdpr">Data protection</a>
-        <a href="/dpa">Data processing agreement</a>
-        <a href="/terms">Terms of service</a>
-        <a href="/messaging">Messaging terms</a>
-      </div>
-
-      <div class="foot-links">
-        <h4>Talk to us</h4>
+        <h4>{{ copy.foot.talk }}</h4>
         <a href="mailto:{{ brand.support_email }}">{{ brand.support_email }}</a>
         <a href="tel:{{ brand.support_phone }}">{{ brand.support_phone }}</a>
-        <a href="/#signup">Get started</a>
-        <a href="/shop/login">Business sign in</a>
+        <a href="{{ home }}#signup">{{ copy.nav.cta }}</a>
+        <a href="/shop/login">{{ copy.foot.shop_login }}</a>
       </div>
     </div>
 
     <div class="foot-bottom">
-      <p>&copy; {{ now.year }} {{ brand.legal_name }}. All rights reserved.</p>
+      <p>&copy; {{ now.year }} {{ brand.legal_name }}. {{ copy.foot.rights }}</p>
       <p class="foot-sms">
         Message and data rates may apply. Message frequency varies. Reply STOP
         to unsubscribe or HELP for help. See our

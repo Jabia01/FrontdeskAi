@@ -1,6 +1,6 @@
 <header class="nav">
   <div class="nav-inner">
-    <a class="wordmark chichi-hover" href="/"
+    <a class="wordmark chichi-hover" href="{{ home }}"
        aria-label="{{ brand.name }} {{ copy.nav.home_label }}">
       {% with avatar=True, size=36, uid="nav" %}
         {% include "marketing/_mascot.html" %}
@@ -9,15 +9,30 @@
     </a>
 
     <nav class="nav-links" aria-label="Main">
-      <a href="/#how">{{ copy.nav.how }}</a>
-      <a href="/#features">{{ copy.nav.features }}</a>
-      <a href="/#languages">{{ copy.nav.languages }}</a>
-      <a href="/#pricing">{{ copy.nav.pricing }}</a>
-      <a href="/#faq">{{ copy.nav.faq }}</a>
+      <a href="{{ home }}#how">{{ copy.nav.how }}</a>
+      <a href="{{ home }}#features">{{ copy.nav.features }}</a>
+      <a href="{{ home }}#languages">{{ copy.nav.languages }}</a>
+      <a href="{{ home }}#pricing">{{ copy.nav.pricing }}</a>
+      <a href="{{ home }}#faq">{{ copy.nav.faq }}</a>
     </nav>
 
     <div class="nav-cta">
-      <a class="btn btn-primary btn-sm" href="/#signup">{{ copy.nav.cta }}</a>
+      {#
+        A plain link per language, not a <select> with an onchange handler:
+        the switch has to work with JavaScript off, and it has to be a real
+        href so a crawler can follow it to the page the hreflang promises.
+        Hidden entirely when there is only one language to choose from.
+      #}
+      {% if alternates and alternates | length > 1 %}
+      <span class="lang-switch">
+        {% for alt in alternates %}
+        <a href="{{ alt.href }}" hreflang="{{ alt.code }}"
+           class="{{ 'on' if alt.current }}"
+           {% if alt.current %}aria-current="page"{% endif %}>{{ alt.code | upper }}</a>
+        {% endfor %}
+      </span>
+      {% endif %}
+      <a class="btn btn-primary btn-sm" href="{{ home }}#signup">{{ copy.nav.cta }}</a>
     </div>
   </div>
 </header>

@@ -45,6 +45,7 @@ FEATURES = en.FEATURES
 FAQ = en.FAQ
 SECTORS = en.SECTORS
 COPY = en.COPY
+NICHE_PAGES = en.NICHE_PAGES
 
 
 def reviews_are_samples() -> bool:

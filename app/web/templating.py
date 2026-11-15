@@ -141,6 +141,10 @@ def render(
             # resolves a locale passes its own `copy` in `context`, and the
             # spread below means that one wins.
             "copy": DEFAULT_COPY,
+            # The home path for the locale being rendered, so the nav and the
+            # footer can link to it without knowing which locale they are in.
+            # "/" by default; a localised route passes "/es".
+            "home": "/",
             "principal": principal,
             "csrf_token": principal.csrf_token if principal else "",
             "now": datetime.now(UTC),

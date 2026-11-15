@@ -17,13 +17,13 @@ from __future__ import annotations
 from types import ModuleType
 from typing import Any
 
-from app.web.locales import en
+from app.web.locales import en, es
 
 DEFAULT_LOCALE = "en"
 
 #: Every locale the site knows about, in the order a language switcher shows
 #: them. Adding one is a file plus an entry here.
-LOCALES: dict[str, ModuleType] = {"en": en}
+LOCALES: dict[str, ModuleType] = {"en": en, "es": es}
 
 #: Prefix on any value still carrying its English text.
 TRANSLATION_TODO = "TODO:"
@@ -31,6 +31,7 @@ TRANSLATION_TODO = "TODO:"
 #: What a locale has to define to be usable at all. Checked by a test rather
 #: than at import, so a missing key is a red build and not a broken page.
 REQUIRED_KEYS: tuple[str, ...] = (
+    "NICHE_PAGES",
     "DEMO_SHOP",
     "DEMO_CAPTION",
     "DEMO_CONVERSATIONS",

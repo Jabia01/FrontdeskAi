@@ -186,6 +186,28 @@ h1, h2, h3, h4 { margin: 0; font-weight: 640; letter-spacing: -0.035em; }
   transition: transform 260ms var(--ease);
 }
 .nav-links a:hover { color: var(--fg); }
+
+/* The language switch. Two or three uppercase codes beside the CTA - small
+   enough to sit in the nav on a phone, which a dropdown is not. */
+.lang-switch {
+  display: inline-flex;
+  gap: 2px;
+  margin-right: 10px;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+.lang-switch a {
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 620;
+  letter-spacing: 0.04em;
+  color: var(--fg-3);
+  transition: color 180ms, background 180ms;
+}
+.lang-switch a:hover { color: var(--fg); }
+.lang-switch a.on { color: var(--fg); background: rgba(255, 255, 255, 0.07); }
 .nav-links a:hover::after { transform: scaleX(1); }
 
 .nav-cta { margin-left: auto; }

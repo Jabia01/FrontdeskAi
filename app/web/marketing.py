@@ -26,7 +26,6 @@ from app.config import get_settings
 from app.db import get_session
 from app.web import content, infra, locales, signup_form
 from app.web import phone as phone_util
-from app.web.locales import en
 from app.web.templating import render
 
 log = logging.getLogger(__name__)
@@ -73,6 +72,38 @@ def _consent_detail(copy: dict) -> str:
     )
 
 
+def _home(locale: str | None) -> str:
+    """The home path for a locale: "/" for English, "/es" otherwise.
+
+    The nav and the footer link through this rather than hardcoding "/", so a
+    Spanish visitor clicking "Precios" stays on the Spanish page instead of
+    being dropped back into English halfway through reading.
+    """
+    code = (locale or locales.DEFAULT_LOCALE).lower()
+    return "/" if code == locales.DEFAULT_LOCALE else f"/{code}"
+
+
+def _alternates(locale: str | None) -> list[dict[str, str]]:
+    """hreflang alternates, and the data behind the language switch.
+
+    Only publishable locales: a half-translated language that `missing()`
+    still has something to say about should not be advertised to a search
+    engine or offered in the switcher. The switch is a plain link per
+    language, so it works with JavaScript off.
+    """
+    current = (locale or locales.DEFAULT_LOCALE).lower()
+    return [
+        {
+            "code": code,
+            "href": _home(code),
+            "label": locales.LOCALES[code].COPY["language_name"],
+            "current": code == current,
+        }
+        for code in locales.LOCALES
+        if locales.is_publishable(code)
+    ]
+
+
 def _landing_context(locale: str | None = None) -> dict:
     """Everything the landing page renders, for one locale.
 
@@ -90,31 +121,37 @@ def _landing_context(locale: str | None = None) -> dict:
         "consent_detail": _consent_detail(text.COPY["signup"]),
         "html_lang": (locale or locales.DEFAULT_LOCALE),
         "copy": text.COPY,
-        "conversations": content.DEMO_CONVERSATIONS,
+        "home": _home(locale),
+        "alternates": _alternates(locale),
+        "conversations": text.DEMO_CONVERSATIONS,
         "conversations_json": json.dumps(
-            content.DEMO_CONVERSATIONS, ensure_ascii=False
+            text.DEMO_CONVERSATIONS, ensure_ascii=False
         ),
-        "headline_stem": content.HEADLINE_STEM,
-        "headline_tails": content.HEADLINE_TAILS,
-        "demo_shop": content.DEMO_SHOP,
-        "demo_caption": content.DEMO_CAPTION,
-        "owner_alert": content.OWNER_ALERT,
-        "metrics": content.METRICS,
-        "channels": content.CHANNELS,
-        "features": content.FEATURES,
-        "languages": content.LANGUAGE_DEMO,
-        "languages_json": json.dumps(content.LANGUAGE_DEMO, ensure_ascii=False),
-        "sectors": content.SECTORS,
+        "headline_stem": text.HEADLINE_STEM,
+        "headline_tails": text.HEADLINE_TAILS,
+        "demo_shop": text.DEMO_SHOP,
+        "demo_caption": text.DEMO_CAPTION,
+        "owner_alert": text.OWNER_ALERT,
+        "metrics": text.METRICS,
+        "channels": text.CHANNELS,
+        "features": text.FEATURES,
+        "languages": text.LANGUAGE_DEMO,
+        "languages_json": json.dumps(text.LANGUAGE_DEMO, ensure_ascii=False),
+        "sectors": text.SECTORS,
         # The signup form's dropdowns. Derived from the niche specs rather
         # than written into the template - see app/web/signup_form.py.
         "niche_choices": signup_form.NICHE_CHOICES,
         "country_choices": signup_form.COUNTRY_CHOICES,
         "language_choices": signup_form.LANGUAGE_CHOICES,
         "crm_choices": signup_form.CRM_CHOICES,
-        "faq": content.FAQ,
-        # Empty while the quotes are invented - see content.visible_reviews.
-        "reviews": content.visible_reviews(),
-        "reviews_are_samples": content.reviews_are_samples(),
+        "faq": text.FAQ,
+        # Empty while the quotes are invented. `content.SHOW_REVIEWS` rather
+        # than the locale's own flag: it is the module-level name the existing
+        # tests monkeypatch, and the rule is a product decision rather than a
+        # per-language one - a Spanish visitor should be no likelier to read an
+        # invented testimonial than an English one.
+        "reviews": list(text.REVIEWS) if content.SHOW_REVIEWS else [],
+        "reviews_are_samples": any(r.get("sample") for r in text.REVIEWS),
     }
 
 
@@ -136,45 +173,94 @@ def _niche_context(slug: str, locale: str | None = None) -> dict:
         "copy": text.COPY,
         "locale": (locale or locales.DEFAULT_LOCALE),
         "html_lang": (locale or locales.DEFAULT_LOCALE),
+        "home": _home(locale),
+        "alternates": _alternates(locale),
         "conversations": conversations,
         "conversations_json": json.dumps(conversations, ensure_ascii=False),
         "demo_caption": text.DEMO_CAPTION,
     }
 
 
-def _register_niche_pages() -> None:
-    """One route per niche, generated rather than written five times.
+def _thanks_context(locale: str | None = None) -> dict:
+    text = locales.get(locale)
+    return {
+        "copy": text.COPY,
+        "locale": (locale or locales.DEFAULT_LOCALE),
+        "html_lang": (locale or locales.DEFAULT_LOCALE),
+        "home": _home(locale),
+        "alternates": _alternates(locale),
+    }
 
-    Explicit paths, not a catch-all `/{slug}`: a wildcard here would shadow
-    /privacy, /terms, /messaging and anything added under / later.
+
+def _register_pages() -> None:
+    """Every marketing page, for every locale, generated in a loop.
+
+    Explicit paths throughout. Deliberately *not* a catch-all `/{slug}` or
+    `/{locale}`: either one would shadow /privacy, /terms, /messaging, /gdpr,
+    /dpa, /thanks and anything else added under / later, and the failure would
+    be a legal page quietly serving a 404 page's content.
+
+    A non-English locale gets its own prefix - /es, /es/dental - and only if
+    `locales.is_publishable()` agrees. A locale with a `TODO:` left in it
+    simply has no routes, which is a stronger guarantee than a template
+    remembering to check.
     """
-    for slug, page in en.NICHE_PAGES.items():
+    for code in locales.LOCALES:
+        if code != locales.DEFAULT_LOCALE and not locales.is_publishable(code):
+            continue
+        prefix = "" if code == locales.DEFAULT_LOCALE else f"/{code}"
+        text = locales.get(code)
 
-        def view(request: Request, slug: str = slug):
-            return render(request, "marketing/niche.html", **_niche_context(slug))
+        if prefix:
 
-        router.add_api_route(
-            page["path"],
-            view,
-            methods=["GET"],
-            include_in_schema=False,
-            name=f"niche_{slug}",
-        )
+            def home(request: Request, code: str = code):
+                return render(
+                    request, "marketing/landing.html", **_landing_context(code)
+                )
+
+            router.add_api_route(
+                prefix,
+                home,
+                methods=["GET"],
+                include_in_schema=False,
+                name=f"landing_{code}",
+            )
+
+            def thanks_page(request: Request, code: str = code):
+                return render(
+                    request, "marketing/thanks.html", **_thanks_context(code)
+                )
+
+            router.add_api_route(
+                f"{prefix}/thanks",
+                thanks_page,
+                methods=["GET"],
+                include_in_schema=False,
+                name=f"thanks_{code}",
+            )
+
+        for slug, page in text.NICHE_PAGES.items():
+
+            def view(request: Request, slug: str = slug, code: str = code):
+                return render(
+                    request, "marketing/niche.html", **_niche_context(slug, code)
+                )
+
+            router.add_api_route(
+                prefix + page["path"],
+                view,
+                methods=["GET"],
+                include_in_schema=False,
+                name=f"niche_{code}_{slug}",
+            )
 
 
-_register_niche_pages()
+_register_pages()
 
 
 @router.get("/thanks", include_in_schema=False)
-async def thanks(request: Request, locale: str | None = None):
-    text = locales.get(locale)
-    return render(
-        request,
-        "marketing/thanks.html",
-        copy=text.COPY,
-        locale=(locale or locales.DEFAULT_LOCALE),
-        html_lang=(locale or locales.DEFAULT_LOCALE),
-    )
+async def thanks(request: Request):
+    return render(request, "marketing/thanks.html", **_thanks_context())
 
 
 # The legal pages. These are not optional furniture: A2P 10DLC campaign
@@ -250,6 +336,14 @@ async def signup(
     session: AsyncSession = Depends(get_session),
 ):
     page_locale = locale if locales.is_known(locale) else locales.DEFAULT_LOCALE
+    # Where "thanks" lives for the page they submitted from. A Spanish
+    # visitor should not be dropped into an English confirmation, and the
+    # field is validated above rather than trusted - it arrives in the body.
+    thanks_path = (
+        "/thanks"
+        if page_locale == locales.DEFAULT_LOCALE
+        else f"/{page_locale}/thanks"
+    )
     picked_niche = signup_form.clean_niche(niche)
     picked_country = signup_form.clean_country(country)
     picked_languages = signup_form.clean_languages(languages)
@@ -281,7 +375,7 @@ async def signup(
     if website.strip():
         # Silently accept and discard - a bot that gets an error learns.
         log.info("signup honeypot tripped")
-        return RedirectResponse("/thanks", status_code=303)
+        return RedirectResponse(thanks_path, status_code=303)
 
     if not business_name.strip():
         return again("Please tell us the name of your business.")
@@ -318,7 +412,7 @@ async def signup(
     if already >= MAX_SIGNUPS_PER_NUMBER:
         # Looks like success: they almost certainly did already reach us.
         log.info("duplicate signup for the same number, ignored")
-        return RedirectResponse("/thanks", status_code=303)
+        return RedirectResponse(thanks_path, status_code=303)
 
     row = await repo_admin.create_signup(
         session,
@@ -351,4 +445,4 @@ async def signup(
         picked_country or "no country",
         row.id,
     )
-    return RedirectResponse("/thanks", status_code=303)
+    return RedirectResponse(thanks_path, status_code=303)

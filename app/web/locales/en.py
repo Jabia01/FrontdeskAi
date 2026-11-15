@@ -567,6 +567,8 @@ SECTORS: list[dict[str, str]] = [
 #: Prose that used to be written straight into the templates. Here so a second
 #: locale is a file rather than a second set of templates.
 COPY: dict[str, Any] = {
+    # The name of this language, in this language - what the switcher shows.
+    "language_name": "English",
     "per_month": "month",
     "cta_primary": "Start free",
     "pricing_heading": "Two plans. Everything in both.",
@@ -748,6 +750,23 @@ COPY: dict[str, Any] = {
         "sample_flag": "Sample copy - not real customer quotes",
     },
     "pricing_eyebrow": "Pricing",
+    "foot": {
+        "product": "Product",
+        "who": "Who it's for",
+        "legal": "Legal",
+        "privacy": "Privacy policy",
+        "gdpr": "Data protection",
+        "dpa": "Data processing agreement",
+        "terms": "Terms of service",
+        "messaging": "Messaging terms",
+        # Empty in English, because the legal pages *are* English. A locale
+        # whose documents have not been translated fills this in rather than
+        # letting someone find out by clicking.
+        "legal_note": "",
+        "talk": "Talk to us",
+        "shop_login": "Business sign in",
+        "rights": "All rights reserved.",
+    },
     "faq_head": {
         "eyebrow": "Questions",
         "heading": "The ones owners",
