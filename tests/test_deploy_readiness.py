@@ -199,6 +199,30 @@ class TestTheBlueprint:
         assert "alembic upgrade head" in web["preDeployCommand"]
         assert web["healthCheckPath"] == "/health"
 
+    def test_the_public_residency_claim_matches_the_blueprint(self, web):
+        """The one test that stops us lying to a clinic's DPO.
+
+        `/gdpr` and `/dpa` both state where the service runs, and both get it
+        from `app.web.infra.HOSTING_REGION`. If that constant and the
+        blueprint disagree, one of two things has happened: the service moved
+        and the pages were not updated, or - much worse - somebody wrote an EU
+        hosting claim onto a public page while the blueprint still says Ohio.
+        The second is a false representation to a data protection officer, and
+        no amount of good intent makes it less of one.
+
+        Moving region is therefore a two-line change by design, and the build
+        tells you about the second line.
+        """
+        from app.web import infra
+
+        assert web["region"] == infra.HOSTING_REGION
+        assert infra.HOSTING_REGION in infra.REGION_LOCATIONS, (
+            "an unmapped region renders as a bare Render slug on a legal page"
+        )
+        # And the derived claim agrees with the region, rather than being a
+        # second thing someone has to remember to flip.
+        assert infra.hosted_in_eu() == (web["region"] in infra.EU_REGIONS)
+
     def test_it_trusts_the_proxy(self, web):
         """Without this the signup form's per-address rate limit sees every
         visitor as the proxy."""

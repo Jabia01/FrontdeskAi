@@ -1,0 +1,181 @@
+{% extends "marketing/base.html" %}
+{#
+  The Art. 28 agreement, published rather than attached to an email.
+
+  Deliberately short, and deliberately a draft. Art. 28(3) lists eight things a
+  processor agreement has to contain; this page has all eight, in plain
+  language, and says plainly that it has not been through a lawyer. A published
+  DPA that reads like a finished contract and has not been reviewed is a
+  liability, not a sales aid.
+
+  The sub-processor list and the hosting location come from `app/web/infra.py`,
+  the same structure the GDPR page renders - so the annex cannot disagree with
+  the page a buyer read five minutes earlier.
+#}
+{% block title %}Data processing agreement - {{ brand.name }}{% endblock %}
+{% block robots %}index, follow{% endblock %}
+
+{% block body %}
+<div class="legal">
+  <h1>Data processing agreement</h1>
+  <p class="legal-date">Version {{ brand.dpa_updated }}</p>
+
+  <div class="legal-highlight">
+    <p>
+      <strong>Draft, pending legal review.</strong> This is the agreement we
+      intend to sign with every customer, published so you can read it before
+      you talk to us rather than after. It has not been reviewed by a lawyer.
+      If your own counsel wants changes, that is a conversation and not a
+      problem - and if you have a DPA of your own, send it.
+    </p>
+  </div>
+
+  <p>
+    This agreement is between you - the <strong>controller</strong> - and
+    {{ brand.legal_name }}, the <strong>processor</strong>. It covers the
+    personal data we process on your behalf when you use {{ brand.name }} as
+    your front desk. It does not cover your own account data, where we are the
+    controller; that is on the
+    <a href="/gdpr">data protection page</a>.
+  </p>
+
+  <h2>1. What we may do with it</h2>
+  <p>
+    Only what you instruct. In practice that means: receive messages sent to
+    your number, answer them, take and change bookings, send reminders and
+    confirmations, pass a conversation to you, and show you all of it. Nothing
+    else. We do not use your customers' data for our own purposes, we do not
+    sell it or share it for advertising, and it is not used to train any model.
+  </p>
+  <p>
+    If an instruction from you would put us in breach of GDPR, we will tell you
+    instead of carrying it out.
+  </p>
+
+  <h2>2. How long, and what happens at the end</h2>
+  <p>
+    For as long as you are a customer. When you leave, you can ask us to delete
+    everything or to export it first. We do that within 30 days of the request.
+  </p>
+  <p>
+    While you are a customer there is no automatic deletion - we keep the
+    conversation history until you ask us to remove it. That is the honest
+    current state and the
+    <a href="/gdpr">data protection page</a> says the same.
+  </p>
+
+  <h2>3. Confidentiality</h2>
+  <p>
+    Only the people who run the service can reach production data, and only to
+    operate and support it. They are bound to confidentiality.
+  </p>
+
+  <h2>4. Security</h2>
+  <p>
+    Art. 32. Encryption in transit and at rest; strict separation between
+    businesses, enforced on every query and tested on purpose; one-time codes
+    rather than passwords for business sign-in; and a short list of people with
+    production access. The measures in force are described on the
+    <a href="/gdpr">data protection page</a>, which is kept current rather than
+    frozen into this text.
+  </p>
+
+  <h2>5. Sub-processors</h2>
+  <p>
+    You give general authorisation for the sub-processors in the annex below.
+    We will tell you before we add or replace one, and you may object - in
+    which case you can stop using the service and we will refund anything paid
+    in advance. Each of them is under a written agreement no weaker than this
+    one.
+  </p>
+
+  <h2>6. Transfers outside the EEA</h2>
+  <p>
+    {% if eu_hosted %}
+    The service runs in {{ hosting_location }}, inside the EEA.
+    {% else %}
+    <strong>Data is processed in {{ hosting_location }} and elsewhere outside
+    the European Economic Area</strong>, as the annex sets out. The transfer
+    mechanism for each is still to be confirmed, which is stated rather than
+    assumed. If EU-only processing is a requirement for you, say so before you
+    sign anything: we are not there yet.
+    {% endif %}
+  </p>
+
+  <h2>7. Helping you answer your people</h2>
+  <p>
+    When a customer or patient of yours asks you for their data, asks you to
+    correct it, or asks you to delete it, that request is yours to answer and
+    ours to make answerable. Write to
+    <a href="mailto:{{ brand.dpo_email }}">{{ brand.dpo_email }}</a> and we will
+    find it, export it or remove it. If one of them contacts us directly we
+    will not answer for you - we will tell them to ask you, and tell you they
+    asked.
+  </p>
+
+  <h2>8. Breaches, audits and assistance</h2>
+  <p>
+    If there is a breach affecting your data we notify you without undue delay
+    and within 72 hours of becoming aware, with what we know at the time - Art.
+    33(2). We will give you the information you need for a data protection
+    impact assessment, and we will answer an auditor's questions in writing. An
+    on-site audit is something to agree in advance rather than something this
+    page can promise.
+  </p>
+
+  <h2>Annex A - what is processed</h2>
+  <ul>
+    <li>
+      <strong>Whose data:</strong> your customers, patients or clients, and the
+      people who contact you on their behalf.
+    </li>
+    <li>
+      <strong>What:</strong> phone number, name if given, the messages
+      themselves, the language used, appointment details, and - where the voice
+      channel is on - call audio and transcripts.
+    </li>
+    <li>
+      <strong>Special categories:</strong> the assistant does not ask for
+      health information and will not discuss it. What a patient volunteers in
+      their own words may still be Art. 9 data in your hands, and is covered by
+      this agreement. See the clinic section of the
+      <a href="/gdpr">data protection page</a> for what the assistant is
+      actually prevented from doing.
+    </li>
+    <li>
+      <strong>Why:</strong> running your front desk, as section 1 describes.
+    </li>
+  </ul>
+
+  <h2>Annex B - sub-processors</h2>
+  <div class="legal-table-wrap">
+    <table class="legal-table">
+      <thead>
+        <tr>
+          <th>Who</th>
+          <th>What for</th>
+          <th>Where</th>
+          <th>Transfer mechanism</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in subprocessors %}
+        <tr>
+          <td><strong>{{ row.name }}</strong></td>
+          <td>{{ row.role }}</td>
+          <td>{{ row.location }}</td>
+          <td>{{ row.safeguard }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Signing it</h2>
+  <p>
+    We countersign this with every customer at onboarding. If you want it as a
+    document with your details on it, ask
+    <a href="mailto:{{ brand.dpo_email }}">{{ brand.dpo_email }}</a>.
+  </p>
+</div>
+{% endblock %}

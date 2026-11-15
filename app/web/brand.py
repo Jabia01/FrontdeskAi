@@ -38,6 +38,20 @@ BRAND: dict[str, Any] = {
     # ---- where we operate -----------------------------------------------
     "city": "Madrid",
     "market": "clinics, agencies and law firms in Spain",
+    # ---- data protection -------------------------------------------------
+    # Selling to a Spanish clinic means handling Art. 9 health data and
+    # answering to the AEPD, and selling to an extranjeria firm means handling
+    # case files. A GDPR page without a named controller, a contact for data
+    # questions and a supervisory authority is not a GDPR page.
+    #
+    # `eu_representative` is Art. 27, and it is only required of a controller
+    # with no establishment in the EU. Which of those we are is precisely the
+    # question `legal_name` has not answered yet, so it stays TODO rather than
+    # being guessed either way.
+    "dpo_email": TODO,               # e.g. "privacy@chichi.ai"
+    "supervisory_authority": TODO,   # e.g. "Agencia Espanola de Proteccion de Datos (AEPD)"
+    "eu_representative": TODO,       # an Art. 27 representative, if we need one
+    "dpa_updated": TODO,             # the version date of the DPA we sign
     # ---- commercial terms ------------------------------------------------
     #: Plans come from config, not from a template. `price` is the rendered
     #: string rather than a symbol glued to a number: Spanish writes "490 €",

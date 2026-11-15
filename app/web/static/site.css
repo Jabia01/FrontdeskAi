@@ -1032,6 +1032,31 @@ html:not(.js) .headline-swap > span:first-child { opacity: 1; transform: none; }
 }
 .legal-highlight p:last-child { margin-bottom: 0; }
 
+/* The sub-processor table. Scrolls sideways under 720px rather than wrapping
+   five columns into something unreadable - a DPO reading this on a phone would
+   rather swipe than squint. */
+.legal-table-wrap { overflow-x: auto; margin: 20px 0 26px; }
+.legal-table { width: 100%; border-collapse: collapse; min-width: 640px; }
+.legal-table th, .legal-table td {
+  text-align: left;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--fg-2);
+  vertical-align: top;
+}
+.legal-table th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-3);
+  font-weight: 620;
+  border-bottom-color: var(--line-bright);
+}
+.legal-table tr:last-child td { border-bottom: none; }
+.legal-table strong { color: var(--fg); }
+
 /* ----------------------------------------------------------------- footer */
 
 .foot { border-top: 1px solid var(--line); padding: 64px 0 34px; margin-top: 40px; }

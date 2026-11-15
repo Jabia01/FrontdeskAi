@@ -24,7 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app import repo_admin
 from app.config import get_settings
 from app.db import get_session
-from app.web import content, locales, signup_form
+from app.web import content, infra, locales, signup_form
 from app.web import phone as phone_util
 from app.web.locales import en
 from app.web.templating import render
@@ -191,6 +191,32 @@ async def privacy(request: Request):
 @router.get("/terms", include_in_schema=False)
 async def terms(request: Request):
     return render(request, "marketing/terms.html")
+
+
+def _residency_context() -> dict:
+    """The facts both the GDPR page and the DPA render.
+
+    One context for both, so the DPA's annex cannot say Frankfurt while the
+    page a buyer read five minutes earlier says Ohio - and all of it comes
+    from `app/web/infra.py`, which a deploy test pins to `render.yaml`.
+    """
+    return {
+        "hosting_location": infra.hosting_location(),
+        "eu_hosted": infra.hosted_in_eu(),
+        "subprocessors": infra.SUBPROCESSORS,
+    }
+
+
+@router.get("/gdpr", include_in_schema=False)
+async def gdpr(request: Request):
+    """What a clinic's data protection officer reads before signing."""
+    return render(request, "marketing/gdpr.html", **_residency_context())
+
+
+@router.get("/dpa", include_in_schema=False)
+async def dpa(request: Request):
+    """The Art. 28 processor agreement, published rather than emailed."""
+    return render(request, "marketing/dpa.html", **_residency_context())
 
 
 @router.get("/messaging", include_in_schema=False)

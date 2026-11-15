@@ -1,0 +1,276 @@
+{% extends "marketing/base.html" %}
+{#
+  The page a clinic's data protection officer reads before signing anything.
+
+  Written to one rule: it describes what the system does *today*, not what it is
+  going to do. There is no automatic deletion yet, the service runs in the
+  United States, and the transfer mechanism has not been reviewed by a lawyer -
+  so this page says all three, in those words. A GDPR page that describes an
+  intention is worse than no GDPR page, because it is a representation a
+  supervisory authority can hold us to.
+
+  The sub-processor table and the hosting location come from
+  `app/web/infra.py`, and a test cross-reads that against `render.yaml`. It is
+  not possible to publish "hosted in Frankfurt" from this template while the
+  blueprint says Ohio.
+
+  Not legal advice, not reviewed by a lawyer. Every placeholder renders
+  visibly on purpose.
+#}
+{% block title %}Data protection and GDPR - {{ brand.name }}{% endblock %}
+{% block robots %}index, follow{% endblock %}
+
+{% block body %}
+<div class="legal">
+  <h1>Data protection</h1>
+  <p class="legal-date">Last updated {{ brand.legal_updated }}</p>
+
+  <p>
+    This page is for the person who has to sign off on using {{ brand.name }}:
+    a clinic's data protection officer, a law firm's partner, an agency owner
+    who would rather know than hope. It describes what the system does now.
+    Where something is not finished, it says so instead of describing the plan.
+  </p>
+
+  <div class="legal-highlight">
+    <p>
+      <strong>Not yet reviewed by a lawyer.</strong> This is an honest
+      engineering description of where data goes and what happens to it. The
+      transfer mechanisms below are marked unfinished because stating one we
+      have not had reviewed would be worse than stating none.
+    </p>
+  </div>
+
+  <h2>Who is the controller, and who is the processor</h2>
+  <p>
+    This is the distinction everything else follows from, and it has two
+    different answers depending on whose data you mean.
+  </p>
+  <ul>
+    <li>
+      <strong>Your customers' and patients' data is yours.</strong> You are the
+      controller. We are your processor, and we process it only to run your
+      front desk - answering messages, taking bookings, telling you what needs
+      you. We do not use it for anything else, we do not sell it, and it is not
+      used to train any model.
+    </li>
+    <li>
+      <strong>Your own data is ours to control.</strong> Your name, your
+      business's contact details, what you asked us for. We are the controller
+      for that, with you as the data subject.
+    </li>
+  </ul>
+  <p>
+    The agreement that puts the first of those in writing is our
+    <a href="/dpa">data processing agreement</a>, which is Art. 28 and which we
+    sign with every customer.
+  </p>
+
+  <h2>What we process, and why</h2>
+  <ul>
+    <li>
+      <strong>Messages.</strong> What your customer wrote and what the
+      assistant replied, in full. Without it the assistant cannot hold a
+      conversation, and you cannot see what was said in your name.
+    </li>
+    <li>
+      <strong>Phone numbers and names.</strong> The address a reply goes to,
+      and what to call the person.
+    </li>
+    <li>
+      <strong>The language they wrote in.</strong> So the next reply is in the
+      same one.
+    </li>
+    <li><strong>Appointments.</strong> Time, service and who it is for.</li>
+    <li>
+      <strong>Call audio and transcripts</strong>, for businesses that have the
+      voice channel switched on.
+    </li>
+  </ul>
+  <p>
+    Our lawful basis as controller for your own data is contract - Art.
+    6(1)(b) - except for the signup form, where it is your consent under Art.
+    6(1)(a) and you can withdraw it by telling us to. For your customers'
+    data, the lawful basis is yours to determine, which is what being the
+    controller means.
+  </p>
+
+  <h2>Clinics, and health data</h2>
+  <div class="legal-highlight">
+    <p>
+      <strong>The assistant is built not to collect clinical
+      information.</strong> It will not ask about symptoms, medication, medical
+      history or whether someone is suitable for a treatment; it will not
+      discuss them if a patient volunteers them; and it will never ask for a
+      photograph. A message that turns clinical is handed to a human and the
+      assistant stops replying.
+    </p>
+    <p>
+      This is not a setting someone has to remember to switch on. It is part of
+      what the assistant is permitted to say, it is the same for every clinic,
+      and an edit in our own console cannot remove it. Tests fail the build if
+      it goes missing.
+    </p>
+  </div>
+  <p>
+    What follows from that: the treatment a patient enquired about is stored,
+    because it is what they wrote and what the appointment is for. Anything
+    beyond it is not solicited. We are not asking you to trust that nobody
+    wrote it down - we are telling you the assistant is not able to ask.
+  </p>
+  <p>
+    Art. 9 still applies to what a patient volunteers in their own words, and
+    our agreement with you covers it. If your own assessment is that an
+    enquiry about a dental treatment is special-category data in your hands,
+    that assessment is the one that governs.
+  </p>
+
+  <h2>Where the data is</h2>
+  <p>
+    {% if eu_hosted %}
+    The service runs in <strong>{{ hosting_location }}</strong>, inside the
+    European Economic Area.
+    {% else %}
+    <strong>The service runs in {{ hosting_location }}, which is outside the
+    European Economic Area.</strong> So does the database, and so does the
+    model that writes the replies. The table below is the current state, not a
+    target.
+    {% endif %}
+  </p>
+  {% if not eu_hosted %}
+  <div class="legal-highlight">
+    <p>
+      <strong>If data residency in the EU is a requirement for you, we are not
+      there yet.</strong> We would rather tell you that on this page than in a
+      meeting. The move is planned and documented; it is not done, and no claim
+      on this site will say otherwise before it is. The page you are reading is
+      generated from the deployment configuration, and a test fails the build
+      if the two disagree.
+    </p>
+  </div>
+  {% endif %}
+
+  <h2>Who else touches it</h2>
+  <p>
+    Everyone, what they touch, and where they are. Under Art. 28(2) we tell you
+    before we add to this list.
+  </p>
+  <div class="legal-table-wrap">
+    <table class="legal-table">
+      <thead>
+        <tr>
+          <th>Who</th>
+          <th>What for</th>
+          <th>What they see</th>
+          <th>Where</th>
+          <th>Transfer mechanism</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in subprocessors %}
+        <tr>
+          <td><strong>{{ row.name }}</strong></td>
+          <td>{{ row.role }}</td>
+          <td>{{ row.data }}</td>
+          <td>{{ row.location }}</td>
+          <td>{{ row.safeguard }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p>
+    Nobody on that list is permitted to use what they see for their own
+    purposes, and the model provider does not train on it.
+  </p>
+
+  <h2>How long we keep it</h2>
+  <div class="legal-highlight">
+    <p>
+      <strong>Today, indefinitely.</strong> There is no automatic deletion. A
+      conversation from the day a business started is still in the database.
+      Expired login sessions are the only thing anything removes on its own.
+    </p>
+    <p>
+      That is not where this should end up, and we are not going to print a
+      retention period we do not enforce. When deletion runs on a schedule,
+      this paragraph will say what the schedule is.
+    </p>
+  </div>
+  <p>
+    What we will do now, on request: delete a business's data, or one person's
+    data, by hand, within 30 days. Ask at
+    <a href="mailto:{{ brand.dpo_email }}">{{ brand.dpo_email }}</a>. Deleting a
+    business deletes everything belonging to it, because the database is built
+    that way - conversations, messages, customers, bookings and call records
+    all go with it.
+  </p>
+
+  <h2>Your rights, and your customers'</h2>
+  <p>
+    Access, rectification, erasure, restriction, portability and objection -
+    Arts. 15 to 21. If you are one of our customers' customers, the business
+    you messaged is the controller and the request is theirs to answer; we help
+    them answer it. If you are our customer, write to us directly.
+  </p>
+  <ul>
+    <li>Data protection contact:
+        <a href="mailto:{{ brand.dpo_email }}">{{ brand.dpo_email }}</a></li>
+    <li>Controller: {{ brand.legal_name }}, {{ brand.address }}</li>
+    <li>Supervisory authority: {{ brand.supervisory_authority }}</li>
+    <li>Representative in the EU (Art. 27): {{ brand.eu_representative }}</li>
+  </ul>
+  <p>
+    You can complain to your supervisory authority at any time, and you do not
+    have to come to us first.
+  </p>
+
+  <h2>Automated replies, and the EU AI Act</h2>
+  <p>
+    The assistant writes its own replies. It tells your customers that it is an
+    assistant and not a person, in the first message it sends them, in their own
+    language - Art. 50 of the AI Act, and also simply the decent thing to do. It
+    never claims to be a human being, and if anyone asks it directly, it says
+    so.
+  </p>
+  <p>
+    It does not make decisions about people. It books appointments, answers
+    questions from material you gave it, and hands the conversation to you when
+    it should not be the one answering. There is no profiling and no automated
+    decision-making in the Art. 22 sense.
+  </p>
+
+  <h2>Security</h2>
+  <ul>
+    <li>Encrypted in transit, everywhere.</li>
+    <li>Encrypted at rest by the database provider.</li>
+    <li>
+      One business can never see another's data. Every query is scoped to the
+      business it belongs to, and there is a test suite whose whole job is to
+      try to break that.
+    </li>
+    <li>
+      Business owners sign in with a one-time code sent to their own phone.
+      There are no shared passwords.
+    </li>
+    <li>
+      Access to the production database is limited to the people who run the
+      service.
+    </li>
+  </ul>
+
+  <h2>Breaches</h2>
+  <p>
+    If something happens to your data we tell you without undue delay, and in
+    any case within 72 hours of finding out, with what we know, what we are
+    doing about it and what you have to do - Art. 33(2), which puts that duty
+    on us as your processor.
+  </p>
+
+  <h2>Changes</h2>
+  <p>
+    When this page changes in a way that matters, we tell our customers before
+    it takes effect rather than after. The date at the top is the version.
+  </p>
+</div>
+{% endblock %}

@@ -30,6 +30,7 @@ from app.queue.embedded import EmbeddedWorker
 from app.web.admin import router as admin_router
 from app.web.auth import NotAuthenticated
 from app.web.brand import placeholders as brand_placeholders
+from app.web.infra import placeholders as infra_placeholders
 from app.web.marketing import router as marketing_router
 from app.web.owner import router as owner_router
 from app.web.owner_auth import router as owner_auth_router
@@ -60,6 +61,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             "brand details still unfilled, and they appear on the public "
             "legal pages: %s - see app/web/brand.py",
             ", ".join(unfilled),
+        )
+
+    # The same rule for the residency facts on /gdpr and /dpa. A clinic's data
+    # protection officer reads those two pages; an unconfirmed transfer
+    # mechanism rendering as a placeholder is the intended behaviour, and this
+    # is the reminder that it is still doing so.
+    unknown = infra_placeholders()
+    if unknown:
+        log.warning(
+            "data residency facts still unconfirmed on /gdpr and /dpa: %s "
+            "- see app/web/infra.py",
+            ", ".join(unknown),
         )
 
     # On a single-service deployment the queue worker runs here rather than as

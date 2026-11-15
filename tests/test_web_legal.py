@@ -13,7 +13,15 @@ import pytest
 
 from app.web.brand import BRAND, TODO, placeholders
 
-PUBLIC_PAGES = ["/", "/privacy", "/terms", "/messaging", "/thanks"]
+PUBLIC_PAGES = [
+    "/",
+    "/privacy",
+    "/gdpr",
+    "/dpa",
+    "/terms",
+    "/messaging",
+    "/thanks",
+]
 
 
 def prose(body: str) -> str:
@@ -200,3 +208,169 @@ class TestBrandPlaceholders:
             pytest.skip("legal name has been filled in")
         body = prose((await client.get("/privacy")).text)
         assert TODO in body
+
+
+class TestTheDataProtectionPages:
+    """`/gdpr` and `/dpa`: the two pages a Spanish clinic's DPO and an
+    extranjeria firm's partner read before they sign anything.
+
+    These tests are mostly about honesty rather than about completeness. The
+    failure mode they exist to prevent is a page that reads finished - EU
+    hosting, a retention period, a transfer mechanism - while the code and the
+    deployment say otherwise. A supervisory authority can hold us to a
+    statement on a public page, so each of these says what is true today.
+    """
+
+    async def test_both_pages_say_they_are_not_lawyer_reviewed(
+        self, client, db
+    ):
+        for path in ("/gdpr", "/dpa"):
+            body = prose((await client.get(path)).text)
+            assert "reviewed by a lawyer" in body, path
+
+    async def test_the_controller_processor_split_is_stated(self, client, db):
+        """Everything else follows from it, and it is the first question a DPO
+        asks."""
+        body = prose((await client.get("/gdpr")).text)
+        assert "You are the controller" in body
+        assert "We are your processor" in body
+
+    async def test_the_retention_statement_is_the_true_one(self, client, db):
+        """Nothing in the app deletes a conversation on a schedule - the only
+        sweep that removes anything is `purge_expired_sessions`. Until that
+        changes, the page says indefinitely.
+        """
+        body = prose((await client.get("/gdpr")).text)
+        assert "Today, indefinitely" in body
+        assert "no automatic deletion" in body
+
+    async def test_the_hosting_location_comes_from_the_deployment(
+        self, client, db
+    ):
+        """Not from prose somebody typed. `test_deploy_readiness.py` pins the
+        same constant to `render.yaml`, so the two cannot drift."""
+        from app.web import infra
+
+        for path in ("/gdpr", "/dpa"):
+            body = prose((await client.get(path)).text)
+            assert infra.hosting_location() in body, path
+
+    async def test_a_us_deployment_says_so_plainly(self, client, db):
+        """The sentence a buyer needs to see, not buried. If this ever fails
+        because the service moved to Frankfurt, the fix is to delete the test,
+        not to soften the page."""
+        from app.web import infra
+
+        if infra.hosted_in_eu():
+            pytest.skip("hosted in the EEA; the warning is correctly absent")
+        body = prose((await client.get("/gdpr")).text)
+        assert "outside the European Economic Area" in body
+        assert "we are not there yet" in body
+
+    async def test_every_subprocessor_is_listed_on_both_pages(
+        self, client, db
+    ):
+        """Art. 28(2): the customer has to be told who else touches it. A
+        provider added to `infra.SUBPROCESSORS` appears here without anyone
+        editing a template."""
+        from app.web import infra
+
+        for path in ("/gdpr", "/dpa"):
+            body = prose((await client.get(path)).text)
+            for row in infra.SUBPROCESSORS:
+                assert row["name"] in body, (path, row["name"])
+
+    async def test_the_model_provider_is_named(self, client, db):
+        """The one a clinic will ask about by name."""
+        body = prose((await client.get("/gdpr")).text)
+        assert "Anthropic" in body
+        assert "does not train on it" in body
+
+    async def test_the_clinical_boundary_is_described_in_the_same_words_it_is_built_in(
+        self, client, db
+    ):
+        """The page claims the assistant cannot ask for clinical detail or a
+        photograph. That claim is only safe because the dental niche's
+        boundary block actually says so - so assert against the spec, not
+        against the prose."""
+        from app.agent.niche import NICHES
+
+        boundary = NICHES["dental"].boundary.lower()
+        assert "photo" in boundary
+        body = prose((await client.get("/gdpr")).text).lower()
+        assert "never ask for a photograph" in body
+        assert "symptoms, medication, medical" in body
+
+    async def test_the_ai_act_disclosure_is_claimed_only_because_it_happens(
+        self, client, db
+    ):
+        from app.agent.niche import NICHES
+
+        assert NICHES["dental"].discloses
+        body = prose((await client.get("/gdpr")).text)
+        assert "Art. 50" in body
+        assert "first message it sends them" in body
+
+    async def test_the_two_pages_link_to_each_other(self, client, db):
+        """A DPO reading one will want the other, and a DPA that cites a
+        separate security description has to point at it."""
+        assert 'href="/dpa"' in (await client.get("/gdpr")).text
+        assert 'href="/gdpr"' in (await client.get("/dpa")).text
+
+    async def test_the_footer_links_to_both(self, client, db):
+        raw = (await client.get("/")).text
+        assert 'href="/gdpr"' in raw
+        assert 'href="/dpa"' in raw
+
+    async def test_the_unfilled_residency_facts_are_visible_not_hidden(
+        self, client, db
+    ):
+        """Same rule as `brand.placeholders()`: a transfer mechanism nobody
+        has confirmed renders as a placeholder on the page rather than as a
+        blank cell that reads like "none needed"."""
+        from app.web import infra
+
+        assert infra.placeholders(), (
+            "if this is empty, the TODOs were filled in - delete this test"
+        )
+        body = (await client.get("/gdpr")).text
+        assert TODO in body
+
+    async def test_the_move_the_page_promises_is_actually_written_down(
+        self, client, db
+    ):
+        """`/gdpr` tells a prospective clinic the EU move is "planned and
+        documented". That is a representation, so the document has to exist -
+        and it has to be a runbook rather than a sentence of intent."""
+        from pathlib import Path
+
+        body = prose((await client.get("/gdpr")).text)
+        assert "planned and documented" in body
+
+        deploy = (
+            Path(__file__).resolve().parents[1] / "docs" / "deploy.md"
+        ).read_text(encoding="utf-8")
+        assert "Moving the whole thing to Frankfurt" in deploy
+        # The three steps that are easy to leave out and expensive to discover
+        # afterwards: Render cannot change region in place, Twilio verifies
+        # signatures against PUBLIC_BASE_URL, and every webhook needs
+        # repointing or that channel goes quiet with no error anywhere.
+        assert "not editable in place" in deploy
+        assert "PUBLIC_BASE_URL" in deploy
+        assert "Repoint the webhooks" in deploy
+
+    async def test_the_dpa_covers_the_eight_article_28_duties(self, client, db):
+        """Art. 28(3)(a) to (h). Not a substitute for legal review - it is the
+        checklist that stops a section being lost in an edit."""
+        body = prose((await client.get("/dpa")).text)
+        for phrase in (
+            "Only what you instruct",            # (a) documented instructions
+            "bound to confidentiality",          # (b) confidentiality
+            "Art. 32",                           # (c) security
+            "before we add or replace one",      # (d) sub-processors
+            "yours to answer",                   # (e) data subject rights
+            "72 hours",                          # (f) breach assistance
+            "delete everything or to export",    # (g) deletion at the end
+            "answer an auditor's questions",     # (h) audits
+        ):
+            assert phrase in body, phrase

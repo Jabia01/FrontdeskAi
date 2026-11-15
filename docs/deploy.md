@@ -326,3 +326,79 @@ stopped being a standalone entrypoint:
 
 The git history has the two-service blueprint if you want to copy it back
 verbatim: it is the version of `render.yaml` in the initial commit.
+
+## Moving the whole thing to Frankfurt
+
+Not done. Written down because `/gdpr` tells a prospective clinic the move is
+planned and documented, and that sentence should be true.
+
+Why it matters: the service, the database and the model all sit in the United
+States today. That is not unlawful - SCCs and the EU-US Data Privacy Framework
+exist - but selling to a Spanish clinic handling Art. 9 health data, or to an
+extranjeria firm handling case files, from an Ohio box, is an objection you meet
+in the first sales call rather than the tenth. The judgement in
+`app/web/infra.py` is to tell the truth on the page until it is fixed, and to
+make a false claim fail the build. `tests/test_deploy_readiness.py::
+TestTheBlueprint::test_the_public_residency_claim_matches_the_blueprint` is that
+test.
+
+**Render's region is not editable in place.** You cannot move a service between
+regions; you create a new one and retire the old. That is what makes this a
+runbook and not a dropdown, and it means a window of downtime measured in the
+time it takes to restore a database.
+
+The order matters, because the only truly irreversible step is the last one.
+
+1. **Pick the window.** Outside business hours in Spain. Inbound messages
+   during the window are not lost by Twilio - it retries a failing webhook -
+   but a reply arriving forty minutes late is worse than no reply for some of
+   these businesses. Tell the live tenants.
+
+2. **Stop writes.** Set `AI_ENABLED=false` on the current service so the agent
+   stops replying, and let the queue drain (`/health` reports the worker). Do
+   not scale to zero yet: the webhook endpoints should keep returning 200 so
+   Twilio stops retrying.
+
+3. **Dump.** `pg_dump` from the Supabase session pooler, with
+   `--no-owner --no-acl`. Keep it, verify its size, and do not delete it until
+   step 10 is finished and a week has passed.
+
+4. **New Supabase project in `eu-central-1`.** Then `alembic upgrade head`
+   against it to create the schema, and restore *data only*
+   (`pg_restore --data-only`) - restoring the dump's own DDL will fight the
+   migration's enum types, which is the bug documented under "Still manual
+   after this".
+
+5. **New Upstash database in an EU region.** Nothing in Redis is durable here -
+   it holds job ids in flight - so there is nothing to migrate. Note the region
+   down this time: `app/web/infra.py` has a TODO for it precisely because
+   nobody did.
+
+6. **Recreate the Render service in `frankfurt`.** Edit `render.yaml`'s
+   `region` *and* `app/web/infra.py`'s `HOSTING_REGION` in the same commit -
+   the test above fails if you do one without the other - then create the
+   service from the blueprint. Paste every `sync: false` secret again, pointing
+   `DATABASE_URL` and `REDIS_URL` at the new EU instances. It will get a new
+   `onrender.com` hostname.
+
+7. **`PUBLIC_BASE_URL`.** Set it to the new hostname, https, no trailing slash.
+   Twilio signatures are verified against this exact string, so a stale value
+   rejects every inbound webhook with a 403 and the logs will tell you it is a
+   signature failure rather than a URL problem.
+
+8. **Repoint the webhooks.** Every Twilio number's SMS and voice URLs, the
+   WhatsApp sender's callback, and the Retell agent's custom-LLM websocket
+   (`wss://<new-host>/ws/retell/<secret>`). Miss one and that channel goes
+   quiet silently - there is no error anywhere in this app, because the request
+   never arrives.
+
+9. **Verify before you switch anyone back on.** `/health` green; `/sim` drives
+   a conversation end to end; one real message to one real number from a phone
+   you hold. Then `AI_ENABLED=true`.
+
+10. **Retire the old service**, and only then. Keep the old Supabase project
+    paused rather than deleted for a fortnight.
+
+Afterwards: fill in the transfer-mechanism rows in `app/web/infra.py` - most of
+them become "not applicable, processing within the EEA", and the ones that do
+not (Anthropic, Twilio, Retell) are the short list left for a lawyer.
