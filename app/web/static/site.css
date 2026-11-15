@@ -448,6 +448,10 @@ html:not(.js) .headline-swap > span:first-child { opacity: 1; transform: none; }
 .phone[data-accent="teal"]   { --accent-a: #0EA5A5; --accent-b: #2E7BFF; }
 .phone[data-accent="amber"]  { --accent-a: #D97706; --accent-b: #F43F5E; }
 .phone[data-accent="rose"]   { --accent-a: #DB2777; --accent-b: #8B5CF6; }
+/* Fifth, added when the hero went from four demo languages to five.
+   Every conversation needs its own: the colour changing is how a
+   visitor notices the language changed. */
+.phone[data-accent="emerald"]{ --accent-a: #059669; --accent-b: #0EA5A5; }
 .phone { transition: box-shadow 700ms var(--ease); }
 .phone[data-accent] {
   box-shadow: 0 50px 110px -34px rgba(0, 0, 0, 0.95),
@@ -1088,4 +1092,26 @@ html:not(.js) .headline-swap > span:first-child { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) {
   .sector-card { transition: none; }
   .sector-card:hover, .sector-card:focus-visible { transform: none; }
+}
+
+/* Niche pages: what it does, and what it will not do. Two columns, because
+   the second one is what sells to a regulated business - a clinic's objection
+   is never "can it answer?", it is "what will it say when it shouldn't?". */
+.niche-cols {
+  display: grid;
+  gap: 28px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  margin-top: 10px;
+}
+.niche-col--limits {
+  padding: 24px 26px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg-1);
+}
+.niche-note {
+  margin: 18px 0 0;
+  color: var(--fg-3);
+  font-size: 14px;
+  line-height: 1.55;
 }

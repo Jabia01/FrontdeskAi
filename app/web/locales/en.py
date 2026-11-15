@@ -26,171 +26,175 @@ from typing import Any
 
 # --------------------------------------------------------------------- the demo
 
-#: Captured 12 November 2026 against the real deployment, seeded demo shop
-#: "Westside Auto Repair". Four languages, four real conversations - the hero
-#: cycles them so nobody can think this is a Spanish-only trick.
+#: Captured in November 2026 with `scripts/capture_demo.py`, against demo
+#: clinics and agencies built on a real deployment. Five languages across the
+#: three niches - the hero cycles them so nobody can think this is a
+#: Spanish-only trick, or a dental-only one.
 #:
 #: Every reply is verbatim and every `stamp` is the time that reply actually
-#: took. One sentence was trimmed from the end of the Spanish conversation for
-#: length, which the caption on the page discloses.
+#: took. Nothing here was edited for effect, which is why the Swedish reply is
+#: slower than the rest and says so.
 #:
-#: To replace these, run a conversation against a real deployment and paste the
-#: result. Do not write one by hand: a fabricated demo is the single claim on
-#: this site a visitor can disprove in thirty seconds.
-DEMO_SHOP = "Westside Auto Repair"
+#: They are also the evidence the guardrails work, which is why these
+#: particular conversations were kept: the Dutch patient is quoted a "from"
+#: price out of the clinic's own table and told the real figure depends on the
+#: consultation; the English buyer is told plainly that availability cannot be
+#: confirmed from here; the Arabic enquiry gets the firm's published document
+#: list and nothing else, with the not-legal-advice notice attached.
+#:
+#: To replace these, run `scripts/capture_demo.py` and paste the result. Do not
+#: write one by hand: a fabricated demo is the single claim on this site a
+#: visitor can disprove in thirty seconds, because they will try it.
+DEMO_SHOP = "Clinica Dental Marbella"
 DEMO_CAPTION = (
-    "Real conversations, replayed. Captured against a demo shop on "
-    "12 November 2026 and trimmed for length."
+    "Real conversations, replayed. Captured against demo clinics and agencies "
+    "in November 2026 - every reply verbatim, every timing measured."
 )
 
 DEMO_CONVERSATIONS: list[dict[str, Any]] = [
     {
+        "code": "nl",
+        "label": "Dutch",
+        "accent": "violet",
+        "shop": "Clinica Dental Marbella",
+        "turns": [
+            {
+                "from": "customer",
+                "text": "Goedenavond, ik ben geïnteresseerd in facings. Wat kosten die ongeveer?"
+            },
+            {
+                "from": "chichi",
+                "stamp": "9.7s",
+                "text": "Goedenavond! Met facings bedoelt u waarschijnlijk veneers. Die kosten vanaf ongeveer €450 tot €700 per stuk. Een exacte prijs hangt af van het consult, dus dat is een schatting. Wilt u een afspraak maken voor een consult? Dan krijgt u een precieze offerte."
+            },
+            {
+                "from": "customer",
+                "text": "Ik kom in juni naar Marbella, van 3 tot 10 juni. Kan ik dan langskomen?"
+            },
+            {
+                "from": "chichi",
+                "stamp": "4.3s",
+                "text": "Wat fijn dat u in juni naar Marbella komt! Wij zien regelmatig patiënten die van ver komen. Ik heb uw verblijf van 3 tot 10 juni genoteerd, zodat ik alleen tijden binnen die periode aanbied. Op welke dag zou u het liefst langskomen?"
+            }
+        ]
+    },
+    {
         "code": "es",
         "label": "Spanish",
-        "accent": "violet",
-        "shop": "Westside Auto Repair",
-        "turns": [
-            {
-                "from": "customer",
-                "text": "Hola, cuanto cuesta un cambio de aceite?",
-            },
-            {
-                "from": "chichi",
-                "text": "Hola! Un cambio de aceite sintético en Westside Auto Repair cuesta entre $70 y $110 aproximadamente. Son solo estimados; si quiere un precio exacto, puede pasar por el taller y lo revisamos. ¿Le gustaría que le ayude a agendar una visita?",
-                "stamp": "3.2s",
-            },
-            {
-                "from": "customer",
-                "text": "Perfecto. Mi Civic 2014 tambien necesita frenos, puedo llevarlo manana?",
-            },
-            {
-                "from": "chichi",
-                "text": "Sí, tenemos lugar mañana viernes 13 de noviembre. Le puedo ofrecer estos horarios: 8:00 am, 8:30 am o 9:00 am. Para frenos, el precio de pastillas y discos delanteros suele estar entre $320 y $480 (es un estimado; el precio exacto lo confirmamos al revisar el carro). ¿Cuál horario le funciona mejor?",
-                "stamp": "4.2s",
-            },
-            {
-                "from": "customer",
-                "text": "La primera opcion esta bien",
-            },
-            {
-                "from": "chichi",
-                "text": "Listo, quedó agendado su Civic 2014 para frenos el viernes 13 de noviembre a las 8:00 am. El precio de pastillas y discos delanteros es un estimado entre $320 y $480, y lo confirmamos al revisar el carro. ¿Me podría dar su nombre para anotarlo en la cita?",
-                "stamp": "6.6s",
-                "booked": True,
-            },
-        ],
-    },
-    {
-        "code": "en",
-        "label": "English",
         "accent": "teal",
-        "shop": "Westside Auto Repair",
+        "shop": "Clinica Dental Marbella",
         "turns": [
             {
                 "from": "customer",
-                "text": "hi, how much for front brakes on a 2016 Corolla?",
+                "text": "Buenas tardes, quería una limpieza dental. ¿Cuánto cuesta?"
             },
             {
                 "from": "chichi",
-                "text": "Hi! For front brake pads and rotors, our estimate is $320 to $480. That's a range, not a firm price, since the exact figure depends on the car and what the brakes need. If you'd like an exact quote, you can drop it by the shop at 2431 W Chicago Ave, or I can check a drop-off time for you. Would you like me to do that?",
+                "stamp": "4.0s",
+                "text": "¡Buenas tardes! La limpieza entra en nuestro servicio de Revisión e higiene, con un precio orientativo de entre 80 y 120 €. El importe exacto depende de la consulta, así que te lo confirmamos en la visita. ¿Quieres que te busquemos un hueco para venir?"
+            },
+            {
+                "from": "customer",
+                "text": "Vale. ¿Tenéis hueco mañana por la mañana?"
+            },
+            {
+                "from": "chichi",
                 "stamp": "3.2s",
+                "text": "Sí, mañana lunes 16 de noviembre tenemos huecos por la mañana: a las 8:00, a las 8:30 y a las 9:00. ¿Cuál te viene mejor?"
             },
             {
                 "from": "customer",
-                "text": "ok can i bring it in tomorrow?",
+                "text": "La primera me va bien. Me llamo Marta Ruiz"
             },
             {
                 "from": "chichi",
-                "text": "Yes, we have openings tomorrow, Friday. I can offer 8:30 AM, 9:00 AM, or 9:30 AM for a drop-off. Which one works for you?",
-                "stamp": "5.6s",
-            },
-            {
-                "from": "customer",
-                "text": "the earliest one works",
-            },
-            {
-                "from": "chichi",
-                "text": "You're booked for Friday 13 Nov at 8:30 AM to drop off your 2016 Corolla for front brakes. The shop is at 2431 W Chicago Ave, and there's free parking in the lot behind the building, entered from the alley. Could I get your name so the shop knows who to expect?",
-                "stamp": "8.9s",
+                "stamp": "7.9s",
                 "booked": True,
-            },
-        ],
+                "text": "Perfecto, Marta. Te he reservado la limpieza dental para mañana, lunes 16 de noviembre, a las 8:00 en Avenida Ricardo Soriano 42, Marbella. El precio orientativo es de 80 a 120 €, y el importe exacto lo confirmamos en la visita. Si necesitas cambiar la hora, escríbenos por aquí. ¡Hasta mañana!"
+            }
+        ]
     },
     {
-        "code": "pl",
-        "label": "Polish",
+        "code": "sv",
+        "label": "Swedish",
         "accent": "amber",
-        "shop": "Westside Auto Repair",
+        "shop": "Costa Property Partners",
         "turns": [
             {
                 "from": "customer",
-                "text": "dzien dobry, ile kosztuje wymiana oleju?",
+                "text": "Hej! Jag letar efter en villa i Marbella under 900 000 euro. Har ni något?"
             },
             {
                 "from": "chichi",
-                "text": "Dzień dobry! Wymiana oleju syntetycznego kosztuje zwykle od $70 do $110. To tylko orientacyjne szacunki, a dokładną wycenę podamy po wizycie w warsztacie. Czy chce Pan/Pani, żebym sprawdził/a wolne terminy?",
-                "stamp": "3.4s",
+                "stamp": "16.5s",
+                "text": "Hej! Ja, vi har en villa i Marbella inom er budget. Referens MRB-412: en villa med tre sovrum och pool, tio minuter från Puerto Banús. Den har en södervänd trädgård. Priset är 875 000 euro. Vill du boka en visning?"
             },
             {
                 "from": "customer",
-                "text": "a czy moge przyjechac jutro rano?",
+                "text": "Låter bra. Kan vi boka en visning nästa vecka?"
             },
             {
                 "from": "chichi",
-                "text": "Tak, jutro (piątek) jesteśmy otwarci od 8:00 do 18:00. Wymiana oleju nie wymaga wcześniejszego umówienia, można przyjechać bez zapisu. Czy chce Pan/Pani, żebym sprawdził/a dla Pana/Pani konkretną godzinę na wizytę dla diagnostyki lub hamulców?",
-                "stamp": "3.1s",
-            },
-            {
-                "from": "customer",
-                "text": "pierwsza godzina pasuje",
-            },
-            {
-                "from": "chichi",
-                "text": "Świetnie! Jutro otwieramy o 8:00, więc pierwsza godzina to 8:00. Na wymianę oleju nie trzeba się umawiać, wystarczy przyjechać. Czy chodzi tylko o olej, czy także o diagnostykę lub hamulce? Wtedy sprawdzę dla Pana/Pani konkretny termin.",
-                "stamp": "4.2s",
-            },
-        ],
+                "stamp": "3.9s",
+                "text": "Gärna! Vilken dag nästa vecka passar dig bäst? Vi har öppet måndag till fredag 8–18 och lördag 9–14. Jag kollar lediga tider för visning av villa MRB-412 när jag vet vilken dag du vill ha."
+            }
+        ]
     },
     {
         "code": "ar",
         "label": "Arabic",
         "accent": "rose",
-        "shop": "Westside Auto Repair",
         "rtl": True,
+        "shop": "Bufete Extranjeria Madrid",
         "turns": [
             {
                 "from": "customer",
-                "text": "مرحبا، كم سعر تغيير الزيت؟",
+                "text": "السلام عليكم، أريد معلومات عن الأرايغو. ما هي الوثائق المطلوبة؟"
             },
             {
                 "from": "chichi",
-                "text": "مرحبا! تغيير الزيت الصناعي (سينثتيك) يتراوح سعره تقريبا بين 70 و110 دولار. هذه أسعار تقديرية فقط، وإذا أردت سعرا دقيقا يمكنك المرور بالمحل وسنحدد لك السعر بعد الفحص. هل تريد معرفة مواعيد العمل أو حجز موعد؟",
-                "stamp": "3.2s",
+                "stamp": "5.7s",
+                "text": "وعليكم السلام، أهلاً بك في بوفيتي إكستراخيريا مدريد. هذه قائمة الوثائق التي حددها المكتب لطلب الأرايغو:\n- جواز سفر ساري وكامل\n- Certificado de empadronamiento\n- Certificado de antecedentes penales\n- Proof of three years' residence in Spain\n\nسيؤكد المكتب أي متطلبات خاصة بحالتك. هل تودّ حجز استشارة أولية (80 يورو تقديرياً)؟ علماً أن هذه المحادثة ليست استشارة قانونية ولا تنشئ علاقة محامٍ بالموكل."
             },
             {
                 "from": "customer",
-                "text": "هل يمكنني إحضار السيارة غدا؟",
+                "text": "Perdone, mejor en español. ¿Puedo pedir cita esta semana?"
             },
             {
                 "from": "chichi",
-                "text": "نعم، يمكنك الحضور غدا الجمعة. المواعيد المتاحة لتغيير الزيت: الساعة 9:00 صباحا، أو 9:30 صباحا، أو 10:00 صباحا. أيها يناسبك؟ وإذا كنت تفضل الحضور بدون موعد فالمحل يستقبل تغيير الزيت بدون حجز أيضا.",
-                "stamp": "4.4s",
-            },
-            {
-                "from": "customer",
-                "text": "الموعد الأول مناسب",
-            },
-            {
-                "from": "chichi",
-                "text": "ممتاز، الجمعة 13 نوفمبر الساعة 9:00 صباحا متاح. قبل تأكيد الحجز، ما اسمك من فضلك؟",
-                "stamp": "5.6s",
-            },
-        ],
+                "stamp": "3.1s",
+                "text": "Claro, con gusto le ayudo a pedir cita. ¿Qué día de esta semana le viene mejor? Así consulto los horarios disponibles y le propongo opciones."
+            }
+        ]
     },
+    {
+        "code": "en",
+        "label": "English",
+        "accent": "emerald",
+        "shop": "Costa Property Partners",
+        "turns": [
+            {
+                "from": "customer",
+                "text": "Evening. Anything in Estepona around 650k, two beds or more?"
+            },
+            {
+                "from": "chichi",
+                "stamp": "6.9s",
+                "text": "Good evening! We have one match in Estepona: reference EST-118, a two-bedroom apartment at 640,000 with sea views, within walking distance of the old town. I can't confirm availability from here, but I can arrange a viewing or pass your details to an agent. Would you like to go ahead?"
+            },
+            {
+                "from": "customer",
+                "text": "Looks good. Could we see it on Saturday?"
+            },
+            {
+                "from": "chichi",
+                "stamp": "4.0s",
+                "text": "Saturday works. I have 9:00, 9:30 or 10:00 AM on Saturday 21 November. Which would suit you best?"
+            }
+        ]
+    }
 ]
 
-#: What the owner's phone shows while that conversation happens. Real alerts,
-#: in the format `core/owner.py` actually sends.
 OWNER_ALERT = {
     "code": "2F2K",
     "title": "New booking [2F2K]",
@@ -523,27 +527,27 @@ FAQ: list[dict[str, str]] = [
     },
 ]
 
-#: `href` points at the signup anchor until the three niche pages exist.
-#: Three 404s on a live landing page is a worse first impression than a
-#: short link, and a test asserts every href resolves.
+#: A test walks every href: an in-page anchor must have its target on the
+#: page, a path must return 200. Three dead links on a landing page is the
+#: kind of thing nobody notices until a visitor does.
 SECTORS: list[dict[str, str]] = [
     {
         "key": "dental",
-        "href": "#signup",
+        "href": "/dental",
         "name": "Dental and aesthetic clinics",
         "line": "The patient who writes at 11pm, from another country, "
         "in another language.",
     },
     {
         "key": "real_estate",
-        "href": "#signup",
+        "href": "/inmobiliarias",
         "name": "Estate agencies",
         "line": "The buyer browsing from Stockholm at midnight, asking what is "
         "still available.",
     },
     {
         "key": "immigration",
-        "href": "#signup",
+        "href": "/extranjeria",
         "name": "Immigration law firms",
         "line": "The client who needs an appointment, in Arabic, before a "
         "deadline they are frightened of.",
@@ -575,4 +579,122 @@ COPY: dict[str, Any] = {
         "Cancel any time."
     ),
     "hero_price": "From 490 € a month",
+    "see_pricing": "See pricing",
+    "niche_does": "What it does",
+    "niche_refuses": "What it will not do",
+    "niche_limits_note": (
+        "These are not settings you have to remember to turn on. They are "
+        "built into what the assistant is allowed to say, and they are covered "
+        "by tests that run before every release."
+    ),
+}
+
+
+# ------------------------------------------------------------- niche pages
+
+#: One page per niche. The home page is a short router into these, because a
+#: clinic and an extranjeria firm want to read about different things and a
+#: single page trying to address both says less to each.
+#:
+#: `demo` names which of DEMO_CONVERSATIONS to show, so a niche page is never
+#: illustrated with someone else's conversation.
+NICHE_PAGES: dict[str, dict[str, Any]] = {
+    "dental": {
+        "slug": "dental",
+        "path": "/dental",
+        "niche": "dental",
+        "demo": ["nl", "es"],
+        "eyebrow": "Dental and aesthetic clinics",
+        "headline": (
+            "Your next international patient writes at 11pm in German. "
+            "Chichi answers in German and books the consultation."
+        ),
+        "lede": (
+            "Most of the enquiries that matter arrive after you have closed, "
+            "from someone in another country deciding between you and a clinic "
+            "two streets away. Chichi answers in their language, quotes only "
+            "the prices you have set, and puts the appointment in the book."
+        ),
+        "does": [
+            "Answers in the patient's own language, day or night",
+            ("Quotes only the 'from' prices you have entered - never a figure "
+            "it worked out itself"),
+            "Takes travel dates and offers only times inside the stay",
+            "Books the consultation and sends your deposit link",
+            "Sends the recall when it is due",
+        ],
+        "refuses": [
+            "Never diagnoses, and never says what a symptom might be",
+            ("Never advises on medication, anaesthetic or whether a treatment "
+            "suits someone"),
+            "Never estimates how long treatment or healing takes",
+            "Does not ask for photographs or medical history",
+            ("Pain, bleeding, swelling or anything after a procedure goes "
+            "straight to your clinical team"),
+        ],
+    },
+    "inmobiliarias": {
+        "slug": "inmobiliarias",
+        "path": "/inmobiliarias",
+        "niche": "real_estate",
+        "demo": ["sv", "en"],
+        "eyebrow": "Estate agencies",
+        "headline": (
+            "A buyer in Stockholm is looking at your listings at midnight. "
+            "Chichi answers in Swedish and arranges the viewing."
+        ),
+        "lede": (
+            "Foreign buyers browse when your office is shut and ask the same "
+            "five questions. Chichi answers them in the buyer's language, in "
+            "your own listing words, and hands a qualified enquiry to an agent."
+        ),
+        "does": [
+            "Answers in the buyer's language, from your own listing text",
+            "Takes budget, area, timeline, cash or mortgage, and NIE status",
+            "Sends matching properties - only ones you have listed",
+            "Arranges viewings and follows up over the next month",
+        ],
+        "refuses": [
+            "Never confirms a property is still available",
+            "Never negotiates, and never says where an offer stands",
+            "Never invents a size, a build year or a licence status",
+            ("Never says buying property grants residency - Spain's golden visa "
+            "has ended, and Portugal's no longer covers it"),
+            "Tax, mortgage and legal questions go to a person",
+        ],
+    },
+    "extranjeria": {
+        "slug": "extranjeria",
+        "path": "/extranjeria",
+        "niche": "immigration",
+        "demo": ["ar", "es"],
+        "eyebrow": "Immigration law firms",
+        "headline": (
+            "A client writes in Arabic about arraigo, frightened of a deadline. "
+            "Chichi answers in Arabic and books the consultation."
+        ),
+        "lede": (
+            "Your clients write in the language they are most comfortable in, "
+            "often outside office hours, often worried. Chichi takes the facts, "
+            "books the consultation, and knows exactly where to stop."
+        ),
+        "does": [
+            ("Answers in the client's language - Arabic, Spanish, French, "
+            "Russian, Urdu and more"),
+            ("Sorts the enquiry: arraigo, nationality, TIE renewal, digital "
+            "nomad visa, family reunification"),
+            "Sends only the document list your firm has published",
+            "Books and takes the deposit for a paid consultation",
+            "Reports case status exactly as your firm set it",
+        ],
+        "refuses": [
+            "Never says whether someone qualifies, or what will happen",
+            "Never predicts timescales, outcomes or deadlines",
+            "Never assembles a document list of its own",
+            "Never asks for a passport, NIE or case number",
+            "Says in the first message that this is not legal advice",
+            ("An expulsion order, detention, or a deadline inside ten days goes "
+            "to you immediately, before anything else"),
+        ],
+    },
 }

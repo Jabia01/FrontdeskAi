@@ -24,6 +24,7 @@ from app import repo_admin
 from app.db import get_session
 from app.web import content, locales
 from app.web import phone as phone_util
+from app.web.locales import en
 from app.web.templating import render
 
 log = logging.getLogger(__name__)
@@ -96,6 +97,48 @@ def _landing_context(locale: str | None = None) -> dict:
 @router.get("/", include_in_schema=False)
 async def landing(request: Request):
     return render(request, "marketing/landing.html", **_landing_context())
+
+
+def _niche_context(slug: str, locale: str | None = None) -> dict:
+    """A niche page: its own copy, and only its own captured conversations."""
+    text = locales.get(locale)
+    page = text.NICHE_PAGES[slug]
+    wanted = page["demo"]
+    conversations = [
+        c for c in text.DEMO_CONVERSATIONS if c["code"] in wanted
+    ] or text.DEMO_CONVERSATIONS
+    return {
+        "page": page,
+        "copy": text.COPY,
+        "locale": (locale or locales.DEFAULT_LOCALE),
+        "html_lang": (locale or locales.DEFAULT_LOCALE),
+        "conversations": conversations,
+        "conversations_json": json.dumps(conversations, ensure_ascii=False),
+        "demo_caption": text.DEMO_CAPTION,
+    }
+
+
+def _register_niche_pages() -> None:
+    """One route per niche, generated rather than written five times.
+
+    Explicit paths, not a catch-all `/{slug}`: a wildcard here would shadow
+    /privacy, /terms, /messaging and anything added under / later.
+    """
+    for slug, page in en.NICHE_PAGES.items():
+
+        def view(request: Request, slug: str = slug):
+            return render(request, "marketing/niche.html", **_niche_context(slug))
+
+        router.add_api_route(
+            page["path"],
+            view,
+            methods=["GET"],
+            include_in_schema=False,
+            name=f"niche_{slug}",
+        )
+
+
+_register_niche_pages()
 
 
 @router.get("/thanks", include_in_schema=False)

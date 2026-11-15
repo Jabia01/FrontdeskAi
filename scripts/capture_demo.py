@@ -188,8 +188,18 @@ async def build_shop(niche: str) -> tuple[uuid.UUID, str]:
     return client_id, sim_id
 
 
-async def say(client_id: uuid.UUID, sim_id: str, phone: str, text: str) -> dict:
-    """One customer message in, one agent reply out, timed."""
+async def say(
+    client_id: uuid.UUID, sim_id: str, phone: str, text: str, after: int | None
+) -> dict:
+    """One customer message in, whatever came back, timed.
+
+    `after` is a sequence cursor, and it is load-bearing rather than tidy.
+    Once a conversation hands off, the AI is paused and a further message gets
+    no reply at all - without the cursor this read the *previous* outbound row
+    and reported it as a fresh answer, which made the bot look like it had
+    repeated itself. A capture tool that invents a reply is worse than no
+    capture tool.
+    """
     started = time.monotonic()
     async with session_scope() as session:
         result = await ingest(
@@ -209,26 +219,33 @@ async def say(client_id: uuid.UUID, sim_id: str, phone: str, text: str) -> dict:
     elapsed = time.monotonic() - started
 
     async with session_scope() as session:
-        rows = await outbound_for_customer_since(session, client_id, customer_id, None)
-    replies = [r for r in rows if r.direction == Direction.outbound]
+        rows = await outbound_for_customer_since(session, client_id, customer_id, after)
+    fresh = [r for r in rows if r.direction == Direction.outbound]
     return {
         "customer": text,
-        "reply": replies[-1].body if replies else "",
+        "reply": fresh[-1].body if fresh else "",
         "seconds": round(elapsed, 1),
+        "cursor": max((r.seq for r in rows), default=after),
+        "silent": not fresh,
     }
 
 
 async def run(niche: str, lines: list[str], phone: str) -> int:
     client_id, sim_id = await build_shop(niche)
     turns = []
+    cursor: int | None = None
     for line in lines:
-        turn = await say(client_id, sim_id, phone, line)
+        turn = await say(client_id, sim_id, phone, line, cursor)
+        cursor = turn.pop("cursor")
+        silent = turn.pop("silent")
         turns.append(turn)
         print(f"  customer > {turn['customer']}", file=sys.stderr)
-        print(f"  chichi   > {turn['reply']}  [{turn['seconds']}s]", file=sys.stderr)
-        if not turn["reply"]:
-            print("  (no reply - stopping)", file=sys.stderr)
+        if silent:
+            # Almost always a handoff: the conversation is with a human now
+            # and the agent is deliberately quiet.
+            print("  chichi   > (no reply - handed off or paused)", file=sys.stderr)
             break
+        print(f"  chichi   > {turn['reply']}  [{turn['seconds']}s]", file=sys.stderr)
     print(json.dumps({"niche": niche, "turns": turns}, ensure_ascii=False, indent=2))
     return 0
 

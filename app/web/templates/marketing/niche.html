@@ -1,0 +1,94 @@
+{% extends "marketing/base.html" %}
+
+{# One page per niche. The home page routes into these, because a clinic and an
+   extranjeria firm want to read about different things, and a single page
+   trying to address both says less to each.
+
+   The demo here is the same component the home page uses, driven by the same
+   captured conversations - filtered to this niche's own, so a clinic is never
+   illustrated with someone else's enquiry. #}
+
+{% block title %}{{ page.eyebrow }} - {{ brand.name }}{% endblock %}
+{% block description %}{{ page.headline }}{% endblock %}
+
+{% block body %}
+<section class="hero">
+  <div class="shell">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">{{ page.eyebrow }}</span>
+        <h1 class="h1">{{ page.headline }}</h1>
+        <p class="lede">{{ page.lede }}</p>
+
+        <div class="cta-row">
+          <a class="btn btn-primary btn-lg" href="/#signup">{{ copy.cta_primary }}</a>
+          <a class="btn btn-ghost btn-lg" href="/#pricing">{{ copy.see_pricing }}</a>
+        </div>
+      </div>
+
+      <div class="hero-demo">
+        <div class="phone" data-accent="{{ conversations[0].accent }}" data-phone>
+          <div class="phone-screen">
+            <div class="phone-top">
+              <div class="phone-av">
+                {% with avatar=True, pose="typing", size=34, uid="nichephone" %}
+                  {% include "marketing/_mascot.html" %}
+                {% endwith %}
+              </div>
+              <div>
+                <div class="phone-who">{{ conversations[0].shop }}</div>
+                <div class="phone-sub">
+                  <span class="dot-ok" style="display:inline-block"></span>
+                  answering in
+                  <span data-current-language>{{ conversations[0].label }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="thread" data-thread></div>
+          </div>
+        </div>
+
+        <div class="lang-chips phone-langs" data-phone-langs>
+          {% for conversation in conversations %}
+          <button type="button" class="lang-chip{{ ' on' if loop.first }}"
+                  data-conversation="{{ loop.index0 }}">{{ conversation.label }}</button>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <p class="phone-caption" style="margin-inline:auto;margin-top:30px">
+      {{ demo_caption }}
+    </p>
+  </div>
+</section>
+
+{# What it does, and what it will not do, side by side. The second column is
+   the one that sells to a regulated business: a clinic's objection is never
+   "can it answer?", it is "what will it say when it shouldn't?". #}
+<section class="section">
+  <div class="shell">
+    <div class="niche-cols">
+      <div class="niche-col">
+        <h2 class="h2">{{ copy.niche_does }}</h2>
+        <ul class="price-list">
+          {% for item in page.does %}<li>{{ item }}</li>{% endfor %}
+        </ul>
+      </div>
+      <div class="niche-col niche-col--limits">
+        <h2 class="h2">{{ copy.niche_refuses }}</h2>
+        <ul class="price-list">
+          {% for item in page.refuses %}<li>{{ item }}</li>{% endfor %}
+        </ul>
+        <p class="niche-note">{{ copy.niche_limits_note }}</p>
+      </div>
+    </div>
+
+    <div class="cta-row" style="justify-content:center;margin-top:36px">
+      <a class="btn btn-primary btn-lg" href="/#signup">{{ copy.cta_primary }}</a>
+    </div>
+  </div>
+</section>
+
+<script type="application/json" id="demo-conversations">{{ conversations_json | safe }}</script>
+{% endblock %}

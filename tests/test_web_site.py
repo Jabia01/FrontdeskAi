@@ -74,6 +74,12 @@ class TestNothingIsLoadedFromAnyoneElse:
         assert not re.search(r"\son(click|load|error|mouseover)=", body), path
 
 
+#: The accents the stylesheet defines. A conversation using one that is not
+#: here renders with no gradient at all, which looks like a broken page
+#: rather than a missing colour.
+ACCENTS = ("violet", "teal", "amber", "rose", "emerald")
+
+
 class TestTheDemoIsReal:
     """The hero replays captured conversations in four languages. If one ever
     stops being a real capture it becomes the single claim on this site a
@@ -117,7 +123,7 @@ class TestTheDemoIsReal:
         "conversation", content.DEMO_CONVERSATIONS, ids=lambda c: c["code"]
     )
     def test_each_has_its_own_accent(self, conversation):
-        assert conversation["accent"] in ("violet", "teal", "amber", "rose")
+        assert conversation["accent"] in ACCENTS
         assert conversation["label"].strip()
 
     def test_the_accents_differ(self):
