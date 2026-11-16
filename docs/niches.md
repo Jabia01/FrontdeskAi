@@ -127,6 +127,42 @@ advice and does not create a lawyer-client relationship.
 
 ---
 
+## Why a conversation went to a human
+
+Every escalation is recorded twice, because the two records answer different
+questions.
+
+`conversations.handoff_reason` is the model's own words — *"patient says the
+crown came off and it hurts"*. That is what the clinic reads when it picks the
+conversation up, and it is not something a category could replace.
+
+`conversations.handoff_code` is one value from a closed list of twenty, defined
+in `app/core/handoff.py`. That is what can be counted. A clinic that has to
+answer *"how often did your system refuse a clinical question last month, and
+is that number going up"* cannot answer it by grepping free text in nine
+languages.
+
+The list is global, so a code means the same thing at every tenant and the
+counts compare. Each niche is shown only its own subset — the codes listed in
+the sections above, plus `other` — which is what keeps the prompt short; the
+narrowing is guidance, not a constraint, and a code from outside a shop's niche
+is stored as given rather than tidied into `other`.
+
+Four paths escalate — the model calling `handoff_to_human`, the model setting
+`handoff` in its reply, the engine's own two-failed-attempts rule, and a live
+call — and all four go through one function, so a clinical question asked on
+the phone counts as the same thing as the same question texted.
+
+The console shows the code on the conversation, on the shop's conversation
+list, on the owner's own dashboard, and as a count per code on `/admin/usage`.
+
+**Two honest limits.** Handoffs from before reason codes shipped carry no code,
+and are left out of the counts rather than bucketed as "something else" —
+counting them would invent a trend. And this is a count, not an audit log:
+there is no retention policy on it yet, and `docs/` does not yet promise one.
+
+---
+
 ## Adding a niche
 
 Not by copying a dict entry. A regulated niche needs:

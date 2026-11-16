@@ -19,6 +19,28 @@
       {% endfor %}
     </div>
   </div>
+  {#
+    Only the codes this shop has actually used. Twenty links, most of them
+    leading to an empty table, is a worse page than four - and the counts are
+    the answer to "is this getting worse", which is the reason anyone opens
+    this page twice.
+  #}
+  {% if codes %}
+  <div class="card-head" style="border-top:0">
+    <span class="sub" style="margin:0">Handed off because</span>
+    <span class="spacer"></span>
+    <div class="topnav" style="margin:0">
+      {% for row in codes %}
+      <a href="/admin/shops/{{ client.id }}/conversations?code={{ row.code }}"
+         class="{{ 'on' if code == row.code }}"
+         >{{ row.code | handoff_label }} <span class="sub">{{ row.count }}</span></a>
+      {% endfor %}
+      {% if code %}
+      <a href="/admin/shops/{{ client.id }}/conversations">clear</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
   {% if rows %}
   <table>
     <thead><tr>
@@ -39,7 +61,11 @@
         <td><span class="clip">{{ row.last_body or "-" }}</span></td>
         <td class="tight"><span class="badge {{ row.conversation.status.value }}">
           {{ row.conversation.status.value }}</span>
-          <span class="badge">{{ row.conversation.channel.value }}</span></td>
+          <span class="badge">{{ row.conversation.channel.value }}</span>
+          {% if row.conversation.handoff_code %}
+          <span class="badge human">
+            {{ row.conversation.handoff_code | handoff_label }}</span>
+          {% endif %}</td>
         <td class="num">{{ row.message_count }}</td>
         <td class="tight sub">{{ row.conversation.last_message_at | ago }}</td>
       </tr>

@@ -119,6 +119,10 @@
           <td><a href="/admin/shops/{{ client.id }}/conversations/{{ row.conversation.id }}">
             {{ row.customer.phone | phone }}</a>
             <div class="sub" style="margin:0;font-size:13px">
+              {% if row.conversation.handoff_code %}
+              <span class="badge human">
+                {{ row.conversation.handoff_code | handoff_label }}</span>
+              {% endif %}
               {{ row.conversation.handoff_reason or "handed off" }}</div></td>
           <td class="tight sub">{{ row.conversation.handed_off_at | ago }}</td>
         </tr>

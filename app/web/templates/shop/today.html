@@ -37,6 +37,10 @@
       <td><a href="/shop/conversations/{{ row.conversation.id }}">
         {{ row.customer.phone | phone }}</a>
         <div class="sub" style="margin:0;font-size:13px">
+          {% if row.conversation.handoff_code %}
+          <span class="badge human">
+            {{ row.conversation.handoff_code | handoff_label }}</span>
+          {% endif %}
           {{ row.conversation.handoff_reason or "handed to you" }}</div></td>
       <td><span class="clip">{{ row.last_body or "" }}</span></td>
       <td class="tight sub">{{ row.conversation.handed_off_at | ago }}</td>

@@ -12,10 +12,22 @@
 
 {% if conversation.status.value == "human" %}
 <div class="note warn">
+  {% if conversation.handoff_code %}
+  <span class="badge human">
+    {{ conversation.handoff_code | handoff_label }}</span>
+  {% endif %}
   The AI has stopped answering this one{% if conversation.handoff_reason %}
   ({{ conversation.handoff_reason }}){% endif %}. Text the customer yourself,
   or reply <span class="mono">RESUME {{ conversation.short_code }}</span> to let
   it carry on.
+  {#
+    The handover note. It went out in the WhatsApp alert at the time and was
+    then thrown away, which meant the one page an owner opens *before* picking
+    a conversation up could not show them what it was about.
+  #}
+  {% if conversation.handoff_summary %}
+  <div style="margin-top:8px">{{ conversation.handoff_summary }}</div>
+  {% endif %}
 </div>
 {% endif %}
 

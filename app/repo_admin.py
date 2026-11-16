@@ -514,6 +514,32 @@ async def attention_counts(
     return out
 
 
+async def handoff_counts(session: AsyncSession, *, since: datetime) -> list[dict]:
+    """Platform-wide handoffs, split by reason code.
+
+    The question this answers is the one a regulated niche has to be able to
+    answer about itself: how often did the agent refuse a clinical question
+    this month, and is that number moving. Free text could not be counted,
+    which is why `handoff_code` exists at all.
+
+    Rows with no code are left out rather than bucketed as `other`. They are
+    not unclassified escalations - they are handoffs that predate the code,
+    and counting them as "something else" would invent a trend.
+    """
+    result = await session.execute(
+        select(Conversation.handoff_code, func.count().label("count"))
+        .where(
+            Conversation.handed_off_at >= since,
+            Conversation.handoff_code.isnot(None),
+        )
+        .group_by(Conversation.handoff_code)
+        .order_by(func.count().desc(), Conversation.handoff_code)
+    )
+    return [
+        {"code": code, "count": int(count)} for code, count in result.all()
+    ]
+
+
 async def usage_by_model(session: AsyncSession, *, since: datetime) -> list[dict]:
     """Platform-wide Claude spend, split by model. The margin number."""
     result = await session.execute(

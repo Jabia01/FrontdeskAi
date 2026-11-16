@@ -65,6 +65,44 @@
 </div>
 
 <div class="card flush">
+  <div class="card-head"><h2>Why conversations went to a human</h2></div>
+  {#
+    The number a regulated niche has to be able to produce about itself: how
+    often the agent refused a clinical or a legal question, and whether that
+    is moving. Free text could not be counted, which is the whole reason
+    `handoff_code` exists.
+
+    Platform-wide and unfiltered by shop on purpose - this page is the margin
+    and the safety view together, and a code that only ever fires at one
+    clinic is worth seeing as exactly that.
+  #}
+  {% if handoff_codes %}
+  <table>
+    <thead><tr>
+      <th>Reason</th><th>Code</th><th class="num">Handoffs</th><th class="num">Share</th>
+    </tr></thead>
+    <tbody>
+    {% for row in handoff_codes %}
+      <tr>
+        <td>{{ row.code | handoff_label }}</td>
+        <td class="tight mono sub">{{ row.code }}</td>
+        <td class="num">{{ row.count | number }}</td>
+        <td class="num">{{ (100 * row.count / handoff_total) | round(1) }}%</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="sub" style="padding:12px 18px;margin:0;font-size:13px">
+    Handoffs from before reason codes shipped carry no code and are not
+    counted here - they are not unclassified escalations, and bucketing them
+    as "something else" would invent a trend.
+  </p>
+  {% else %}
+  <p class="empty">No coded handoffs in this window.</p>
+  {% endif %}
+</div>
+
+<div class="card flush">
   <div class="card-head"><h2>By shop</h2></div>
   {% if per_shop %}
   <table>

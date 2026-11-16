@@ -29,7 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import repo, repo_admin, repo_shop
 from app.agent.prompt import config_prompt_version
-from app.core import defaults
+from app.core import defaults, handoff
 from app.core.router import invalidate, load_shop
 from app.db import get_session
 from app.models import (
@@ -912,6 +912,12 @@ async def shop_conversations(
             status = ConversationStatus(raw_status)
         except ValueError:
             status = None
+    # A query param, not a path segment: `test_web_isolation.py` holds the
+    # rule that a shop is identified by the path and nothing else is, and a
+    # `/conversations/{code}` segment would be a second thing in the path to
+    # reason about. Normalised through the same chokepoint the writer uses,
+    # so a hand-typed URL filters on a real code or on nothing.
+    code = handoff.normalise(request.query_params.get("code", ""))
     return render(
         request,
         "admin/conversations.html",
@@ -920,9 +926,15 @@ async def shop_conversations(
         client=client,
         tz=client.timezone,
         rows=await repo_shop.conversation_page(
-            session, client_id, status=status, limit=100
+            session,
+            client_id,
+            status=status,
+            code=code.value if code else None,
+            limit=100,
         ),
         status=raw_status,
+        code=code.value if code else "",
+        codes=await repo_shop.handoff_counts(session, client_id),
         **await _chrome(session),
     )
 
@@ -1042,6 +1054,7 @@ async def usage(
         key=lambda row: row["cost"],
         reverse=True,
     )
+    handoff_codes = await repo_admin.handoff_counts(session, since=since)
     cache_read = sum(row["cache_read"] for row in by_model)
     cache_write = sum(row["cache_write"] for row in by_model)
     fresh_input = sum(row["input_tokens"] for row in by_model)
@@ -1053,6 +1066,11 @@ async def usage(
         days=days,
         by_model=by_model,
         per_shop=per_shop,
+        handoff_codes=handoff_codes,
+        # Passed rather than summed in the template: a share of zero would be
+        # a ZeroDivisionError inside Jinja, which renders as a 500 on a page
+        # whose whole job is to tell you something is wrong.
+        handoff_total=sum(row["count"] for row in handoff_codes) or 1,
         total_cost=sum(row["cost"] for row in by_model),
         total_calls=sum(row["calls"] for row in by_model),
         cache_read=cache_read,

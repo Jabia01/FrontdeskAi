@@ -16,6 +16,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.responses import HTMLResponse
 
 from app.agent.language import LANGUAGE_NAMES
+from app.core.handoff import label as handoff_label
 from app.web import phone as phone_util
 from app.web.auth import Principal
 from app.web.brand import BRAND
@@ -116,6 +117,10 @@ templates.env.filters["phone"] = phone_util.display
 templates.env.filters["mask_phone"] = phone_util.mask
 templates.env.filters["language_name"] = language_name
 templates.env.filters["number"] = number
+#: A handoff code to the sentence an owner would use. Never raises, and
+#: shows an unrecognised code as itself - a blank cell would read as "no
+#: handoff" when there was one.
+templates.env.filters["handoff_label"] = handoff_label
 
 
 def render(

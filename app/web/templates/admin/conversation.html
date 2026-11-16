@@ -57,8 +57,23 @@
           {% else %}-{% endif %}</dd>
         <dt>Handoff</dt>
         <dd>{% if conversation.handed_off_at %}
+          {#
+            Three things, and they are not the same thing. The code is the
+            category, and it is a link because "show me the others like this"
+            is the next question. The reason is the model's own words. The
+            summary is the handover note, which used to be composed, sent in
+            the alert and then thrown away.
+          #}
+          {% if conversation.handoff_code %}
+          <a class="badge human" href="/admin/shops/{{ client.id }}/conversations?code={{ conversation.handoff_code }}"
+             >{{ conversation.handoff_code | handoff_label }}</a>
+          {% endif %}
           {{ conversation.handoff_reason or "handed off" }}
           <span class="sub">({{ conversation.handed_off_at | ago }})</span>
+          {% if conversation.handoff_summary %}
+          <div class="sub" style="margin:6px 0 0">
+            {{ conversation.handoff_summary }}</div>
+          {% endif %}
           {% else %}no{% endif %}</dd>
         <dt>Misunderstood</dt><dd>{{ conversation.misunderstand_count }}</dd>
         <dt>AI failures</dt><dd>{{ conversation.ai_failure_count }}</dd>

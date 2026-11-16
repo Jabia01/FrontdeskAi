@@ -58,6 +58,10 @@ async def conversation_page(
     client_id: uuid.UUID,
     *,
     status: ConversationStatus | None = None,
+    #: Filter to one handoff reason code. Narrows rather than replacing the
+    #: status filter, so "human conversations that were a clinical question"
+    #: is expressible.
+    code: str | None = None,
     limit: int = 50,
     offset: int = 0,
 ) -> list[ConversationRow]:
@@ -89,6 +93,8 @@ async def conversation_page(
     )
     if status is not None:
         query = query.where(Conversation.status == status)
+    if code:
+        query = query.where(Conversation.handoff_code == code)
     result = await session.execute(query)
     return [
         ConversationRow(
@@ -147,6 +153,27 @@ async def open_handoffs(
     return await conversation_page(
         session, client_id, status=ConversationStatus.human, limit=limit
     )
+
+
+async def handoff_counts(
+    session: AsyncSession, client_id: uuid.UUID
+) -> list[dict]:
+    """How often this shop handed off, by reason code.
+
+    Drives the filter row on the conversations page, which is why it returns
+    only the codes this shop has actually used. Twenty links, most of them
+    leading to an empty table, is a worse page than four.
+    """
+    result = await session.execute(
+        select(Conversation.handoff_code, func.count().label("count"))
+        .where(
+            Conversation.client_id == client_id,
+            Conversation.handoff_code.isnot(None),
+        )
+        .group_by(Conversation.handoff_code)
+        .order_by(func.count().desc(), Conversation.handoff_code)
+    )
+    return [{"code": code, "count": int(count)} for code, count in result.all()]
 
 
 async def pending_drafts(
