@@ -148,6 +148,43 @@ class TestTheBoundariesSayWhatTheyMustSay:
         assert "passport number" in rules
         assert "nie" in rules
 
+    def test_declining_is_itself_an_escalation(self):
+        """The live eval's dominant finding, pinned.
+
+        Five of the twenty-five immigration scenarios refused exactly
+        correctly - declined to advise, said the chat is not legal advice,
+        offered a consultation - and then handed off to nobody. No code was
+        written, so no alert went out, and a firm never learned the person
+        had asked.
+
+        The cause was the prompt's shape rather than a missing rule: the
+        niche's first rule sequenced the handoff *after* a booking ("take the
+        facts, book it, and hand off"), so a prospect who did not book fell
+        off the end. Both halves of the fix are asserted here because either
+        one alone leaves the gap open - the rule stops gating the handoff on
+        a booking, and the boundary says plainly that declining is the
+        escalation.
+        """
+        spec = NICHES["immigration"]
+        boundary = " ".join(spec.boundary.split()).lower()
+        rules = " ".join(" ".join(spec.rules).split()).lower()
+
+        assert "declining is itself an escalation" in boundary
+        assert "handing off does not wait for that booking" in rules
+        # The three codes the boundary maps declines onto have to be codes
+        # this niche is actually shown, or the mapping names something the
+        # prompt never offers it.
+        for code in ("legal_advice", "document_request", "case_specific"):
+            assert code in boundary
+            assert code in spec.escalate_codes
+
+    def test_an_off_topic_request_is_not_an_escalation(self):
+        """The limit on the rule above. "Can you help me write a CV?" is
+        declined under the universal off-topic rule, and sending the firm an
+        alert about it would teach them to ignore alerts."""
+        boundary = " ".join(NICHES["immigration"].boundary.split()).lower()
+        assert "off-topic request that has nothing to do with" in boundary
+
 
 class TestTheJobStatusMechanism:
     """Trades "is it ready?" is disabled for two niches and re-used by the third."""

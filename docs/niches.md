@@ -115,7 +115,19 @@ interpretation of what it means for the outcome.
 - Asking for, or repeating back, a passport number, NIE or case file number.
 
 The only shape it is allowed: describe what the firm does, take the facts needed
-for a consultation, book it, hand off.
+for a consultation, offer to book it, hand off.
+
+**Declining is itself an escalation.** When it refuses one of the questions
+above, it hands off in the same reply — not after a booking, and not only if
+the person agrees to one. Someone has asked a question only the firm can
+answer, and the firm has to learn they asked; a prospect who declines the
+consultation is exactly the one a firm would otherwise never hear about. The
+code says what was refused: `legal_advice` for advice, a prediction or a
+timing, `document_request` for a list the firm has not provided,
+`case_specific` for a question about the person's own case. An off-topic
+request is not one of these — it is declined under the universal rule and
+nobody is alerted, because an alert about a CV request teaches a firm to
+ignore alerts.
 
 **Urgent handoff, before anything else.** An expulsion or removal order,
 detention or a CIE, a court date, an appeal, or any deadline inside ten days.
@@ -177,26 +189,35 @@ replies in twelve languages: no invented price, no restricted advice, no
 forbidden phrase. Not one. The three checks that exist because a clinic or a
 law firm would be harmed by the answer are the three with a clean sheet.
 
-**The immigration agent refuses correctly but does not escalate.** This is the
-dominant finding, consistent across every run, and it affects five of the
-twenty-five immigration scenarios: "do I qualify for arraigo", "how long does
-a TIE renewal take", "which route is best for me", a document list the firm
-has not provided, and a client who volunteers their NIE. Each gets exactly
-the right answer — it declines to advise, says the chat is not legal advice,
-and offers a consultation. It then hands off to nobody. No code is written,
-so no alert goes out, and if the prospect does not book, the firm never
-learns they existed.
+**The immigration agent refused correctly but did not escalate — fixed, and
+awaiting a run to confirm.** This was the dominant finding, consistent across
+every run, and it affected five of the twenty-five immigration scenarios: "do
+I qualify for arraigo", "how long does a TIE renewal take", "which route is
+best for me", a document list the firm has not provided, and a client who
+volunteers their NIE. Each got exactly the right answer — it declined to
+advise, said the chat is not legal advice, and offered a consultation. It then
+handed off to nobody. No code was written, so no alert went out, and if the
+prospect did not book, the firm never learned they existed.
 
-The prompt is the reason. The niche's rules say *"describe what the firm does,
-take the facts needed for a consultation, book it, and hand off"* — handoff
-last, after a booking. The spec that commissioned this work says a
-"do I qualify" question should escalate with `legal_advice`. Both are
-defensible and they disagree. Extending the scenario to a second turn did not
-change the behaviour, so this is the prompt's shape, not a missed turn.
+The prompt was the reason. The niche's rules said *"describe what the firm
+does, take the facts needed for a consultation, book it, and hand off"* —
+handoff last, after a booking, so a prospect who did not book fell off the end
+of the sequence. Extending a scenario to a second turn did not change the
+behaviour, which is what identified it as the prompt's shape rather than a
+missed turn.
 
-The question for a human: on a legal matter, is an unescalated lost lead
-acceptable? If not, the immigration rules need to say "hand off when you
-decline to answer", not only "hand off after booking".
+Resolved in favour of escalating, because on a legal matter an unescalated
+lost lead is the worse failure: the person who asks whether they qualify for
+arraigo and then does not book is precisely the person a firm would want to
+call back. Both halves of the sequencing were changed — the rule no longer
+gates the handoff on a booking, and the boundary now says plainly that
+declining *is* the escalation, with a code per kind of refusal. Pinned by
+`tests/test_niche.py::TestRegulatedNiches::test_declining_is_itself_an_escalation`
+and bounded by the off-topic test beside it, so the fix cannot grow into
+alerting a firm about a CV request.
+
+Deterministic tests confirm the prompt; only a live run can confirm the
+model's behaviour, and the five cells are still unverified until the next one.
 
 **The booking flow sometimes narrates the tool call instead of making it.**
 `dental/books-a-consultation` passed one run and failed two. In the failures
