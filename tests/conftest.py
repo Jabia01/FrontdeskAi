@@ -144,6 +144,18 @@ async def make_shop(
     vertical: str = "other",
     job_noun: str = "job",
     currency: str = "$",
+    #: What this shop sells, and what it charges. Defaulted to the garage
+    #: values every existing test asserts against; the live eval passes the
+    #: niche's own, because a dental clinic configured with "Brakes" and
+    #: "Oil change" is not a dental clinic and evaluating one proves nothing.
+    services: list[str] | None = None,
+    price_ranges: list[dict] | None = None,
+    #: Opening hours. The default names Monday and Sunday only, which is what
+    #: every booking test asserts against - and is why the live eval must
+    #: pass a full week: a shop with one open day cannot be asked for a
+    #: Tuesday appointment, and the agent refusing to invent one looks like a
+    #: failure to book.
+    hours: dict[str, str] | None = None,
 ) -> uuid.UUID:
     """Create a shop with config and endpoints. Returns its client_id.
 
@@ -169,9 +181,13 @@ async def make_shop(
             ClientConfig(
                 client_id=client.id,
                 business_info={"address": "1 Test St", "phone": "+13125550100"},
-                services=["Brakes", "Oil change"],
-                hours={"monday": "8:00-18:00", "sunday": "closed"},
-                price_ranges=[{"service": "Front brakes", "low": 300, "high": 450}],
+                services=services or ["Brakes", "Oil change"],
+                hours=hours or {"monday": "8:00-18:00", "sunday": "closed"},
+                price_ranges=(
+                    price_ranges
+                    if price_ranges is not None
+                    else [{"service": "Front brakes", "low": 300, "high": 450}]
+                ),
                 tone="Friendly and brief.",
                 handoff_rules={
                     "keywords": handoff_keywords

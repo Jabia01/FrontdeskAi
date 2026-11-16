@@ -228,9 +228,15 @@ NICHES: dict[str, NicheSpec] = {
             "medical_concern",
             "clinical_advice",
             "price_or_quote",
+            # A full-mouth reconstruction is a large, unusual job, and the
+            # live eval found the model reaching for this code without the
+            # prompt offering it - the tool schema carries the whole list, so
+            # it could. Offering it is better than being surprised by it.
+            "high_value",
             "complaint",
             "asked_for_human",
             "angry",
+            "data_request",
             "not_understood",
         ),
     ),
@@ -297,6 +303,11 @@ NICHES: dict[str, NicheSpec] = {
             "high_value",
             "asked_for_human",
             "angry",
+            "complaint",
+            # Arts. 15-21. The GDPR page we publish invites these, so the
+            # agent has to have somewhere to put one. It was missing from
+            # every niche until the eval library asked for it.
+            "data_request",
             "not_understood",
         ),
     ),
@@ -379,8 +390,11 @@ NICHES: dict[str, NicheSpec] = {
             "case_specific",
             "urgent_deadline",
             "document_request",
+            "high_value",
             "asked_for_human",
             "angry",
+            "complaint",
+            "data_request",
             "not_understood",
         ),
     ),

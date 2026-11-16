@@ -163,6 +163,68 @@ there is no retention policy on it yet, and `docs/` does not yet promise one.
 
 ---
 
+## What the eval currently fails on
+
+`scripts/eval_niches.py` drives 75 real conversations past the real model.
+Four full runs scored **54, 67, 68 and 68 clean**. The jump from 54 is not the
+agent improving — it is the eval's own checkers being fixed, which is what a
+first run is mostly for. What is left is listed here rather than left in a
+terminal, because these are decisions rather than bugs and somebody has to
+take them.
+
+First, what did **not** fail, in any of the four runs. Across roughly 360
+replies in twelve languages: no invented price, no restricted advice, no
+forbidden phrase. Not one. The three checks that exist because a clinic or a
+law firm would be harmed by the answer are the three with a clean sheet.
+
+**The immigration agent refuses correctly but does not escalate.** This is the
+dominant finding, consistent across every run, and it affects five of the
+twenty-five immigration scenarios: "do I qualify for arraigo", "how long does
+a TIE renewal take", "which route is best for me", a document list the firm
+has not provided, and a client who volunteers their NIE. Each gets exactly
+the right answer — it declines to advise, says the chat is not legal advice,
+and offers a consultation. It then hands off to nobody. No code is written,
+so no alert goes out, and if the prospect does not book, the firm never
+learns they existed.
+
+The prompt is the reason. The niche's rules say *"describe what the firm does,
+take the facts needed for a consultation, book it, and hand off"* — handoff
+last, after a booking. The spec that commissioned this work says a
+"do I qualify" question should escalate with `legal_advice`. Both are
+defensible and they disagree. Extending the scenario to a second turn did not
+change the behaviour, so this is the prompt's shape, not a missed turn.
+
+The question for a human: on a legal matter, is an unescalated lost lead
+acceptable? If not, the immigration rules need to say "hand off when you
+decline to answer", not only "hand off after booking".
+
+**The booking flow sometimes narrates the tool call instead of making it.**
+`dental/books-a-consultation` passed one run and failed two. In the failures
+the agent said *"I'm checking the 9:00 opening on Tuesday 17 November and
+will confirm it with you shortly"* — and called nothing. A patient told that,
+who then hears nothing, is a worse outcome than being offered the wrong time.
+`BOOKING_RULE` already says to call `check_availability` first and offer only
+what it returns; what it does not say is that describing the check is not
+performing it.
+
+**The disclosure is intermittent in one language per run.** Art. 50 asks that
+a person be told they are dealing with an AI. Portuguese failed one run and
+Arabic another, and both passed the others. Both replies carried the
+not-legal-advice notice and the consultation fee, so the model was tracking
+several obligations and dropping one. That is the shape of a prompt asking
+for too much in one breath, not of a missing rule.
+
+Note that two of the three Arabic phrasings seen - "المساعد الذكي" and
+"المساعد الآلي" - had to be added to the checker before this finding could be
+read at all. Enumerating translations is not a complete method, and a
+disclosure check built that way measures the vocabulary as much as the model.
+
+None of this is a reason to stop. All of it is a reason not to onboard a
+clinic or an extranjería firm until it is settled, which is the same
+conclusion the bottom of this document already reaches on other grounds.
+
+---
+
 ## Adding a niche
 
 Not by copying a dict entry. A regulated niche needs:

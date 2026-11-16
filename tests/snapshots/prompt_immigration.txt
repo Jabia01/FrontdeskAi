@@ -119,8 +119,11 @@ nearest wrong answer.
 - `case_specific` - Asked about their own case
 - `urgent_deadline` - Urgent - detention, court or a deadline
 - `document_request` - Asked for documents
+- `high_value` - Large or unusual job
 - `asked_for_human` - Asked for a person
 - `angry` - Angry customer
+- `complaint` - Complaint
+- `data_request` - Data protection request
 - `not_understood` - Could not understand them
 - `other` - Something else
 
@@ -273,8 +276,11 @@ nearest wrong answer.
 - `case_specific` - Asked about their own case
 - `urgent_deadline` - Urgent - detention, court or a deadline
 - `document_request` - Asked for documents
+- `high_value` - Large or unusual job
 - `asked_for_human` - Asked for a person
 - `angry` - Angry customer
+- `complaint` - Complaint
+- `data_request` - Data protection request
 - `not_understood` - Could not understand them
 - `other` - Something else
 
@@ -427,8 +433,11 @@ nearest wrong answer.
 - `case_specific` - Asked about their own case
 - `urgent_deadline` - Urgent - detention, court or a deadline
 - `document_request` - Asked for documents
+- `high_value` - Large or unusual job
 - `asked_for_human` - Asked for a person
 - `angry` - Angry customer
+- `complaint` - Complaint
+- `data_request` - Data protection request
 - `not_understood` - Could not understand them
 - `other` - Something else
 
@@ -581,8 +590,11 @@ nearest wrong answer.
 - `case_specific` - Asked about their own case
 - `urgent_deadline` - Urgent - detention, court or a deadline
 - `document_request` - Asked for documents
+- `high_value` - Large or unusual job
 - `asked_for_human` - Asked for a person
 - `angry` - Angry customer
+- `complaint` - Complaint
+- `data_request` - Data protection request
 - `not_understood` - Could not understand them
 - `other` - Something else
 

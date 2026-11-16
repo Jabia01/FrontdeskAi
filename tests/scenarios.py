@@ -85,13 +85,26 @@ class Turn:
 
     # --- tier two: what is checked
     expect_language: str | None = None
-    expect_handoff_code: str | None = None
+    #: One code, or several where more than one is genuinely right. "I am
+    #: furious about the third failed crown" is both `angry` and `complaint`,
+    #: and a scenario that insists on one of them produces a red cell for a
+    #: correct answer - which is how a table stops being read.
+    expect_handoff_code: str | tuple[str, ...] | None = None
     expect_tools: tuple[str, ...] | None = None
     expect_handoff: bool | None = None
     #: Phrases that must not appear in the reply to this turn. Scenario-wide
     #: ones live on `Scenario.forbidden_phrases`; these are for a trap that
     #: only matters once, like a price named in answer to one question.
     forbidden_phrases: tuple[str, ...] = ()
+
+    @property
+    def expected_codes(self) -> tuple[str, ...]:
+        """`expect_handoff_code` as a tuple, whichever way it was written."""
+        if not self.expect_handoff_code:
+            return ()
+        if isinstance(self.expect_handoff_code, str):
+            return (self.expect_handoff_code,)
+        return tuple(self.expect_handoff_code)
 
 
 @dataclass(frozen=True, slots=True)
@@ -258,30 +271,127 @@ def _outcome(turn: Turn) -> AgentOutcome:
 # ----------------------------------------------------------------- the player
 
 
-async def play(scenario: Scenario, *, shadow: bool = False) -> Transcript:
-    """Run one scenario end to end against a shop of its own.
+@dataclass(frozen=True, slots=True)
+class ShopHandle:
+    """A shop a scenario can run on, and the endpoint to reach it.
 
-    Creates the shop, drives the engine once per turn, and reads back what
-    landed. The shop is left behind: the `db` fixture truncates between tests,
-    which is cheaper than tearing down by hand and cannot leak a row into the
-    next test by forgetting one.
+    Exists so the live eval can create *one* shop per niche and run its
+    twenty-five scenarios against it. Prompt caching is scoped to a (shop,
+    channel) pair, so a shop per scenario would pay seventy-five cold caches
+    to learn nothing - and the thing being evaluated is one clinic's
+    configuration, not seventy-five of them.
     """
-    spec = niche_for(scenario.niche)
+
+    client_id: uuid.UUID
+    sim_id: str
+
+
+#: What each niche's shop is seeded with. Deliberately sparse: two of the
+#: three price ranges are "from" figures and one treatment is left with no
+#: range at all, because "a service the business never priced" is the case
+#: hard rule 2 exists for and an eval where every price is configured would
+#: never reach it.
+#:
+#: Written here rather than taken from `defaults.VERTICALS` because these are
+#: evaluation fixtures - a change to the seed data for real new shops should
+#: not silently change what the eval is asking about.
+#: A full working week. `make_shop` opens on Monday and closes on Sunday and
+#: says nothing about the other five days, which is right for the tests that
+#: assert against it - and made every booking scenario in the first live run
+#: impossible. Asked for a Tuesday, the agent correctly answered that it had
+#: no Tuesday openings and offered the Monday it did have, and the eval
+#: recorded that as a failure to call `book_appointment`.
+#:
+#: The agent was right and the fixture was wrong, which is the more dangerous
+#: way round: a shop with one open day makes the agent look broken.
+NICHE_HOURS: dict[str, str] = {
+    "monday": "9:00-18:00",
+    "tuesday": "9:00-18:00",
+    "wednesday": "9:00-18:00",
+    "thursday": "9:00-18:00",
+    "friday": "9:00-15:00",
+    "saturday": "closed",
+    "sunday": "closed",
+}
+
+NICHE_PRICES: dict[str, list[dict]] = {
+    "dental": [
+        {"service": "Veneers", "low": 490, "high": 490},
+        {"service": "Whitening", "low": 300, "high": 450},
+    ],
+    "real_estate": [{"service": "Valuation", "low": 0, "high": 0}],
+    "immigration": [{"service": "Initial consultation", "low": 90, "high": 90}],
+}
+
+
+async def make_niche_shop(
+    niche: str, *, languages: tuple[str, ...] = (), name: str = ""
+) -> ShopHandle:
+    """One shop configured as the niche says, with endpoints unique per run.
+
+    Seeded with the niche's own services and prices. The default `make_shop`
+    sells brakes and oil changes, which is right for every test that asserts
+    against it and wrong for an eval: a dental clinic whose configured
+    services are "Brakes" and "Oil change" is not a dental clinic, and asking
+    it about veneers would be measuring the wrong shop.
+    """
+    spec = niche_for(niche)
     nonce = uuid.uuid4().hex[:8]
     client_id = await make_shop(
-        f"{scenario.name} ({scenario.niche})",
+        name or f"{spec.label} ({nonce})",
         vertical=spec.key,
         job_noun=spec.job_noun,
         currency=spec.currency,
-        enabled_languages=list(scenario.languages),
+        services=list(spec.services),
+        price_ranges=NICHE_PRICES.get(spec.key, []),
+        hours=NICHE_HOURS,
+        enabled_languages=list(languages or spec.market_languages),
         # Unique per run. Two scenarios in one session must not be able to
-        # land on each other's endpoints, and `make_shop`'s defaults are only
-        # unique by an 8-hex suffix it does not share with the caller.
+        # land on each other's endpoints, and `make_shop`'s own defaults are
+        # unique by a suffix it does not share with the caller.
         sms_number=f"+3460000{nonce[:4]}",
         whatsapp_id=f"whatsapp:+3460000{nonce[:4]}",
         sim_id=f"sim-{nonce}",
         handoff_keywords=list(spec.handoff_keywords),
     )
+    return ShopHandle(client_id=client_id, sim_id=f"sim-{nonce}")
+
+
+async def play(
+    scenario: Scenario,
+    *,
+    shop: ShopHandle | None = None,
+    shadow: bool = False,
+    live: bool = False,
+) -> Transcript:
+    """Run one scenario end to end and read back what landed.
+
+    `shop` reuses an existing one, which is how the live eval keeps one warm
+    cache per niche. Without it a shop is created for this scenario alone,
+    which is what a test wants: it is then impossible for one test's shop to
+    be another's.
+
+    `live` is the whole reason this function is shared with
+    `scripts/eval_niches.py`. Left False the model is a stub and the scenario
+    declares its answers; set True the real `run_agent` runs and the scenario's
+    script fields are ignored. Everything else - the shop, the ingest, the
+    engine, the tools, the handoff persistence - is the same code in both,
+    which is the point. A harness that drove a different path from the eval
+    would be testing a path nothing uses.
+
+    The shop is left behind when this function created it: the `db` fixture
+    truncates between tests, which is cheaper than tearing down by hand and
+    cannot leak a row into the next test by forgetting one. A caller that
+    passed its own `shop` owns it.
+    """
+    if shop is None:
+        shop = await make_niche_shop(scenario.niche, languages=scenario.languages)
+    client_id = shop.client_id
+    # Deliberately *not* derived from the shop. Two scenarios sharing one
+    # shop - which is how the live eval runs - would otherwise generate the
+    # same `provider_msg_id`s, and ingest would dedupe the second scenario's
+    # turns away into the first scenario's rows.
+    run_id = uuid.uuid4().hex[:10]
     if shadow:
         await _set_shadow(client_id)
 
@@ -303,7 +413,23 @@ async def play(scenario: Scenario, *, shadow: bool = False) -> Transcript:
         return "scenario"
 
     async with AsyncExitStack() as stack:
-        stack.enter_context(patch.object(engine, "run_agent", fake_run_agent))
+        if not live:
+            stack.enter_context(patch.object(engine, "run_agent", fake_run_agent))
+        else:
+            # The real agent runs, so nothing records the kwargs. Wrap rather
+            # than replace, so `PlayedTurn.kwargs` - and the tool-set and
+            # prompt properties that read it - work identically in both tiers.
+            real_run_agent = engine.run_agent
+
+            async def recording_run_agent(**kwargs):
+                seen.append(kwargs)
+                return await real_run_agent(**kwargs)
+
+            stack.enter_context(
+                patch.object(engine, "run_agent", recording_run_agent)
+            )
+        # Owner alerts enqueue to Redis, which is not running under the test
+        # suite and is not something a read-only eval should be writing to.
         stack.enter_context(
             patch("app.queue.client.enqueue_owner_alert", swallow_alert)
         )
@@ -315,14 +441,14 @@ async def play(scenario: Scenario, *, shadow: bool = False) -> Transcript:
                 InboundMessage(
                     channel=Channel.simulator,
                     provider="local",
-                    external_id=f"sim-{nonce}",
+                    external_id=shop.sim_id,
                     from_number=scenario.customer_phone,
                     body=turn.customer,
                     # Owned here, unique per turn and per run. Ingest is
                     # idempotent on this, so two turns with the same text
                     # would collapse into one and the transcript would be
                     # short by a message with nothing raised.
-                    provider_msg_id=f"{nonce}-{index}",
+                    provider_msg_id=f"{run_id}-{index}",
                 )
             )
             assert result.message_id is not None, (

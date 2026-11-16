@@ -115,9 +115,11 @@ nearest wrong answer.
 - `medical_concern` - Pain, injury or possible infection
 - `clinical_advice` - Asked for clinical advice
 - `price_or_quote` - Wanted a price or a quote
+- `high_value` - Large or unusual job
 - `complaint` - Complaint
 - `asked_for_human` - Asked for a person
 - `angry` - Angry customer
+- `data_request` - Data protection request
 - `not_understood` - Could not understand them
 - `other` - Something else
 
@@ -266,9 +268,11 @@ nearest wrong answer.
 - `medical_concern` - Pain, injury or possible infection
 - `clinical_advice` - Asked for clinical advice
 - `price_or_quote` - Wanted a price or a quote
+- `high_value` - Large or unusual job
 - `complaint` - Complaint
 - `asked_for_human` - Asked for a person
 - `angry` - Angry customer
+- `data_request` - Data protection request
 - `not_understood` - Could not understand them
 - `other` - Something else
 
@@ -417,9 +421,11 @@ nearest wrong answer.
 - `medical_concern` - Pain, injury or possible infection
 - `clinical_advice` - Asked for clinical advice
 - `price_or_quote` - Wanted a price or a quote
+- `high_value` - Large or unusual job
 - `complaint` - Complaint
 - `asked_for_human` - Asked for a person
 - `angry` - Angry customer
+- `data_request` - Data protection request
 - `not_understood` - Could not understand them
 - `other` - Something else
 
@@ -568,9 +574,11 @@ nearest wrong answer.
 - `medical_concern` - Pain, injury or possible infection
 - `clinical_advice` - Asked for clinical advice
 - `price_or_quote` - Wanted a price or a quote
+- `high_value` - Large or unusual job
 - `complaint` - Complaint
 - `asked_for_human` - Asked for a person
 - `angry` - Angry customer
+- `data_request` - Data protection request
 - `not_understood` - Could not understand them
 - `other` - Something else
 

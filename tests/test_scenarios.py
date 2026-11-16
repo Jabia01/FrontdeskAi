@@ -83,6 +83,41 @@ class TestTheSequencer:
         assert first.client_id != second.client_id
         assert first.conversation_id != second.conversation_id
 
+    async def test_two_scenarios_can_share_one_shop_without_colliding(self, db):
+        """How the live eval runs: one shop per niche, so the prompt cache is
+        warm for all twenty-five of its scenarios instead of paying
+        twenty-five cold ones. The ids the sequencer generates must therefore
+        not be derived from the shop - the first version of this derived them
+        from the `sim-` id, which would have had the second scenario's turns
+        deduplicated away into the first scenario's rows."""
+        from .scenarios import make_niche_shop
+
+        shop = await make_niche_shop("dental", languages=("es", "en"))
+        first = await play(
+            Scenario(
+                name="patient one",
+                niche="dental",
+                customer_phone="+34600111001",
+                turns=(Turn("hola", reply="Hola."), Turn("una cita", reply="Claro.")),
+            ),
+            shop=shop,
+        )
+        second = await play(
+            Scenario(
+                name="patient two",
+                niche="dental",
+                customer_phone="+34600111002",
+                turns=(Turn("hola", reply="Hola."), Turn("una cita", reply="Claro.")),
+            ),
+            shop=shop,
+        )
+        assert first.client_id == second.client_id == shop.client_id
+        # Different customers, so different conversations - and each one sees
+        # only its own two messages.
+        assert first.conversation_id != second.conversation_id
+        assert len(first) == len(second) == 2
+        assert len(first.replies) == len(second.replies) == 2
+
     async def test_a_typo_in_the_niche_is_refused_rather_than_run(self):
         """`niche_for` falls back to `other` - the unregulated, full-tool-set
         shop - so a mistyped key would run the whole scenario against the one

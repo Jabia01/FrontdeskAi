@@ -294,14 +294,35 @@ a disclosure, reviewed by someone qualified, not a label.
 
 ## Testing
 
+Two tiers, because they answer different questions.
+
 ```bash
-./.venv/Scripts/python.exe -m pytest
+./.venv/Scripts/python.exe -m pytest                  # the suite: does the plumbing work
+./.venv/Scripts/python.exe scripts/eval_niches.py     # the eval: does the agent behave
 ```
 
-479 tests, no API key or network needed — Claude responses are replayed from
-recorded payload shapes built as real SDK types, and the calendar runs on an
-in-memory stub. The suite uses a separate `frontdesk_test` database, rebuilt from
-the models on each run.
+**The suite** is ~1,670 tests and needs no API key or network. Claude responses
+are replayed from recorded payload shapes built as real SDK types, and the
+calendar runs on an in-memory stub. It uses a separate `frontdesk_test`
+database, rebuilt from the models on each run. `tests/scenarios.py` drives
+multi-turn conversations with the model stubbed, which is what proves the
+sequencing — history, handoff persistence, which tools a niche was handed.
+
+**The eval** drives 75 real conversations past the real model and scores them
+with the checkers in `tests/evals/checks.py`: no invented price, right
+language, no restricted advice, disclosed on the first reply, the expected
+handoff code, only the niche's tools. It needs `ANTHROPIC_API_KEY`, exits 2
+without one, and costs well under a euro for a full run.
+
+It lives in `scripts/` rather than behind a pytest marker so that
+`testpaths = ["tests"]` keeps network-capable code out of CI by construction.
+Importing the harness pins `DATABASE_URL` to the local test database and
+blanks the Twilio and Google credentials, so the eval cannot reach production
+or send a real message — but for that same reason, **do not run it while
+pytest is running**: the suite truncates the tables the eval is writing to.
+
+A pass from the eval means nothing known-bad was found, not that a human has
+read it. The transcripts are in the `--json` output for exactly that reason.
 
 | File | Covers |
 | --- | --- |
@@ -327,6 +348,12 @@ the models on each run.
 | `test_reminders.py` | what is due, what is skipped, never twice, and the language it goes out in |
 | `test_summary.py` | content, timing, once-per-local-day, and quiet days staying quiet |
 | `test_deploy_readiness.py` | the health check's 503 path, credentials from the environment, and that the image ships its templates |
+| `test_handoff_codes.py` | the reason-code taxonomy: one closed list, per-niche subsets, and a classifier that cannot raise |
+| `test_handoff_persistence.py` | all four escalation paths actually write a code and a handover note |
+| `test_scenarios.py` | the conversation harness, and the multi-turn failures it exists for |
+| `evals/test_checks.py` | each checker, and — more importantly — what it must *not* flag |
+| `evals/test_library.py` | the 75 scenarios check themselves: real codes, real tools, no phrase that fires on a correct refusal |
+| `evals/test_eval_driver.py` | the eval's guards, and its scoring layer over a stubbed transcript |
 
 ---
 
