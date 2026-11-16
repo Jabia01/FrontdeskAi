@@ -686,10 +686,20 @@ async def save_config(
             ),
             "missed_call_channel": value("missed_call_channel").strip() or "sms",
             "owner_channel": value("owner_channel").strip() or "auto",
+            # Falls back to what is stored, not to `other`. The old fallback
+            # was `other`, which meant a save that did not carry the field -
+            # a partial POST, a stale form, a future code path submitting a
+            # subset - silently turned a dental clinic into an unregulated
+            # shop: no advice boundary, no tool restriction, no Art. 50
+            # disclosure, and no warning. The boundary is supposed to be
+            # impossible to remove by editing config, so this fails closed.
+            #
+            # Changing the vertical deliberately still works: it is a
+            # dropdown with a valid value in it, and that is a visible act.
             "vertical": (
                 value("vertical").strip()
                 if value("vertical").strip() in defaults.VERTICALS
-                else "other"
+                else ((client.config.vertical if client.config else "") or "other")
             ),
             "job_noun": value("job_noun").strip().lower()[:32] or "job",
             # Validated against a short list rather than free text: this is

@@ -172,3 +172,101 @@ class TestGreeting:
 def test_language_name_falls_back_to_the_code():
     assert language_name("pl") == "Polish"
     assert language_name("xx") == "XX"
+
+
+class TestEveryMarketLanguageResolvesFromACountryCode:
+    """The twelve languages the three Spain-and-Portugal niches declare.
+
+    `niche.market_languages` seeds a new shop's `enabled_languages`, and the
+    first message to a stranger is chosen from the country code of the number
+    they wrote from. So a language a niche claims to speak, that no prefix
+    maps to, is a language the shop will never actually greet anybody in -
+    and the failure is silent: the shop simply answers in its default.
+
+    The table above already covered a handful. This covers the set the niches
+    name, which is the set that has to work.
+    """
+
+    @pytest.mark.parametrize(
+        ("phone", "language"),
+        [
+            ("+34600111222", "es"),  # Spain
+            ("+351912345678", "pt"),  # Portugal
+            ("+49170111222", "de"),  # Germany
+            ("+31612345678", "nl"),  # Netherlands
+            ("+33600111222", "fr"),  # France
+            ("+46700111222", "sv"),  # Sweden
+            ("+47900111222", "no"),  # Norway
+            ("+79001112233", "ru"),  # Russia
+            ("+380501112233", "uk"),  # Ukraine
+            ("+212600111222", "ar"),  # Morocco
+            ("+8613800138000", "zh"),  # China
+            ("+923001112233", "ur"),  # Pakistan
+        ],
+    )
+    def test_the_country_code_finds_the_language(self, phone, language):
+        assert language in country_languages(phone, enabled=["en", language])
+
+    @pytest.mark.parametrize(
+        ("phone", "language"),
+        [
+            ("+34600111222", "es"),
+            ("+49170111222", "de"),
+            ("+212600111222", "ar"),
+            ("+8613800138000", "zh"),
+            ("+923001112233", "ur"),
+        ],
+    )
+    def test_the_greeting_names_it_alongside_english(self, phone, language):
+        """English is always offered as well - that rule predates the niches
+        and is untouched - so the greeting has to name both."""
+        decision = resolve(phone=phone, enabled=["en", language, "es"])
+        text = greeting_instruction(decision, "Clinica Sol")
+        assert language_name(language) in text
+        assert "English" in text
+
+    def test_every_language_a_niche_claims_has_a_prefix_somewhere(self):
+        """The guard on the guard. If a niche gains a market language and no
+        country code maps to it, this fails rather than the shop quietly
+        never greeting in it.
+
+        Spanish and English are exempt: they are the locale default and the
+        always-on second language, so they are reached without a prefix.
+        """
+        from app.agent.niche import NICHES
+
+        claimed = {
+            code
+            for spec in NICHES.values()
+            for code in spec.market_languages
+            if code not in {"en", "es"}
+        }
+        # One real number per language, chosen as the country the niche's
+        # cohort actually writes from.
+        samples = {
+            "pt": "+351912345678",
+            "de": "+49170111222",
+            "nl": "+31612345678",
+            "fr": "+33600111222",
+            "sv": "+46700111222",
+            "no": "+47900111222",
+            "ru": "+79001112233",
+            "uk": "+380501112233",
+            "ar": "+212600111222",
+            "zh": "+8613800138000",
+            "ur": "+923001112233",
+        }
+        missing = sorted(code for code in claimed if code not in samples)
+        assert not missing, (
+            f"these market languages have no sample number here, so nothing "
+            f"checks they are reachable: {missing}"
+        )
+        unreachable = sorted(
+            code
+            for code in claimed
+            if code not in country_languages(samples[code], enabled=["en", code])
+        )
+        assert not unreachable, (
+            f"these languages are claimed by a niche but no country prefix "
+            f"maps to them: {unreachable}"
+        )
