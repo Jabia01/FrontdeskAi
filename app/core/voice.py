@@ -46,6 +46,7 @@ from app.agent import language as lang
 from app.agent.runner import run_agent
 from app.agent.tools import ToolContext
 from app.config import get_settings
+from app.core import handoff
 from app.core import owner as owner_mod
 from app.core.router import ShopContext, load_shop
 from app.db import session_scope
@@ -595,12 +596,26 @@ async def answer(
 
         if outcome.handoff_requested or reply.handoff:
             reason = outcome.handoff_reason or reply.handoff_reason or "handoff requested"
-            await hand_off(session, state.client_id, conversation.id, reason)
+            summary = outcome.handoff_summary or reply.reply
+            # Same chokepoint as the text engine, deliberately. A clinical
+            # question asked on the phone and the same question texted must
+            # count as the same thing, or the per-code totals a clinic is
+            # shown are only ever about one channel.
+            code = handoff.classify(
+                reason,
+                code=outcome.handoff_code or reply.handoff_code,
+                niche=state.shop.config.get("vertical") or "",
+            ).value
+            await hand_off(
+                session,
+                state.client_id,
+                conversation.id,
+                reason,
+                code=code,
+                summary=summary,
+            )
             return await escalate(
-                state,
-                reason=reason,
-                spoken_already=reply.reply,
-                summary=outcome.handoff_summary or reply.reply,
+                state, reason=reason, spoken_already=reply.reply, summary=summary
             )
 
         return VoiceReply(text=reply.reply)

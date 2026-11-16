@@ -657,6 +657,26 @@ class TestWhenSomethingGoesWrong:
             )
         assert conversation.status is ConversationStatus.human
 
+    async def test_a_handoff_on_a_call_is_coded_like_one_in_a_text(
+        self, client, voice_shop, stub_agent, owner_alerts
+    ):
+        """Voice goes through the same `handoff.classify` chokepoint as the
+        text engine. If it did not, the per-code totals a clinic is shown
+        would only ever be about the channel that happened to be wired up."""
+        from app.repo import get_conversation
+
+        state = await self._state(client)
+        stub_agent.box["outcome"] = agent_outcome(handoff=True, reason="refund")
+        await voice.answer(state, transcript(("user", "I want a refund")))
+        async with session_scope() as session:
+            conversation = await get_conversation(
+                session, voice_shop, state.conversation_id
+            )
+        assert conversation.handoff_code == "payment_or_refund"
+        # The handover note is kept now rather than only sent in the alert,
+        # so the console can say why the call went to a person.
+        assert conversation.handoff_summary == "refund"
+
     async def test_a_shop_with_no_owner_number_promises_a_callback(
         self, db, stub_agent, owner_alerts, client
     ):

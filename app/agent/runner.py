@@ -97,6 +97,10 @@ class AgentOutcome:
     handoff_requested: bool = False
     handoff_reason: str = ""
     handoff_summary: str = ""
+    #: Set only when the model called `handoff_to_human`. The other two
+    #: handoff paths are classified by the engine, which is the only place
+    #: that knows about a forced handoff.
+    handoff_code: str = ""
     refused: bool = False
     failed: bool = False
     error: str | None = None
@@ -456,6 +460,7 @@ async def run_agent(
         handoff_requested=tool_ctx.handoff_requested,
         handoff_reason=tool_ctx.handoff_reason,
         handoff_summary=tool_ctx.handoff_summary,
+        handoff_code=tool_ctx.handoff_code,
         refused=refused,
         failed=reply is None,
         error=error,

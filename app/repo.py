@@ -257,17 +257,49 @@ async def hand_off(
     client_id: uuid.UUID,
     conversation_id: uuid.UUID,
     reason: str,
+    *,
+    code: str = "",
+    summary: str = "",
 ) -> None:
+    """Pause the AI on one conversation and record why.
+
+    `code` and `summary` are keyword-only, and that is load-bearing: the
+    structural guard in `tests/test_tenant_isolation.py` reads the first two
+    positional parameters of every helper in this module, and five existing
+    callers pass `reason` positionally. New information goes in behind the
+    star so neither of those has to move.
+
+    The code is normalised here rather than trusted, because this is the only
+    place it reaches the column. `app.core.handoff` is a leaf - it imports
+    `app.agent.niche` and nothing else from `app` - so reaching up into
+    `app.core` from here is safe, and worth it: an unknown string in
+    `handoff_code` would quietly skew every count built on it.
+    """
+    from app.core.handoff import normalise
+
+    values: dict = {
+        "status": ConversationStatus.human,
+        "handoff_reason": reason[:200],
+        "handed_off_at": utcnow(),
+    }
+    # Only written when given, never cleared. Two paths can hand off the same
+    # conversation within one turn - the tool call pauses it, and the engine
+    # then sees a stale `status` and pauses it again - and the second call
+    # must not blank what the first one recorded.
+    known = normalise(code)
+    if known is not None:
+        values["handoff_code"] = known.value
+    if summary:
+        # `Text`, so there is no column limit to respect. The cap is against a
+        # model that decides to hand over an essay.
+        values["handoff_summary"] = summary[:2000]
+
     await session.execute(
         update(Conversation)
         .where(
             Conversation.client_id == client_id, Conversation.id == conversation_id
         )
-        .values(
-            status=ConversationStatus.human,
-            handoff_reason=reason[:200],
-            handed_off_at=utcnow(),
-        )
+        .values(**values)
     )
 
 

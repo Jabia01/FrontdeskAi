@@ -138,8 +138,20 @@ async def make_shop(
     voice_number: str | None = None,
     handoff_keywords: list[str] | None = None,
     owner_phone: str = "+13125550999",
+    #: The niche. Defaults to the column default, so every existing caller
+    #: gets the unregulated `other` shop it has always had - full tool set,
+    #: no advice boundary, dollars. A test that wants a clinic asks for one.
+    vertical: str = "other",
+    job_noun: str = "job",
+    currency: str = "$",
 ) -> uuid.UUID:
-    """Create a shop with config and endpoints. Returns its client_id."""
+    """Create a shop with config and endpoints. Returns its client_id.
+
+    Timezone stays `America/Chicago` even for a Spanish niche. Flipping it
+    would shift every time assertion in `test_booking.py` and
+    `test_reminders.py` for no gain: the niche changes what the agent may say,
+    not what hour it is.
+    """
     suffix = uuid.uuid4().hex[:8]
     async with session_scope() as session:
         client = Client(
@@ -178,6 +190,9 @@ async def make_shop(
                 default_customer_language=default_customer_language,
                 enabled_languages=enabled_languages or ["en"],
                 country_language_overrides=country_language_overrides or {},
+                vertical=vertical,
+                job_noun=job_noun,
+                currency=currency,
             )
         )
 

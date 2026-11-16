@@ -22,6 +22,7 @@ from typing import Any
 
 from app.agent.language import LANGUAGE_NAMES
 from app.agent.niche import niche_for
+from app.core import handoff
 
 # Channel style lives in the system prompt, so each (shop, channel) pair gets its
 # own cache entry. That is still stable per channel, which is what matters.
@@ -276,12 +277,37 @@ def _boundary_block(spec) -> str:
     return f"\n\n## What you must not do\n\n{body}{notices}"
 
 
+def _handoff_codes_block(spec) -> str:
+    """The codes this niche may pass to `handoff_to_human`.
+
+    The tool's own schema offers the whole global list, because tool schemas
+    render into the cached prefix and a per-niche enum is one more thing that
+    has to stay byte-stable. Narrowing happens here instead, in prose: a
+    dental clinic is shown eight codes rather than twenty, which is the
+    difference between a choice and a search.
+
+    Not conditional on `regulated`. Every shop hands off, so every shop gets
+    the list - the US verticals get the universal subset, which is exactly the
+    set of escalations their rules already describe.
+    """
+    codes = handoff.codes_for(spec.key)
+    lines = "\n".join(
+        f"- `{code.value}` - {handoff.LABELS[code]}" for code in codes
+    )
+    intro = _wrap_paragraphs(
+        "When you call `handoff_to_human`, or set `handoff` in your reply, "
+        "pass the one of these that fits best. If none of them does, use "
+        "`other` rather than the nearest wrong answer."
+    )
+    return f"\n\n## Handoff codes\n\n{intro}\n\n{lines}"
+
+
 BASE_RULES = """\
 {identity}
 
 ## Hard rules
 
-{hard_rules}{boundary}
+{hard_rules}{boundary}{handoff_codes}
 
 {language}
 
@@ -345,6 +371,7 @@ def build_system_prompt(shop: dict[str, Any], channel: str) -> str:
         identity=IDENTITY,
         hard_rules=_numbered(_rule_blocks(spec.tools) + spec.rules),
         boundary=_boundary_block(spec),
+        handoff_codes=_handoff_codes_block(spec),
         language=LANGUAGE_BLOCK,
         style=STYLE_BLOCK,
         tone_block=TONE_BLOCK,

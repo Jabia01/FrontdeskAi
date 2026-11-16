@@ -230,6 +230,12 @@ class TestRequestShape:
             "language_confidence",
             "handoff",
             "handoff_reason",
+            # The categorised reason, for the path where the model sets
+            # `handoff` without calling `handoff_to_human`. Listed here as
+            # well as in the model, deliberately: the two are written out
+            # independently so a field that is added to one and not the other
+            # fails rather than passes.
+            "handoff_code",
             "understood",
         }
 

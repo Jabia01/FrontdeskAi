@@ -76,6 +76,11 @@ class AgentReply(BaseModel):
     language_confidence: float = Field(ge=0.0, le=1.0)
     handoff: bool = False
     handoff_reason: str = ""
+    #: The categorised reason, when the model sets `handoff` without calling
+    #: `handoff_to_human`. Unvalidated here on purpose - `handoff.classify` is
+    #: the chokepoint, and a reply rejected by pydantic over a mis-typed code
+    #: is a reply the customer never receives.
+    handoff_code: str = ""
     understood: bool = True
 
 
@@ -116,6 +121,13 @@ AGENT_REPLY_SCHEMA: dict[str, Any] = {
                 "type": "string",
                 "description": "Short reason for the handoff, or an empty string.",
             },
+            "handoff_code": {
+                "type": "string",
+                "description": (
+                    "If handoff is true, the matching code from the list in "
+                    "your rules. An empty string otherwise."
+                ),
+            },
             "understood": {
                 "type": "boolean",
                 "description": (
@@ -130,6 +142,7 @@ AGENT_REPLY_SCHEMA: dict[str, Any] = {
             "language_confidence",
             "handoff",
             "handoff_reason",
+            "handoff_code",
             "understood",
         ],
         "additionalProperties": False,

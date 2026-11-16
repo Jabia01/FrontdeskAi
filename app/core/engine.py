@@ -22,8 +22,8 @@ from app.agent import language as lang
 from app.agent.runner import AgentOutcome, run_agent
 from app.agent.tools import ToolContext
 from app.config import get_settings
+from app.core import handoff, owner_commands
 from app.core import owner as owner_mod
-from app.core import owner_commands
 from app.core.delivery import send_reply
 from app.core.router import ShopContext, load_shop
 from app.db import session_scope
@@ -256,14 +256,39 @@ async def handle_inbound_message(
         # reply. Pause here too, so the two paths cannot diverge and leave the
         # AI answering a conversation it has already escalated.
         needs_pause = forced_handoff or reply.handoff or outcome.handoff_requested
+        # The fallback used to be "could not understand the customer twice"
+        # whatever had happened, which the owner alert then said out loud for a
+        # handoff that had nothing to do with misunderstanding. It is only true
+        # on the forced path, so it is only said there.
+        handoff_reason = (
+            outcome.handoff_reason
+            or reply.handoff_reason
+            or (
+                "could not understand the customer twice"
+                if forced_handoff
+                else "the assistant handed this over without saying why"
+            )
+        )
+        handoff_summary = outcome.handoff_summary or text[:400]
+        # Three paths converge here and only one of them arrives with a code.
+        # `handoff_to_human` named one; a bare `handoff: true` may have named
+        # one in the structured reply; the forced path is the engine's own
+        # decision, so the engine says what it means rather than leaving
+        # `classify` to re-read the sentence it just wrote itself.
+        named = outcome.handoff_code or reply.handoff_code
+        if not named and forced_handoff:
+            named = handoff.HandoffCode.NOT_UNDERSTOOD.value
+        handoff_code = handoff.classify(
+            handoff_reason, code=named, niche=shop.config.get("vertical") or ""
+        ).value
         if needs_pause and conversation.status != ConversationStatus.human:
             await hand_off(
                 session,
                 client_id,
                 conversation.id,
-                outcome.handoff_reason
-                or reply.handoff_reason
-                or "could not understand the customer twice",
+                handoff_reason,
+                code=handoff_code,
+                summary=handoff_summary,
             )
 
         # --- 5. shadow mode: draft for the owner instead of sending ----------
@@ -316,11 +341,7 @@ async def handle_inbound_message(
             await _alert_owner(
                 client_id,
                 owner_mod.handoff_alert(
-                    code,
-                    outcome.handoff_reason
-                    or "could not understand the customer twice",
-                    outcome.handoff_summary or text[:400],
-                    customer.phone,
+                    code, handoff_reason, handoff_summary, customer.phone
                 ),
             )
         if result.blocked:

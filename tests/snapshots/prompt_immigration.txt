@@ -109,6 +109,21 @@ it before anything else, and do not try to book an appointment first.
 Say once, in the customer's language, that this chat is not legal advice and
 does not create a lawyer-client relationship.
 
+## Handoff codes
+
+When you call `handoff_to_human`, or set `handoff` in your reply, pass the one
+of these that fits best. If none of them does, use `other` rather than the
+nearest wrong answer.
+
+- `legal_advice` - Asked for legal advice
+- `case_specific` - Asked about their own case
+- `urgent_deadline` - Urgent - detention, court or a deadline
+- `document_request` - Asked for documents
+- `asked_for_human` - Asked for a person
+- `angry` - Angry customer
+- `not_understood` - Could not understand them
+- `other` - Something else
+
 ## Language
 
 Reply in the language of the customer's latest clear message, starting from your
@@ -247,6 +262,21 @@ it before anything else, and do not try to book an appointment first.
 
 Say once, in the customer's language, that this chat is not legal advice and
 does not create a lawyer-client relationship.
+
+## Handoff codes
+
+When you call `handoff_to_human`, or set `handoff` in your reply, pass the one
+of these that fits best. If none of them does, use `other` rather than the
+nearest wrong answer.
+
+- `legal_advice` - Asked for legal advice
+- `case_specific` - Asked about their own case
+- `urgent_deadline` - Urgent - detention, court or a deadline
+- `document_request` - Asked for documents
+- `asked_for_human` - Asked for a person
+- `angry` - Angry customer
+- `not_understood` - Could not understand them
+- `other` - Something else
 
 ## Language
 
@@ -387,6 +417,21 @@ it before anything else, and do not try to book an appointment first.
 Say once, in the customer's language, that this chat is not legal advice and
 does not create a lawyer-client relationship.
 
+## Handoff codes
+
+When you call `handoff_to_human`, or set `handoff` in your reply, pass the one
+of these that fits best. If none of them does, use `other` rather than the
+nearest wrong answer.
+
+- `legal_advice` - Asked for legal advice
+- `case_specific` - Asked about their own case
+- `urgent_deadline` - Urgent - detention, court or a deadline
+- `document_request` - Asked for documents
+- `asked_for_human` - Asked for a person
+- `angry` - Angry customer
+- `not_understood` - Could not understand them
+- `other` - Something else
+
 ## Language
 
 Reply in the language of the customer's latest clear message, starting from your
@@ -525,6 +570,21 @@ it before anything else, and do not try to book an appointment first.
 
 Say once, in the customer's language, that this chat is not legal advice and
 does not create a lawyer-client relationship.
+
+## Handoff codes
+
+When you call `handoff_to_human`, or set `handoff` in your reply, pass the one
+of these that fits best. If none of them does, use `other` rather than the
+nearest wrong answer.
+
+- `legal_advice` - Asked for legal advice
+- `case_specific` - Asked about their own case
+- `urgent_deadline` - Urgent - detention, court or a deadline
+- `document_request` - Asked for documents
+- `asked_for_human` - Asked for a person
+- `angry` - Angry customer
+- `not_understood` - Could not understand them
+- `other` - Something else
 
 ## Language
 

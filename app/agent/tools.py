@@ -29,6 +29,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.niche import NICHES
+from app.core import handoff
 from app.core.router import ShopContext
 from app.integrations import listings
 from app.repo import create_lead as repo_create_lead
@@ -52,6 +53,8 @@ class ToolContext:
     handoff_requested: bool = False
     handoff_reason: str = ""
     handoff_summary: str = ""
+    #: The categorised reason, already normalised through `handoff.classify`.
+    handoff_code: str = ""
     #: Set by book_appointment so the engine can alert the owner.
     booking_id: uuid.UUID | None = None
     booking_summary: str = ""
@@ -131,11 +134,26 @@ async def _create_lead(
     )
 
 
-async def _handoff_to_human(ctx: ToolContext, reason: str, summary: str) -> str:
-    await hand_off(ctx.session, ctx.shop.client_id, ctx.conversation_id, reason)
+async def _handoff_to_human(
+    ctx: ToolContext, reason: str, summary: str, code: str = ""
+) -> str:
+    # `code` defaults rather than being required, because this handler is
+    # called directly by four existing tests and by the voice fixtures. The
+    # schema marks it required for the model; Python does not need to.
+    niche = (ctx.shop.config.get("vertical") or "") if ctx.shop else ""
+    resolved = handoff.classify(reason, code=code, niche=niche)
+    await hand_off(
+        ctx.session,
+        ctx.shop.client_id,
+        ctx.conversation_id,
+        reason,
+        code=resolved.value,
+        summary=summary,
+    )
     ctx.handoff_requested = True
     ctx.handoff_reason = reason
     ctx.handoff_summary = summary
+    ctx.handoff_code = resolved.value
     return (
         "The owner has been alerted and will take over this conversation. "
         "Write one short, calm closing message telling the customer that someone "
@@ -761,8 +779,22 @@ _SPECS: tuple[ToolSpec, ...] = (
                         "conversation, in the owner's language."
                     ),
                 },
+                # The whole global list, not this niche's subset. Tool schemas
+                # render into the cached prefix, so one that varied per niche
+                # would be one more thing obliged to stay byte-stable - and
+                # the enum is here for validity, not for guidance. The prompt
+                # names the handful of codes this niche should actually use.
+                "code": {
+                    "type": "string",
+                    "enum": list(handoff.ALL_CODES),
+                    "description": (
+                        "The category of this handoff. Pick the closest one "
+                        "from the list your rules give you; use 'other' if "
+                        "none of them fit."
+                    ),
+                },
             },
-            "required": ["reason", "summary"],
+            "required": ["reason", "summary", "code"],
             "additionalProperties": False,
         },
         handler=_handoff_to_human,
