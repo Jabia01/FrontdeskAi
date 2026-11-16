@@ -13,14 +13,16 @@ replaced it: the *implementation* stays confidential, the *nature* does not.
 from __future__ import annotations
 
 from dataclasses import replace
+from types import SimpleNamespace
 
 import pytest
 
 from app.agent import language as lang
 from app.agent.prompt import build_system_prompt
-from app.agent.runner import build_turn_hint
+from app.agent.runner import _is_first_reply, build_turn_hint
 from app.core import voice
 from app.core.router import ShopContext
+from app.models import Direction
 from tests.prompt_fixtures import snapshot_shop, vertical_keys
 
 
@@ -35,6 +37,12 @@ def hint(shop, **overrides):
         primary="en", greeting=("en",), source=lang.Source.SHOP_DEFAULT
     )
     return build_turn_hint(shop, decision, **kwargs)
+
+
+def _row(direction: Direction):
+    """The one attribute `_is_first_reply` reads. A real `Message` would need
+    a session, and the predicate is deliberately simple enough not to."""
+    return SimpleNamespace(direction=direction)
 
 
 @pytest.fixture
@@ -97,6 +105,36 @@ class TestTheFirstReplyDiscloses:
         """A canned English line bolted onto a German greeting reads as a bot
         that cannot cope."""
         assert "in the language you are writing" in lang.DISCLOSURE
+
+
+class TestWhichTurnIsTheFirstOne:
+    """The gap this file had. Every test above passes `first_reply` in by
+    hand, so none of them noticed that the runner was computing it wrongly:
+    it asked "is the history empty", and the engine ingests the inbound
+    message before it reads the history, so the answer was always no. The
+    disclosure never fired on the text path at all.
+
+    The question is whether the *business* has said anything, so what counts
+    is an outbound message, not a row.
+    """
+
+    def test_a_customers_own_first_message_does_not_count_as_a_reply(self):
+        """The exact shape the engine hands over on a first contact: one
+        inbound row, already persisted, nothing sent back yet."""
+        assert _is_first_reply([_row(Direction.inbound)])
+
+    def test_an_empty_history_is_also_a_first_reply(self):
+        assert _is_first_reply([])
+
+    def test_once_the_business_has_answered_it_is_not(self):
+        assert not _is_first_reply(
+            [_row(Direction.inbound), _row(Direction.outbound), _row(Direction.inbound)]
+        )
+
+    def test_a_long_one_sided_conversation_is_still_a_first_reply(self):
+        """Three messages in and nothing answered - the customer has still not
+        been told what they are talking to."""
+        assert _is_first_reply([_row(Direction.inbound)] * 3)
 
 
 class TestTheOpenersDisclose:

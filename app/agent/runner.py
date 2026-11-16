@@ -148,6 +148,25 @@ def history_to_messages(history: list[Message]) -> list[dict[str, Any]]:
     return messages
 
 
+def _is_first_reply(history: list[Message]) -> bool:
+    """Whether the business has not said anything to this customer yet.
+
+    This used to be `not history`, which was wrong in a way nothing caught:
+    the engine ingests the inbound message *before* reading the history, so
+    by the time the agent runs there is always at least one row in it. The
+    condition was therefore never true on the text path, and the EU AI Act
+    Art. 50 disclosure - which rides on it - never fired for a customer who
+    wrote first. `tests/test_disclosure.py` tested `build_turn_hint` with the
+    flag passed in by hand, so it was green throughout.
+
+    An outbound message is the thing that matters, not a row. `recent_messages`
+    already excludes anything the customer never saw - a blocked send, a
+    shadow-mode draft - so a conversation whose only replies were drafted is
+    still, correctly, one where nothing has been said.
+    """
+    return not any(row.direction == Direction.outbound for row in history)
+
+
 def _spec(shop: ShopContext):
     """The shop's niche spec. Never raises; unknown falls back to `other`."""
     from app.agent.niche import niche_for
@@ -388,9 +407,7 @@ async def run_agent(
                     misunderstand_count=misunderstand_count,
                     detected_not_enabled=False,
                     now=now,
-                    # Nothing said yet in this conversation, so this reply is
-                    # the business's first word to them.
-                    first_reply=not history,
+                    first_reply=_is_first_reply(history),
                 ),
             }
         )
